@@ -7,7 +7,7 @@ info:
 
     **Authentication.** Send `Authorization: Bearer <key>`. A key belongs to one organization and one integration and carries scopes. The organization is always taken from the key.
 
-    **Envelope.** Success: `{"status":"ok","requestId","data"}`. Failure: `{"status":"error","requestId","error":{"code","message":{"ar","en"},"details"}}`. The `X-Request-ID` header repeats `requestId`; log it. Codes are listed in `error-codes.md`.
+    **Envelope.** Success: `{"status":"ok","requestId","data"}`. Failure: `{"status":"error","requestId","error":{"code","message":{"ar","en"},"details"}}`. The `X-Request-ID` header repeats `requestId`; log it. Every error code is listed in the error codes table of this documentation.
 
     **Money** is a decimal string with at most two decimals ("125.50"). On input a JSON number is accepted too, but more than two decimals is rejected, never rounded. `discount` and `tax` are percentages.
 
@@ -17,7 +17,7 @@ info:
 
     **Limits.** 600 requests/minute per key by default (adjustable per key), 6 sync batches/minute, 50,000 items and 32 MiB per sync body (gzip accepted with `Content-Encoding: gzip`). On 429 read `Retry-After`.
 
-    Nothing marked "unverified" in the assumptions is final: Orgasoft has not confirmed the product field spellings other than those in this document, the meaning of `tax`, `isQuota`/`quotaQuantity`, or that the acknowledgement payload below is their sample 3.
+    Some details are still being confirmed with Orgasoft during integration: product field spellings beyond those in this document, the meaning of `tax`, `isQuota`/`quotaQuantity`, and the shape of the acknowledgement payload.
 servers:
   - url: "{baseUrl}/erp/v1"
     variables:
@@ -286,7 +286,7 @@ paths:
       summary: Mark orders as imported
       description: |
         Up to 500 per call. Repeating a call with the same references is safe. A new reference for an order already acknowledged is refused per order (`result: conflict`, `code: ERP_ACK_REFERENCE_CONFLICT`, `existingReference` set). Acknowledging again with the same reference returns `already_acknowledged` and, after the order changed, clears the `changed` flag.
-        Scope: `erp.orders.ack`. Also accepted (Orgasoft sample 3, unverified): `{"order_number":"10542","orga_orderID":"ORGA-77123","items":[...]}`; `items` is ignored.
+        Scope: `erp.orders.ack`. Also accepted, as an alternative shape: `{"order_number":"10542","orga_orderID":"ORGA-77123","items":[...]}`; `items` is ignored.
       requestBody:
         required: true
         content:
@@ -513,7 +513,7 @@ components:
     OrderLimit: { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 500, default: 100 } }
   responses:
     Error:
-      description: Failure. The code is stable; see error-codes.md.
+      description: Failure. The code is stable; the error codes table in this API documentation lists every code.
       content:
         application/json:
           schema: { $ref: "#/components/schemas/ErrorResponse" }
@@ -643,7 +643,7 @@ components:
     ProductItem:
       type: object
       description: |
-        Field names follow contracts/orgasoft-samples.md. Input accepts camelCase and PascalCase, with the first letter case ignored. Other Orgasoft spellings can be added in one place: `internal/modules/erp/provider/orgasoft/fields.go`.
+        Field names follow the Orgasoft samples in this document. Input accepts camelCase and PascalCase, with the first letter case ignored.
       required: [externalProductCode, arName, publicPrice, stock]
       properties:
         externalProductCode: { type: [string, integer], maxLength: 64, description: "Orgasoft's code. One code is one sellable item per tenant." }
@@ -656,9 +656,9 @@ components:
         expiryDate: { type: string, description: "YYYY-MM-DD; a time part is ignored. Optional." }
         isQuota: { type: boolean }
         quotaQuantity: { type: integer, minimum: 0, description: "With isQuota=true: the most any one buying pharmacy branch may ever take. isQuota=false removes the quota. Omitted: unchanged." }
-        unit: { type: string, maxLength: 40, description: "Optional. Not in Orgasoft's samples (unverified); ignored when absent." }
-        manufacturer: { type: string, maxLength: 120, description: "Optional. Not in Orgasoft's samples (unverified); ignored when absent." }
-        batchNumber: { type: string, maxLength: 60, description: "Optional. Not in Orgasoft's samples (unverified); ignored when absent." }
+        unit: { type: string, maxLength: 40, description: "Optional. Leave it out if your system does not have it." }
+        manufacturer: { type: string, maxLength: 120, description: "Optional. Leave it out if your system does not have it." }
+        batchNumber: { type: string, maxLength: 60, description: "Optional. Leave it out if your system does not have it." }
     SyncRequest:
       type: object
       required: [items]

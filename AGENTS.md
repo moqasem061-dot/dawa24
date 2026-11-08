@@ -72,7 +72,7 @@ docs/modules/                    one page per module: entities, invariants
 ```
 
 Postgres schemas mirror module names: `identity`, `org`, `catalog`, `inventory`,
-`commerce`, `promo`, `billing`, `ingest`, `workflow`, `hr`, `platform`, `ai`.
+`commerce`, `promo`, `billing`, `ingest`, `workflow`, `hr`, `platform`, `ai`, `erp`.
 
 ## Working effectively here
 

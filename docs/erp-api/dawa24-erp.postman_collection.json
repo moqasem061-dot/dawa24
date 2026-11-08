@@ -1,0 +1,2622 @@
+{
+  "info": {
+    "_postman_id": "1ca79027-1dde-42ea-8bc0-94e117b4ff10",
+    "name": "Dawa24 ERP API for Orgasoft",
+    "description": "**Dawa24 ERP API — for Orgasoft**\n\n**How to read this collection (no server needed):**\n1. Click a request on the left.\n2. Read the explanation on the right.\n3. Open the **Body** tab to see exactly what to send.\n4. Click **Examples** (top right) to see exactly what Dawa24 replies — for success and for each error.\n\n**How to run it (when Dawa24 gives you a test server and a key):**\n1. Choose the environment **Dawa24 ERP - test server** (top right).\n2. Put the server address in `baseUrl` and your key in `apiKey`. Nothing else to change.\n3. Run **01 Start here → Check my API key**. If it says `\"status\": \"ok\"`, you are connected.\n\n**Rules that apply to every request:**\n- Your key goes in the header `Authorization: Bearer <key>` (already set up here).\n- Every reply has `\"status\": \"ok\"` or `\"status\": \"error\"`. Errors have a `code` and a message in Arabic and English.\n- Prices are text with at most 2 decimals, like `\"125.50\"`. Discount and tax are percents.\n- Up to 600 requests per minute. If you get error 429, wait the seconds in the `Retry-After` header.\n- Keep the `requestId` from the reply when you report a problem — it lets us find your request.\n\n---\n\n**طريقة قراءة المجموعة (بدون سيرفر):** اضغط على أي طلب، اقرأ الشرح، افتح تبويب **Body** لترى ما يجب إرساله، واضغط **Examples** لترى رد دواء24 بالضبط في حالة النجاح وكل خطأ.\n\n**طريقة التشغيل (عندما نرسل لكم سيرفر تجريبي ومفتاح):** اختر البيئة **Dawa24 ERP - test server**، ضع عنوان السيرفر في `baseUrl` والمفتاح في `apiKey`، ثم شغّل **Check my API key**. إذا ظهر `\"status\": \"ok\"` فالربط يعمل.\n\n**قواعد عامة:** المفتاح يُرسل في `Authorization: Bearer`. كل رد فيه `status` ورسائل الخطأ بالعربي والإنجليزي. الأسعار بحد أقصى رقمين عشريين. احتفظوا بـ `requestId` عند الإبلاغ عن مشكلة.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{apiKey}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "01 Start here - ابدأ هنا",
+      "description": "Use these first to check that everything is connected. / استخدمها أولاً للتأكد من أن الربط يعمل.",
+      "item": [
+        {
+          "name": "1. Check my API key - تأكد من مفتاح الربط",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/erp/v1/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "erp",
+                "v1",
+                "health"
+              ]
+            },
+            "description": "**What it does:** checks that your API key works and shows your company name, warehouse and what the key is allowed to do.\n\n**When:** once at setup, and any time something does not work.\n\n**ماذا يفعل:** يتأكد أن مفتاح الربط صحيح ويعرض اسم شركتك والمخزن والصلاحيات.\n\n**متى:** مرة عند الإعداد، وكلما حدثت مشكلة."
+          },
+          "response": [
+            {
+              "name": "200 Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/health",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "health"
+                  ]
+                }
+              },
+              "status": "Success",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"9f2c41d07a3b4e55\",\n  \"data\": {\n    \"apiVersion\": \"1.0\",\n    \"serverTime\": \"2026-11-07T10:15:30Z\",\n    \"organization\": {\n      \"id\": 4021,\n      \"name\": {\n        \"ar\": \"مؤسسة النور للأدوية\",\n        \"en\": \"Al Nour Pharma\"\n      },\n      \"type\": \"vendor\"\n    },\n    \"integration\": {\n      \"provider\": \"orgasoft\",\n      \"status\": \"active\"\n    },\n    \"key\": {\n      \"prefix\": \"k3m9x2pq\",\n      \"scopes\": [\n        \"erp.products.sync\",\n        \"erp.orders.read\",\n        \"erp.orders.ack\",\n        \"erp.orders.decide\"\n      ],\n      \"warehouse\": {\n        \"id\": 811,\n        \"name\": \"المستودع الرئيسي\"\n      },\n      \"branch\": {\n        \"id\": 977\n      },\n      \"rateLimitPerMinute\": 600,\n      \"expiresAt\": null\n    }\n  }\n}"
+            },
+            {
+              "name": "401 Wrong or missing key",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/health",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "health"
+                  ]
+                }
+              },
+              "status": "Wrong or missing key",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_AUTH_INVALID\",\n    \"message\": {\n      \"ar\": \"مفتاح الواجهة غير صحيح.\",\n      \"en\": \"The API key is not valid.\"\n    },\n    \"details\": null\n  }\n}"
+            },
+            {
+              "name": "429 Too many requests",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/health",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "health"
+                  ]
+                }
+              },
+              "status": "Too many requests",
+              "code": 429,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_RATE_LIMITED\",\n    \"message\": {\n      \"ar\": \"تجاوزت الحد المسموح من الطلبات. أعد المحاولة بعد 12 ثانية.\",\n      \"en\": \"Too many requests. Retry in 12 seconds.\"\n    },\n    \"details\": {\n      \"retryAfterSeconds\": 12,\n      \"limitPerMinute\": 600\n    }\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Reply status is ok', () => pm.expect(pm.response.code).to.be.within(200, 299));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 Products - الأصناف",
+      "description": "Send your products to Dawa24: code, name, price, stock. / أرسل أصنافك إلى دواء24: الكود والاسم والسعر والرصيد.",
+      "item": [
+        {
+          "name": "1. Send products - إرسال الأصناف",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}",
+                "description": "Optional. Same key = same upload if you retry."
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/erp/v1/products/sync",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "erp",
+                "v1",
+                "products",
+                "sync"
+              ]
+            },
+            "description": "**What it does:** sends your products to Dawa24.\n\n**Full list or only changes?** Both work. Dawa24 compares every product with the last data it received and applies only real changes. A product you do not send is left as it is (never deleted). To show a product as out of stock, send `stock: 0`.\n\n**Fields:**\n| Field | Required | Meaning |\n|---|---|---|\n| externalProductCode | yes | Your product code |\n| arName | yes | Arabic name |\n| publicPrice | yes | Public price, max 2 decimals (62.50) |\n| stock | yes | Quantity available |\n| barcode | no | Barcode |\n| discount | no | Discount percent (12.5 = 12.5%) |\n| tax | no | Tax percent |\n| expiryDate | no | YYYY-MM-DD |\n| isQuota / quotaQuantity | no | Limit how much one pharmacy branch can buy |\n\nField names can start with a small or capital letter (`arName` or `ArName`). Up to 50,000 products per request.\n\n**The reply** gives a `syncId`. Use it in the next two requests (it is filled in automatically).\n\n**ماذا يفعل:** يرسل أصنافك إلى دواء24. يمكنك إرسال القائمة كاملة أو المتغير فقط، ودواء24 يطبق التغييرات الحقيقية فقط. الصنف الذي لا ترسله يبقى كما هو ولا يُحذف. لإظهار الصنف غير متوفر أرسل الرصيد 0.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clientBatchId\": \"orga-2026-11-07T10:15\",\n  \"items\": [\n    {\n      \"externalProductCode\": \"100245\",\n      \"arName\": \"بانادول اكسترا 24 قرص\",\n      \"barcode\": \"6221024000123\",\n      \"publicPrice\": 62.5,\n      \"discount\": 12.5,\n      \"tax\": 0,\n      \"stock\": 340,\n      \"expiryDate\": \"2027-09-30\",\n      \"isQuota\": true,\n      \"quotaQuantity\": 20\n    },\n    {\n      \"externalProductCode\": \"100311\",\n      \"arName\": \"فيتامين د 50000 وحدة\",\n      \"publicPrice\": 95,\n      \"stock\": 0\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "202 Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Idempotency-Key",
+                    "value": "{{$guid}}",
+                    "description": "Optional. Same key = same upload if you retry."
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/products/sync",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "products",
+                    "sync"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"clientBatchId\": \"orga-2026-11-07T10:15\",\n  \"items\": [\n    {\n      \"externalProductCode\": \"100245\",\n      \"arName\": \"بانادول اكسترا 24 قرص\",\n      \"barcode\": \"6221024000123\",\n      \"publicPrice\": 62.5,\n      \"discount\": 12.5,\n      \"tax\": 0,\n      \"stock\": 340,\n      \"expiryDate\": \"2027-09-30\",\n      \"isQuota\": true,\n      \"quotaQuantity\": 20\n    },\n    {\n      \"externalProductCode\": \"100311\",\n      \"arName\": \"فيتامين د 50000 وحدة\",\n      \"publicPrice\": 95,\n      \"stock\": 0\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Success",
+              "code": 202,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"4b1f9a6c22d34b10\",\n  \"data\": {\n    \"syncId\": \"7d0c3f1e-2b6a-4f3d-9a45-0c8d5e1b7a90\",\n    \"state\": \"queued\",\n    \"itemCount\": 2,\n    \"rejectedAtIntake\": 0,\n    \"statusUrl\": \"/erp/v1/products/sync/7d0c3f1e-2b6a-4f3d-9a45-0c8d5e1b7a90\"\n  }\n}"
+            },
+            {
+              "name": "401 Wrong or missing key",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Idempotency-Key",
+                    "value": "{{$guid}}",
+                    "description": "Optional. Same key = same upload if you retry."
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/products/sync",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "products",
+                    "sync"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"clientBatchId\": \"orga-2026-11-07T10:15\",\n  \"items\": [\n    {\n      \"externalProductCode\": \"100245\",\n      \"arName\": \"بانادول اكسترا 24 قرص\",\n      \"barcode\": \"6221024000123\",\n      \"publicPrice\": 62.5,\n      \"discount\": 12.5,\n      \"tax\": 0,\n      \"stock\": 340,\n      \"expiryDate\": \"2027-09-30\",\n      \"isQuota\": true,\n      \"quotaQuantity\": 20\n    },\n    {\n      \"externalProductCode\": \"100311\",\n      \"arName\": \"فيتامين د 50000 وحدة\",\n      \"publicPrice\": 95,\n      \"stock\": 0\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Wrong or missing key",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_AUTH_INVALID\",\n    \"message\": {\n      \"ar\": \"مفتاح الواجهة غير صحيح.\",\n      \"en\": \"The API key is not valid.\"\n    },\n    \"details\": null\n  }\n}"
+            },
+            {
+              "name": "403 Key lacks permission",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Idempotency-Key",
+                    "value": "{{$guid}}",
+                    "description": "Optional. Same key = same upload if you retry."
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/products/sync",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "products",
+                    "sync"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"clientBatchId\": \"orga-2026-11-07T10:15\",\n  \"items\": [\n    {\n      \"externalProductCode\": \"100245\",\n      \"arName\": \"بانادول اكسترا 24 قرص\",\n      \"barcode\": \"6221024000123\",\n      \"publicPrice\": 62.5,\n      \"discount\": 12.5,\n      \"tax\": 0,\n      \"stock\": 340,\n      \"expiryDate\": \"2027-09-30\",\n      \"isQuota\": true,\n      \"quotaQuantity\": 20\n    },\n    {\n      \"externalProductCode\": \"100311\",\n      \"arName\": \"فيتامين د 50000 وحدة\",\n      \"publicPrice\": 95,\n      \"stock\": 0\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Key lacks permission",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_SCOPE_MISSING\",\n    \"message\": {\n      \"ar\": \"المفتاح لا يملك الصلاحية المطلوبة لهذه العملية.\",\n      \"en\": \"The key does not have the permission this call needs.\"\n    },\n    \"details\": {\n      \"requiredScope\": \"erp.products.sync\"\n    }\n  }\n}"
+            },
+            {
+              "name": "409 Same Idempotency-Key, different body",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Idempotency-Key",
+                    "value": "{{$guid}}",
+                    "description": "Optional. Same key = same upload if you retry."
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/products/sync",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "products",
+                    "sync"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"clientBatchId\": \"orga-2026-11-07T10:15\",\n  \"items\": [\n    {\n      \"externalProductCode\": \"100245\",\n      \"arName\": \"بانادول اكسترا 24 قرص\",\n      \"barcode\": \"6221024000123\",\n      \"publicPrice\": 62.5,\n      \"discount\": 12.5,\n      \"tax\": 0,\n      \"stock\": 340,\n      \"expiryDate\": \"2027-09-30\",\n      \"isQuota\": true,\n      \"quotaQuantity\": 20\n    },\n    {\n      \"externalProductCode\": \"100311\",\n      \"arName\": \"فيتامين د 50000 وحدة\",\n      \"publicPrice\": 95,\n      \"stock\": 0\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Same Idempotency-Key, different body",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_IDEMPOTENCY_CONFLICT\",\n    \"message\": {\n      \"ar\": \"استُخدم مفتاح منع التكرار نفسه مع محتوى مختلف.\",\n      \"en\": \"The same idempotency key was used with different content.\"\n    },\n    \"details\": null\n  }\n}"
+            },
+            {
+              "name": "413 Too many products",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Idempotency-Key",
+                    "value": "{{$guid}}",
+                    "description": "Optional. Same key = same upload if you retry."
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/products/sync",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "products",
+                    "sync"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"clientBatchId\": \"orga-2026-11-07T10:15\",\n  \"items\": [\n    {\n      \"externalProductCode\": \"100245\",\n      \"arName\": \"بانادول اكسترا 24 قرص\",\n      \"barcode\": \"6221024000123\",\n      \"publicPrice\": 62.5,\n      \"discount\": 12.5,\n      \"tax\": 0,\n      \"stock\": 340,\n      \"expiryDate\": \"2027-09-30\",\n      \"isQuota\": true,\n      \"quotaQuantity\": 20\n    },\n    {\n      \"externalProductCode\": \"100311\",\n      \"arName\": \"فيتامين د 50000 وحدة\",\n      \"publicPrice\": 95,\n      \"stock\": 0\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Too many products",
+              "code": 413,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_BATCH_TOO_LARGE\",\n    \"message\": {\n      \"ar\": \"عدد الأصناف أكبر من الحد المسموح (50000 صنف في الدفعة).\",\n      \"en\": \"The batch has more items than allowed (50000 per batch).\"\n    },\n    \"details\": {\n      \"limit\": 50000,\n      \"received\": 50210\n    }\n  }\n}"
+            },
+            {
+              "name": "422 Invalid data",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Idempotency-Key",
+                    "value": "{{$guid}}",
+                    "description": "Optional. Same key = same upload if you retry."
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/products/sync",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "products",
+                    "sync"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"clientBatchId\": \"orga-2026-11-07T10:15\",\n  \"items\": [\n    {\n      \"externalProductCode\": \"100245\",\n      \"arName\": \"بانادول اكسترا 24 قرص\",\n      \"barcode\": \"6221024000123\",\n      \"publicPrice\": 62.5,\n      \"discount\": 12.5,\n      \"tax\": 0,\n      \"stock\": 340,\n      \"expiryDate\": \"2027-09-30\",\n      \"isQuota\": true,\n      \"quotaQuantity\": 20\n    },\n    {\n      \"externalProductCode\": \"100311\",\n      \"arName\": \"فيتامين د 50000 وحدة\",\n      \"publicPrice\": 95,\n      \"stock\": 0\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Invalid data",
+              "code": 422,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_BATCH_EMPTY\",\n    \"message\": {\n      \"ar\": \"الدفعة لا تحتوي على أصناف.\",\n      \"en\": \"The batch has no items.\"\n    },\n    \"details\": null\n  }\n}"
+            },
+            {
+              "name": "429 Too many requests",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Idempotency-Key",
+                    "value": "{{$guid}}",
+                    "description": "Optional. Same key = same upload if you retry."
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/products/sync",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "products",
+                    "sync"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"clientBatchId\": \"orga-2026-11-07T10:15\",\n  \"items\": [\n    {\n      \"externalProductCode\": \"100245\",\n      \"arName\": \"بانادول اكسترا 24 قرص\",\n      \"barcode\": \"6221024000123\",\n      \"publicPrice\": 62.5,\n      \"discount\": 12.5,\n      \"tax\": 0,\n      \"stock\": 340,\n      \"expiryDate\": \"2027-09-30\",\n      \"isQuota\": true,\n      \"quotaQuantity\": 20\n    },\n    {\n      \"externalProductCode\": \"100311\",\n      \"arName\": \"فيتامين د 50000 وحدة\",\n      \"publicPrice\": 95,\n      \"stock\": 0\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Too many requests",
+              "code": 429,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_RATE_LIMITED\",\n    \"message\": {\n      \"ar\": \"تجاوزت الحد المسموح من الطلبات. أعد المحاولة بعد 12 ثانية.\",\n      \"en\": \"Too many requests. Retry in 12 seconds.\"\n    },\n    \"details\": {\n      \"retryAfterSeconds\": 12,\n      \"limitPerMinute\": 600\n    }\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Reply status is ok', () => pm.expect(pm.response.code).to.be.within(200, 299));",
+                  "pm.collectionVariables.set('syncId', pm.response.json().data.syncId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2. Check the upload - متابعة الإرسال",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/erp/v1/products/sync/:syncId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "erp",
+                "v1",
+                "products",
+                "sync",
+                ":syncId"
+              ],
+              "variable": [
+                {
+                  "key": "syncId",
+                  "value": "{{syncId}}"
+                }
+              ]
+            },
+            "description": "**What it does:** shows if the upload finished and how many products were created, updated, unchanged, need review, or failed.\n\n**When:** a few seconds after step 1. Repeat until `state` is `completed`.\n\n**ماذا يفعل:** يوضح هل انتهت المعالجة وعدد الأصناف الجديدة والمحدثة وغير المتغيرة والتي تحتاج مراجعة أو فشلت."
+          },
+          "response": [
+            {
+              "name": "200 Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/products/sync/:syncId",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "products",
+                    "sync",
+                    ":syncId"
+                  ],
+                  "variable": [
+                    {
+                      "key": "syncId",
+                      "value": "{{syncId}}"
+                    }
+                  ]
+                }
+              },
+              "status": "Success",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"6c20ab98f1e14d07\",\n  \"data\": {\n    \"syncId\": \"7d0c3f1e-2b6a-4f3d-9a45-0c8d5e1b7a90\",\n    \"clientBatchId\": \"orga-2026-11-07T10:15\",\n    \"state\": \"completed\",\n    \"acceptedAt\": \"2026-11-07T10:15:31Z\",\n    \"startedAt\": \"2026-11-07T10:15:33Z\",\n    \"finishedAt\": \"2026-11-07T10:15:35Z\",\n    \"itemCount\": 2,\n    \"counts\": {\n      \"created\": 1,\n      \"updated\": 0,\n      \"unchanged\": 0,\n      \"needsReview\": 1,\n      \"failed\": 0\n    }\n  }\n}"
+            },
+            {
+              "name": "404 Upload not found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/products/sync/:syncId",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "products",
+                    "sync",
+                    ":syncId"
+                  ],
+                  "variable": [
+                    {
+                      "key": "syncId",
+                      "value": "{{syncId}}"
+                    }
+                  ]
+                }
+              },
+              "status": "Upload not found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_SYNC_NOT_FOUND\",\n    \"message\": {\n      \"ar\": \"لم يتم العثور على عملية المزامنة.\",\n      \"en\": \"The sync was not found.\"\n    },\n    \"details\": null\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Reply status is ok', () => pm.expect(pm.response.code).to.be.within(200, 299));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3. See each product's result - نتيجة كل صنف",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/erp/v1/products/sync/:syncId/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "erp",
+                "v1",
+                "products",
+                "sync",
+                ":syncId",
+                "items"
+              ],
+              "query": [
+                {
+                  "key": "state",
+                  "value": "failed",
+                  "disabled": true
+                },
+                {
+                  "key": "cursor",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "",
+                  "disabled": true
+                }
+              ],
+              "variable": [
+                {
+                  "key": "syncId",
+                  "value": "{{syncId}}"
+                }
+              ]
+            },
+            "description": "**What it does:** lists the result of every product in the upload. Add `state=failed` to see only the problems; each one has a clear message in Arabic and English.\n\n**ماذا يفعل:** يعرض نتيجة كل صنف. أضف `state=failed` لعرض الأخطاء فقط مع رسالة واضحة بالعربي والإنجليزي."
+          },
+          "response": [
+            {
+              "name": "200 Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/products/sync/:syncId/items",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "products",
+                    "sync",
+                    ":syncId",
+                    "items"
+                  ],
+                  "query": [
+                    {
+                      "key": "state",
+                      "value": "failed",
+                      "disabled": true
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "limit",
+                      "value": "",
+                      "disabled": true
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "key": "syncId",
+                      "value": "{{syncId}}"
+                    }
+                  ]
+                }
+              },
+              "status": "Success",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"1e8d4f7a90b24c31\",\n  \"data\": [\n    {\n      \"position\": 0,\n      \"externalProductCode\": \"100245\",\n      \"state\": \"created\",\n      \"code\": null,\n      \"message\": null\n    },\n    {\n      \"position\": 1,\n      \"externalProductCode\": \"100311\",\n      \"state\": \"needs_review\",\n      \"code\": \"ERP_ITEM_MATCH_REVIEW\",\n      \"message\": {\n        \"ar\": \"الصنف يحتاج مراجعة المورد لتحديد المنتج الصحيح.\",\n        \"en\": \"The item needs the supplier to pick the right product.\"\n      }\n    }\n  ],\n  \"page\": {\n    \"nextCursor\": null,\n    \"limit\": 1000\n  }\n}"
+            },
+            {
+              "name": "400 Bad page cursor",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/products/sync/:syncId/items",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "products",
+                    "sync",
+                    ":syncId",
+                    "items"
+                  ],
+                  "query": [
+                    {
+                      "key": "state",
+                      "value": "failed",
+                      "disabled": true
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "limit",
+                      "value": "",
+                      "disabled": true
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "key": "syncId",
+                      "value": "{{syncId}}"
+                    }
+                  ]
+                }
+              },
+              "status": "Bad page cursor",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_CURSOR_INVALID\",\n    \"message\": {\n      \"ar\": \"مؤشر الصفحات غير صالح. ابدأ من جديد بدون مؤشر.\",\n      \"en\": \"The page cursor is not valid. Start again without a cursor.\"\n    },\n    \"details\": null\n  }\n}"
+            },
+            {
+              "name": "404 Upload not found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/products/sync/:syncId/items",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "products",
+                    "sync",
+                    ":syncId",
+                    "items"
+                  ],
+                  "query": [
+                    {
+                      "key": "state",
+                      "value": "failed",
+                      "disabled": true
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "limit",
+                      "value": "",
+                      "disabled": true
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "key": "syncId",
+                      "value": "{{syncId}}"
+                    }
+                  ]
+                }
+              },
+              "status": "Upload not found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_SYNC_NOT_FOUND\",\n    \"message\": {\n      \"ar\": \"لم يتم العثور على عملية المزامنة.\",\n      \"en\": \"The sync was not found.\"\n    },\n    \"details\": null\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Reply status is ok', () => pm.expect(pm.response.code).to.be.within(200, 299));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 Sales orders - طلبات البيع",
+      "description": "Orders that pharmacies placed with you. / الطلبات التي أرسلتها الصيدليات إليك.",
+      "item": [
+        {
+          "name": "1. Get new orders - جلب الطلبات الجديدة",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/erp/v1/orders/sales?state=new",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "erp",
+                "v1",
+                "orders",
+                "sales"
+              ],
+              "query": [
+                {
+                  "key": "state",
+                  "value": "new",
+                  "disabled": false
+                },
+                {
+                  "key": "from",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "to",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "cursor",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "**What it does:** lists orders pharmacies placed with you. Keep `state=new` to get only orders you have not imported yet.\n\n**When:** every few minutes.\n\n**More than one page?** If `page.nextCursor` is not null, call again with `cursor=<that value>`.\n\n**ماذا يفعل:** يعرض طلبات الصيدليات. اترك `state=new` لجلب الطلبات التي لم تستوردها بعد. استدعه كل بضع دقائق."
+          },
+          "response": [
+            {
+              "name": "200 Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/orders/sales?state=new",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "orders",
+                    "sales"
+                  ],
+                  "query": [
+                    {
+                      "key": "state",
+                      "value": "new",
+                      "disabled": false
+                    },
+                    {
+                      "key": "from",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "to",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "limit",
+                      "value": "",
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "status": "Success",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"2d5b8a1c77e04f92\",\n  \"data\": [\n    {\n      \"orderNumber\": \"10542\",\n      \"shipmentNumber\": \"10542-1\",\n      \"status\": \"pending\",\n      \"importState\": \"new\",\n      \"createdAt\": \"2026-11-07T08:02:11Z\",\n      \"updatedAt\": \"2026-11-07T08:02:11Z\",\n      \"paymentMethod\": \"cash_on_delivery\",\n      \"paymentStatus\": \"unpaid\",\n      \"notes\": \"\",\n      \"subtotal\": \"1250.00\",\n      \"shippingFee\": \"25.00\",\n      \"total\": \"1275.00\",\n      \"customer\": {\n        \"erpCode\": \"C-00871\",\n        \"mapped\": true,\n        \"unmappedReason\": null,\n        \"name\": {\n          \"ar\": \"صيدلية الشفاء\",\n          \"en\": \"Al Shifa Pharmacy\"\n        },\n        \"branchName\": {\n          \"ar\": \"الفرع الرئيسي\",\n          \"en\": \"Main branch\"\n        },\n        \"address\": \"12 شارع النيل، المعادي، القاهرة\",\n        \"phone\": \"01012345678\"\n      },\n      \"erp\": {\n        \"reference\": null,\n        \"acknowledgedAt\": null\n      },\n      \"lines\": [\n        {\n          \"lineId\": 88231,\n          \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n          \"externalProductCode\": \"100245\",\n          \"name\": {\n            \"ar\": \"بانادول اكسترا 24 قرص\",\n            \"en\": \"Panadol Extra 24 tablets\"\n          },\n          \"barcode\": \"6221024000123\",\n          \"quantity\": 20,\n          \"unitPrice\": \"54.69\",\n          \"discountAmount\": \"0.00\",\n          \"totalPrice\": \"1093.80\"\n        }\n      ]\n    }\n  ],\n  \"page\": {\n    \"nextCursor\": null,\n    \"limit\": 100\n  }\n}"
+            },
+            {
+              "name": "400 Bad page cursor",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/orders/sales?state=new",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "orders",
+                    "sales"
+                  ],
+                  "query": [
+                    {
+                      "key": "state",
+                      "value": "new",
+                      "disabled": false
+                    },
+                    {
+                      "key": "from",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "to",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "limit",
+                      "value": "",
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "status": "Bad page cursor",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_CURSOR_INVALID\",\n    \"message\": {\n      \"ar\": \"مؤشر الصفحات غير صالح. ابدأ من جديد بدون مؤشر.\",\n      \"en\": \"The page cursor is not valid. Start again without a cursor.\"\n    },\n    \"details\": null\n  }\n}"
+            },
+            {
+              "name": "403 Key lacks permission",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/orders/sales?state=new",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "orders",
+                    "sales"
+                  ],
+                  "query": [
+                    {
+                      "key": "state",
+                      "value": "new",
+                      "disabled": false
+                    },
+                    {
+                      "key": "from",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "to",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "limit",
+                      "value": "",
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "status": "Key lacks permission",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_SCOPE_MISSING\",\n    \"message\": {\n      \"ar\": \"المفتاح لا يملك الصلاحية المطلوبة لهذه العملية.\",\n      \"en\": \"The key does not have the permission this call needs.\"\n    },\n    \"details\": {\n      \"requiredScope\": \"erp.orders.read\"\n    }\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Reply status is ok', () => pm.expect(pm.response.code).to.be.within(200, 299));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2. Get one order - جلب طلب واحد",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/erp/v1/orders/sales/:orderNumber",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "erp",
+                "v1",
+                "orders",
+                "sales",
+                ":orderNumber"
+              ],
+              "variable": [
+                {
+                  "key": "orderNumber",
+                  "value": "10542"
+                }
+              ]
+            },
+            "description": "**What it does:** shows one order with the pharmacy, address, phone and all lines.\n\n**ماذا يفعل:** يعرض طلباً واحداً بكل تفاصيله: الصيدلية والعنوان والهاتف والأصناف."
+          },
+          "response": [
+            {
+              "name": "200 Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/orders/sales/:orderNumber",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "orders",
+                    "sales",
+                    ":orderNumber"
+                  ],
+                  "variable": [
+                    {
+                      "key": "orderNumber",
+                      "value": "10542"
+                    }
+                  ]
+                }
+              },
+              "status": "Success",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"5a9e0c12b8d34f71\",\n  \"data\": {\n    \"orderNumber\": \"10542\",\n    \"shipmentNumber\": \"10542-1\",\n    \"status\": \"pending\",\n    \"importState\": \"new\",\n    \"createdAt\": \"2026-11-07T08:02:11Z\",\n    \"updatedAt\": \"2026-11-07T08:02:11Z\",\n    \"paymentMethod\": \"cash_on_delivery\",\n    \"paymentStatus\": \"unpaid\",\n    \"notes\": \"\",\n    \"subtotal\": \"1250.00\",\n    \"shippingFee\": \"25.00\",\n    \"total\": \"1275.00\",\n    \"customer\": {\n      \"erpCode\": \"C-00871\",\n      \"mapped\": true,\n      \"unmappedReason\": null,\n      \"name\": {\n        \"ar\": \"صيدلية الشفاء\",\n        \"en\": \"Al Shifa Pharmacy\"\n      },\n      \"branchName\": {\n        \"ar\": \"الفرع الرئيسي\",\n        \"en\": \"Main branch\"\n      },\n      \"address\": \"12 شارع النيل، المعادي، القاهرة\",\n      \"phone\": \"01012345678\"\n    },\n    \"erp\": {\n      \"reference\": null,\n      \"acknowledgedAt\": null\n    },\n    \"lines\": [\n      {\n        \"lineId\": 88231,\n        \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n        \"externalProductCode\": \"100245\",\n        \"name\": {\n          \"ar\": \"بانادول اكسترا 24 قرص\",\n          \"en\": \"Panadol Extra 24 tablets\"\n        },\n        \"barcode\": \"6221024000123\",\n        \"quantity\": 20,\n        \"unitPrice\": \"54.69\",\n        \"discountAmount\": \"0.00\",\n        \"totalPrice\": \"1093.80\"\n      }\n    ]\n  }\n}"
+            },
+            {
+              "name": "404 Order not found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/orders/sales/:orderNumber",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "orders",
+                    "sales",
+                    ":orderNumber"
+                  ],
+                  "variable": [
+                    {
+                      "key": "orderNumber",
+                      "value": "10542"
+                    }
+                  ]
+                }
+              },
+              "status": "Order not found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_ORDER_NOT_FOUND\",\n    \"message\": {\n      \"ar\": \"الطلب غير موجود.\",\n      \"en\": \"The order was not found.\"\n    },\n    \"details\": null\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Reply status is ok', () => pm.expect(pm.response.code).to.be.within(200, 299));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3. Mark orders as imported - تأكيد استيراد الطلبات",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/erp/v1/orders/sales/ack",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "erp",
+                "v1",
+                "orders",
+                "sales",
+                "ack"
+              ]
+            },
+            "description": "**What it does:** tells Dawa24 you saved these orders in your system, with your own reference number. They will not come back in `state=new`.\n\n**When:** right after you save the orders. Safe to repeat.\n\n**ماذا يفعل:** يخبر دواء24 أنك حفظت هذه الطلبات عندك مع رقمك المرجعي، فلا تظهر مرة أخرى في الطلبات الجديدة. تكراره آمن.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orders\": [\n    {\n      \"orderNumber\": \"10542\",\n      \"erpReference\": \"ORGA-77123\"\n    },\n    {\n      \"orderNumber\": \"10543\",\n      \"erpReference\": \"ORGA-77124\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "200 Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/orders/sales/ack",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "orders",
+                    "sales",
+                    "ack"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"orders\": [\n    {\n      \"orderNumber\": \"10542\",\n      \"erpReference\": \"ORGA-77123\"\n    },\n    {\n      \"orderNumber\": \"10543\",\n      \"erpReference\": \"ORGA-77124\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Success",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"7f3a6d2e0c1b4a85\",\n  \"data\": [\n    {\n      \"orderNumber\": \"10542\",\n      \"result\": \"acknowledged\",\n      \"code\": null,\n      \"existingReference\": null\n    },\n    {\n      \"orderNumber\": \"10543\",\n      \"result\": \"not_found\",\n      \"code\": null,\n      \"existingReference\": null\n    }\n  ]\n}"
+            },
+            {
+              "name": "422 Invalid data",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/orders/sales/ack",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "orders",
+                    "sales",
+                    "ack"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"orders\": [\n    {\n      \"orderNumber\": \"10542\",\n      \"erpReference\": \"ORGA-77123\"\n    },\n    {\n      \"orderNumber\": \"10543\",\n      \"erpReference\": \"ORGA-77124\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Invalid data",
+              "code": 422,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_VALIDATION\",\n    \"message\": {\n      \"ar\": \"بيانات الطلب غير صالحة.\",\n      \"en\": \"The request data is not valid.\"\n    },\n    \"details\": {\n      \"fields\": [\n        \"orders\"\n      ]\n    }\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Reply status is ok', () => pm.expect(pm.response.code).to.be.within(200, 299));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4. Confirm or reject an order - قبول أو رفض الطلب",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/erp/v1/orders/sales/:orderNumber/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "erp",
+                "v1",
+                "orders",
+                "sales",
+                ":orderNumber",
+                "status"
+              ],
+              "variable": [
+                {
+                  "key": "orderNumber",
+                  "value": "10542"
+                }
+              ]
+            },
+            "description": "**What it does:** confirms or rejects a pending order. The pharmacy is notified.\n\n- Confirm: `{\"status\": \"confirmed\"}`\n- Reject: `{\"status\": \"rejected\", \"reason\": \"...\"}`\n\n**ماذا يفعل:** يقبل أو يرفض طلباً معلقاً، ويتم إبلاغ الصيدلية. عند الرفض اكتب السبب.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"confirmed\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "200 Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/orders/sales/:orderNumber/status",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "orders",
+                    "sales",
+                    ":orderNumber",
+                    "status"
+                  ],
+                  "variable": [
+                    {
+                      "key": "orderNumber",
+                      "value": "10542"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"confirmed\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Success",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"3c8e1f5a9d724b06\",\n  \"data\": {\n    \"orderNumber\": \"10542\",\n    \"result\": \"confirmed\",\n    \"orderStatus\": \"confirmed\"\n  }\n}"
+            },
+            {
+              "name": "404 Order not found",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/orders/sales/:orderNumber/status",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "orders",
+                    "sales",
+                    ":orderNumber",
+                    "status"
+                  ],
+                  "variable": [
+                    {
+                      "key": "orderNumber",
+                      "value": "10542"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"confirmed\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Order not found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_ORDER_NOT_FOUND\",\n    \"message\": {\n      \"ar\": \"الطلب غير موجود.\",\n      \"en\": \"The order was not found.\"\n    },\n    \"details\": null\n  }\n}"
+            },
+            {
+              "name": "409 Order is no longer pending",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/orders/sales/:orderNumber/status",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "orders",
+                    "sales",
+                    ":orderNumber",
+                    "status"
+                  ],
+                  "variable": [
+                    {
+                      "key": "orderNumber",
+                      "value": "10542"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"confirmed\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Order is no longer pending",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_ORDER_STATE_CONFLICT\",\n    \"message\": {\n      \"ar\": \"حالة الطلب الحالية لا تسمح بهذا الإجراء (confirmed).\",\n      \"en\": \"The order's current status does not allow this (confirmed).\"\n    },\n    \"details\": {\n      \"currentStatus\": \"confirmed\"\n    }\n  }\n}"
+            },
+            {
+              "name": "422 Status must be confirmed or rejected",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/orders/sales/:orderNumber/status",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "orders",
+                    "sales",
+                    ":orderNumber",
+                    "status"
+                  ],
+                  "variable": [
+                    {
+                      "key": "orderNumber",
+                      "value": "10542"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"confirmed\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Status must be confirmed or rejected",
+              "code": 422,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_STATUS_NOT_ALLOWED\",\n    \"message\": {\n      \"ar\": \"الحالة المطلوبة غير مسموحة. المسموح: confirmed أو rejected.\",\n      \"en\": \"That status is not allowed. Allowed: confirmed or rejected.\"\n    },\n    \"details\": {\n      \"allowed\": [\n        \"confirmed\",\n        \"rejected\"\n      ]\n    }\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Reply status is ok', () => pm.expect(pm.response.code).to.be.within(200, 299));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 Purchase orders - طلبات الشراء",
+      "description": "For pharmacies that use your ERP: their orders from suppliers on Dawa24. / للصيدليات التي تستخدم نظامكم: طلباتها من الموردين على دواء24.",
+      "item": [
+        {
+          "name": "1. Get purchase orders - جلب طلبات الشراء",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/erp/v1/orders/purchase?state=new",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "erp",
+                "v1",
+                "orders",
+                "purchase"
+              ],
+              "query": [
+                {
+                  "key": "state",
+                  "value": "new",
+                  "disabled": false
+                },
+                {
+                  "key": "from",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "to",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "cursor",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "**What it does:** lists the orders the pharmacy placed with suppliers on Dawa24.\n\n**ماذا يفعل:** يعرض طلبات الصيدلية من الموردين على دواء24."
+          },
+          "response": [
+            {
+              "name": "200 Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/orders/purchase?state=new",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "orders",
+                    "purchase"
+                  ],
+                  "query": [
+                    {
+                      "key": "state",
+                      "value": "new",
+                      "disabled": false
+                    },
+                    {
+                      "key": "from",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "to",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "limit",
+                      "value": "",
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "status": "Success",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"3b81f0c64e2a4d19\",\n  \"data\": [\n    {\n      \"orderNumber\": \"20871\",\n      \"status\": \"pending\",\n      \"importState\": \"new\",\n      \"createdAt\": \"2026-11-07T09:40:05Z\",\n      \"updatedAt\": \"2026-11-07T09:40:05Z\",\n      \"externalReference\": \"ORGA-PO-2026-000451\",\n      \"total\": \"626.00\",\n      \"shipments\": [\n        {\n          \"shipmentNumber\": \"20871-1\",\n          \"status\": \"pending\",\n          \"supplier\": {\n            \"name\": {\n              \"ar\": \"مؤسسة النور للأدوية\",\n              \"en\": \"Al Nour Pharma\"\n            }\n          },\n          \"subtotal\": \"601.00\",\n          \"shippingFee\": \"25.00\",\n          \"lines\": [\n            {\n              \"lineId\": 90412,\n              \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n              \"externalProductCode\": null,\n              \"name\": {\n                \"ar\": \"بانادول اكسترا 24 قرص\",\n                \"en\": \"Panadol Extra 24 tablets\"\n              },\n              \"barcode\": \"6221024000123\",\n              \"quantity\": 12,\n              \"unitPrice\": \"50.40\",\n              \"discountAmount\": \"3.80\",\n              \"totalPrice\": \"601.00\"\n            }\n          ]\n        }\n      ],\n      \"erp\": {\n        \"reference\": null,\n        \"acknowledgedAt\": null\n      }\n    }\n  ],\n  \"page\": {\n    \"nextCursor\": null,\n    \"limit\": 100\n  }\n}"
+            },
+            {
+              "name": "400 Bad page cursor",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/orders/purchase?state=new",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "orders",
+                    "purchase"
+                  ],
+                  "query": [
+                    {
+                      "key": "state",
+                      "value": "new",
+                      "disabled": false
+                    },
+                    {
+                      "key": "from",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "to",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "limit",
+                      "value": "",
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "status": "Bad page cursor",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_CURSOR_INVALID\",\n    \"message\": {\n      \"ar\": \"مؤشر الصفحات غير صالح. ابدأ من جديد بدون مؤشر.\",\n      \"en\": \"The page cursor is not valid. Start again without a cursor.\"\n    },\n    \"details\": null\n  }\n}"
+            },
+            {
+              "name": "403 Key lacks permission",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/orders/purchase?state=new",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "orders",
+                    "purchase"
+                  ],
+                  "query": [
+                    {
+                      "key": "state",
+                      "value": "new",
+                      "disabled": false
+                    },
+                    {
+                      "key": "from",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "to",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "limit",
+                      "value": "",
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "status": "Key lacks permission",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_SCOPE_MISSING\",\n    \"message\": {\n      \"ar\": \"المفتاح لا يملك الصلاحية المطلوبة لهذه العملية.\",\n      \"en\": \"The key does not have the permission this call needs.\"\n    },\n    \"details\": {\n      \"requiredScope\": \"erp.orders.read\"\n    }\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Reply status is ok', () => pm.expect(pm.response.code).to.be.within(200, 299));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2. Get one purchase order - جلب طلب شراء واحد",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/erp/v1/orders/purchase/:orderNumber",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "erp",
+                "v1",
+                "orders",
+                "purchase",
+                ":orderNumber"
+              ],
+              "variable": [
+                {
+                  "key": "orderNumber",
+                  "value": "10542"
+                }
+              ]
+            },
+            "description": "**What it does:** shows one purchase order with each supplier's shipment and lines.\n\n**ماذا يفعل:** يعرض طلب شراء واحداً مع شحنة كل مورد وأصنافها."
+          },
+          "response": [
+            {
+              "name": "200 Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/orders/purchase/:orderNumber",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "orders",
+                    "purchase",
+                    ":orderNumber"
+                  ],
+                  "variable": [
+                    {
+                      "key": "orderNumber",
+                      "value": "10542"
+                    }
+                  ]
+                }
+              },
+              "status": "Success",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"4c7a2e19d05b4f68\",\n  \"data\": {\n    \"orderNumber\": \"20871\",\n    \"status\": \"pending\",\n    \"importState\": \"new\",\n    \"createdAt\": \"2026-11-07T09:40:05Z\",\n    \"updatedAt\": \"2026-11-07T09:40:05Z\",\n    \"externalReference\": \"ORGA-PO-2026-000451\",\n    \"total\": \"626.00\",\n    \"shipments\": [\n      {\n        \"shipmentNumber\": \"20871-1\",\n        \"status\": \"pending\",\n        \"supplier\": {\n          \"name\": {\n            \"ar\": \"مؤسسة النور للأدوية\",\n            \"en\": \"Al Nour Pharma\"\n          }\n        },\n        \"subtotal\": \"601.00\",\n        \"shippingFee\": \"25.00\",\n        \"lines\": [\n          {\n            \"lineId\": 90412,\n            \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n            \"externalProductCode\": null,\n            \"name\": {\n              \"ar\": \"بانادول اكسترا 24 قرص\",\n              \"en\": \"Panadol Extra 24 tablets\"\n            },\n            \"barcode\": \"6221024000123\",\n            \"quantity\": 12,\n            \"unitPrice\": \"50.40\",\n            \"discountAmount\": \"3.80\",\n            \"totalPrice\": \"601.00\"\n          }\n        ]\n      }\n    ],\n    \"erp\": {\n      \"reference\": null,\n      \"acknowledgedAt\": null\n    }\n  }\n}"
+            },
+            {
+              "name": "404 Order not found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/orders/purchase/:orderNumber",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "orders",
+                    "purchase",
+                    ":orderNumber"
+                  ],
+                  "variable": [
+                    {
+                      "key": "orderNumber",
+                      "value": "10542"
+                    }
+                  ]
+                }
+              },
+              "status": "Order not found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_ORDER_NOT_FOUND\",\n    \"message\": {\n      \"ar\": \"الطلب غير موجود.\",\n      \"en\": \"The order was not found.\"\n    },\n    \"details\": null\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Reply status is ok', () => pm.expect(pm.response.code).to.be.within(200, 299));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3. Mark purchase orders as imported - تأكيد استيراد طلبات الشراء",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/erp/v1/orders/purchase/ack",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "erp",
+                "v1",
+                "orders",
+                "purchase",
+                "ack"
+              ]
+            },
+            "description": "**What it does:** same as for sales orders: tells Dawa24 you saved these purchase orders.\n\n**ماذا يفعل:** مثل طلبات البيع: يخبر دواء24 أنك حفظت طلبات الشراء عندك.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orders\": [\n    {\n      \"orderNumber\": \"20871\",\n      \"erpReference\": \"ORGA-PO-2026-000451\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "200 Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/orders/purchase/ack",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "orders",
+                    "purchase",
+                    "ack"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"orders\": [\n    {\n      \"orderNumber\": \"20871\",\n      \"erpReference\": \"ORGA-PO-2026-000451\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Success",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"0d9e3b7c51a24f86\",\n  \"data\": [\n    {\n      \"orderNumber\": \"20871\",\n      \"result\": \"acknowledged\",\n      \"code\": null,\n      \"existingReference\": null\n    }\n  ]\n}"
+            },
+            {
+              "name": "422 Invalid data",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/orders/purchase/ack",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "orders",
+                    "purchase",
+                    "ack"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"orders\": [\n    {\n      \"orderNumber\": \"20871\",\n      \"erpReference\": \"ORGA-PO-2026-000451\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Invalid data",
+              "code": 422,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_VALIDATION\",\n    \"message\": {\n      \"ar\": \"بيانات الطلب غير صالحة.\",\n      \"en\": \"The request data is not valid.\"\n    },\n    \"details\": {\n      \"fields\": [\n        \"orders\"\n      ]\n    }\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Reply status is ok', () => pm.expect(pm.response.code).to.be.within(200, 299));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4. Find supplier offers by barcode - البحث عن عروض الموردين",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/erp/v1/offers?barcode=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "erp",
+                "v1",
+                "offers"
+              ],
+              "query": [
+                {
+                  "key": "barcode",
+                  "value": "",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "**What it does:** finds which suppliers sell a product, by barcode, with price and stock.\n\n**ماذا يفعل:** يبحث بالباركود عن الموردين الذين يبيعون الصنف مع السعر والرصيد.\n\n> ⏳ **Coming soon / قريباً** — this request is final but not open yet. Read it now, test it later."
+          },
+          "response": [
+            {
+              "name": "200 Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/offers?barcode=",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "offers"
+                  ],
+                  "query": [
+                    {
+                      "key": "barcode",
+                      "value": "",
+                      "disabled": false
+                    }
+                  ]
+                }
+              },
+              "status": "Success",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"0d9b7e5c3a1f4826\",\n  \"data\": [\n    {\n      \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n      \"supplier\": {\n        \"name\": {\n          \"ar\": \"مؤسسة النور للأدوية\",\n          \"en\": \"Al Nour Pharma\"\n        },\n        \"linked\": true\n      },\n      \"name\": {\n        \"ar\": \"بانادول اكسترا 24 قرص\",\n        \"en\": \"Panadol Extra 24 tablets\"\n      },\n      \"barcode\": \"6221024000123\",\n      \"publicPrice\": \"62.50\",\n      \"discountPercent\": \"12.50\",\n      \"unitPrice\": \"54.69\",\n      \"inStock\": true\n    }\n  ]\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Reply status is ok', () => pm.expect(pm.response.code).to.be.within(200, 299));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5. Create a purchase order - إنشاء طلب شراء",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/erp/v1/orders/purchase",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "erp",
+                "v1",
+                "orders",
+                "purchase"
+              ]
+            },
+            "description": "**What it does:** places a purchase order on Dawa24 from your system.\n\n**ماذا يفعل:** ينشئ طلب شراء على دواء24 من نظامكم.\n\n> ⏳ **Coming soon / قريباً** — this request is final but not open yet. Read it now, test it later.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "200 Already created (same externalReference sent again)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/orders/purchase",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "orders",
+                    "purchase"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Already created (same externalReference sent again)",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"4c7a2e19d05b4f68\",\n  \"data\": {\n    \"orderNumber\": \"20871\",\n    \"status\": \"pending\",\n    \"importState\": \"new\",\n    \"createdAt\": \"2026-11-07T09:40:05Z\",\n    \"updatedAt\": \"2026-11-07T09:40:05Z\",\n    \"externalReference\": \"ORGA-PO-2026-000451\",\n    \"total\": \"626.00\",\n    \"shipments\": [\n      {\n        \"shipmentNumber\": \"20871-1\",\n        \"status\": \"pending\",\n        \"supplier\": {\n          \"name\": {\n            \"ar\": \"مؤسسة النور للأدوية\",\n            \"en\": \"Al Nour Pharma\"\n          }\n        },\n        \"subtotal\": \"601.00\",\n        \"shippingFee\": \"25.00\",\n        \"lines\": [\n          {\n            \"lineId\": 90412,\n            \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n            \"externalProductCode\": null,\n            \"name\": {\n              \"ar\": \"بانادول اكسترا 24 قرص\",\n              \"en\": \"Panadol Extra 24 tablets\"\n            },\n            \"barcode\": \"6221024000123\",\n            \"quantity\": 12,\n            \"unitPrice\": \"50.40\",\n            \"discountAmount\": \"3.80\",\n            \"totalPrice\": \"601.00\"\n          }\n        ]\n      }\n    ],\n    \"erp\": {\n      \"reference\": null,\n      \"acknowledgedAt\": null\n    }\n  }\n}"
+            },
+            {
+              "name": "201 Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/orders/purchase",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "orders",
+                    "purchase"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"4c7a2e19d05b4f68\",\n  \"data\": {\n    \"orderNumber\": \"20871\",\n    \"status\": \"pending\",\n    \"importState\": \"new\",\n    \"createdAt\": \"2026-11-07T09:40:05Z\",\n    \"updatedAt\": \"2026-11-07T09:40:05Z\",\n    \"externalReference\": \"ORGA-PO-2026-000451\",\n    \"total\": \"626.00\",\n    \"shipments\": [\n      {\n        \"shipmentNumber\": \"20871-1\",\n        \"status\": \"pending\",\n        \"supplier\": {\n          \"name\": {\n            \"ar\": \"مؤسسة النور للأدوية\",\n            \"en\": \"Al Nour Pharma\"\n          }\n        },\n        \"subtotal\": \"601.00\",\n        \"shippingFee\": \"25.00\",\n        \"lines\": [\n          {\n            \"lineId\": 90412,\n            \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n            \"externalProductCode\": null,\n            \"name\": {\n              \"ar\": \"بانادول اكسترا 24 قرص\",\n              \"en\": \"Panadol Extra 24 tablets\"\n            },\n            \"barcode\": \"6221024000123\",\n            \"quantity\": 12,\n            \"unitPrice\": \"50.40\",\n            \"discountAmount\": \"3.80\",\n            \"totalPrice\": \"601.00\"\n          }\n        ]\n      }\n    ],\n    \"erp\": {\n      \"reference\": null,\n      \"acknowledgedAt\": null\n    }\n  }\n}"
+            },
+            {
+              "name": "409 Price changed - correct price in details",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/orders/purchase",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "orders",
+                    "purchase"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Price changed - correct price in details",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"8e2d4c6a1f3b4097\",\n  \"error\": {\n    \"code\": \"ERP_PO_PRICE_MISMATCH\",\n    \"message\": {\n      \"ar\": \"السعر المرسل يختلف عن سعر دواء 24. السعر الصحيح موضح في التفاصيل.\",\n      \"en\": \"The price sent differs from Dawa24's. The correct price is in the details.\"\n    },\n    \"details\": {\n      \"lines\": [\n        {\n          \"line\": 1,\n          \"sentPrice\": \"48.00\",\n          \"correctPrice\": \"50.40\"\n        }\n      ]\n    }\n  }\n}"
+            },
+            {
+              "name": "422 Wrong quantity on a line",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/orders/purchase",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "orders",
+                    "purchase"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Wrong quantity on a line",
+              "code": 422,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_PO_QUANTITY_INVALID\",\n    \"message\": {\n      \"ar\": \"الكمية في السطر 1 يجب أن تكون عدداً صحيحاً موجباً.\",\n      \"en\": \"The quantity on line 1 must be a positive whole number.\"\n    },\n    \"details\": {\n      \"line\": 1\n    }\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Reply status is ok', () => pm.expect(pm.response.code).to.be.within(200, 299));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "syncId",
+      "value": ""
+    }
+  ]
+}

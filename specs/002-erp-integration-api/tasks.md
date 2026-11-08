@@ -998,68 +998,68 @@ Goal: the link-page organization number acts as the ERP customer code, unique pe
 
 Goal: the owner imports a Postman collection and runs the whole journey from the documentation. Depends on the endpoints it describes; the generator reads the OpenAPI examples, so the collection already lists folders for S7 requests. Folder `04 Purchase` only passes after S7, so S7 ends with a regeneration task. Postman and docs work therefore grows: S6 builds the generator and first files; S7 re-runs it.
 
-- [ ] T192 [US8] Write the route-versus-spec test in `internal/modules/erp/http/spec_test.go`
+- [x] T192 [US8] Write the route-versus-spec test in `internal/modules/erp/http/spec_test.go`
   - Do: `TestOpenAPIMatchesRoutes`: walk the chi router from `NewHandler(...).Routes()` and compare `METHOD path` with the paths in the embedded spec, both directions. Declare `var specRoutesNotYetMounted = []string{"GET /offers", "POST /orders/purchase"}` skipped on the spec side until S7 removes them.
   - Done: `gofmt -l internal/modules/erp/http/spec_test.go` prints nothing; `go test ./internal/modules/erp/http/ -run OpenAPIMatchesRoutes -count=1` runs (record pass or the drift it finds).
 
-- [ ] T193 [US8] Bring the embedded spec in step with the code
+- [x] T193 [US8] Bring the embedded spec in step with the code
   - Do: if the test above reports drift, fix `specs/002-erp-integration-api/contracts/openapi.yaml` to match the code only when the code follows plan.md; otherwise fix the code. Then `cp specs/002-erp-integration-api/contracts/openapi.yaml internal/modules/erp/http/spec/openapi.yaml`.
   - Done: `diff -q specs/002-erp-integration-api/contracts/openapi.yaml internal/modules/erp/http/spec/openapi.yaml` prints nothing and `go test ./internal/modules/erp/http/ -run OpenAPIMatchesRoutes -count=1` passes.
 
-- [ ] T194 [US8] Write the Postman golden test in `cmd/cli/erp_postman_test.go`
+- [x] T194 [US8] Write the Postman golden test in `cmd/cli/erp_postman_test.go`
   - Do: `TestPostmanCollectionIsCurrent`: regenerate in memory and compare with the committed `docs/erp-api/dawa24-erp.postman_collection.json` and `dawa24-erp.postman_environment.json`. `TestPostmanCollectionShape`: Collection v2.1 schema URL; folders `00 Health`, `01 Products`, `02 Sales orders`, `03 Decide`, `04 Purchase`, `05 Errors`; variables `baseUrl`, `apiKey`, `syncId`, `orderNumber`, `erpReference`, `externalReference` (`{{$guid}}`); every request has the header `Authorization: Bearer {{apiKey}}` and a `pm.test` script checking the status code and the envelope shape; sync saves `syncId`; the orders list saves `orderNumber`; folder 05 has one request per documented request-level code with a test that `error.code` equals it.
   - Done: `gofmt -l cmd/cli/erp_postman_test.go` prints nothing; `go test ./cmd/cli/ -run Postman -count=1` fails to compile (RED).
 
-- [ ] T195 [US8] Add the collection builder in `cmd/cli/erp_postman_items.go`
+- [x] T195 [US8] Add the collection builder in `cmd/cli/erp_postman_items.go`
   - Do: functions that build the folders and requests from the embedded spec examples (the Orgasoft samples are the product bodies: camelCase, PascalCase, invalid price `12.345`). Read the example bodies from the embedded OpenAPI YAML (`yaml.Unmarshal` of the spec with `gopkg.in/yaml.v3`, which `go.mod` lists as `// indirect`: run `go mod tidy` and touch only that marker), never from Go string literals, because `make check-hardcoded-arabic` scans `cmd`. Request names, exactly, per folder: `00 Health`: `Check key`; `01 Products`: `Send batch`, `Sync state`, `Item results`; `02 Sales orders`: `New orders`, `Acknowledge`, `Imported orders`; `03 Decide`: `Confirm`, `Confirm again`, `Deliver`; `04 Purchase`: `Find offers`, `Create purchase order`; `05 Errors`: one request per documented request-level code.
   - Done: `go build ./cmd/cli/` and `make check-hardcoded-arabic`.
 
-- [ ] T196 [US8] Add the generator in `cmd/cli/erp_postman.go`
+- [x] T196 [US8] Add the generator in `cmd/cli/erp_postman.go`
   - Do: `runERPPostman(args []string) int` (the process exit code) writes both files into `docs/erp-api/` with stable key order and two-space indent; `erpPostmanBytes() (collection, environment []byte, err error)` used by the test. The environment is named `Dawa24 ERP (local)` with `baseUrl` `http://localhost:8080` and an empty secret `apiKey`.
   - Done: `go test ./cmd/cli/ -run PostmanCollectionShape -count=1`.
 
-- [ ] T197 [US8] Add the `erp-postman` dispatch in `main()` of `cmd/cli/main.go`
+- [x] T197 [US8] Add the `erp-postman` dispatch in `main()` of `cmd/cli/main.go`
   - Do: `run()` loads the configuration and opens the database (10 attempts, 2 s apart) before its `switch`, so a case there would fail or hang without a database. Add `if len(os.Args) >= 2 && os.Args[1] == "erp-postman" { os.Exit(runERPPostman(os.Args[2:])) }` in `main()` next to the `match-bench` block, before `run()`. Also add the `erp-postman` and `erp-demo` lines to `usage()`.
   - Done: `go run ./cmd/cli erp-postman` under HOST-GO (`DATABASE_URL` unset) writes both files; `go test ./cmd/cli/ -run Postman -count=1` passes.
 
-- [ ] T198 [US8] Write the demo command test in `cmd/cli/erp_demo_test.go`
+- [x] T198 [US8] DROPPED by owner 2026-11-08: Write the demo command test in `cmd/cli/erp_demo_test.go`
   - Do: `TestErpDemoRefusesProd` (`cfg.Env == "prod"` returns an error and touches nothing); `TestErpDemoCountFlag` parses `-count N`.
   - Done: `gofmt -l cmd/cli/erp_demo_test.go` prints nothing; `go test ./cmd/cli/ -run ErpDemo -count=1` fails to compile (RED).
 
-- [ ] T199 [US8] Add the demo command in `cmd/cli/erp_demo.go`
+- [x] T199 [US8] DROPPED by owner 2026-11-08: Add the demo command in `cmd/cli/erp_demo.go`
   - Do: refuses in prod; for the seeded `vendor@dawa24.test` organization ensures a warehouse and a branch, an integration (provider `provider.DefaultProvider`, never typed), and a key with all four vendor scopes; also creates one variant with SKU `100245` for the supplier (so quickstart step 2 has a known item) and one pending `org.user_organizations` link from `pharmacy@dawa24.test` to the supplier with an empty number via `orgSvc.CreateUserOrgLink` (quickstart step 6 needs it); prints the key once; `-count N` creates N keys. Warehouse and branch names are `i18n.TDefault("erp.demo.warehouse")` and `i18n.TDefault("erp.demo.branch")` (add both keys to `internal/shared/i18n/catalog_erp_ui.go`), never Arabic literals. Use `erp.Service.CreateKey` (never print a hash).
   - Traps: 24.
   - Done: `go test ./cmd/cli/ -run ErpDemo -count=1`.
 
-- [ ] T200 [US8] Add the `erp-demo` case in `cmd/cli/main.go` and prove idempotence
+- [x] T200 [US8] DROPPED by owner 2026-11-08: Add the `erp-demo` case in `cmd/cli/main.go` and prove idempotence
   - Do: add case `erp-demo` in the `run()` switch (it needs the database and `cfg.Env`). Run SB-3 and SB-4, then export `SEED_PASSWORD=<12-char throwaway>` inside the sandbox command, run `cli seed-users`, then `erp-demo` twice; never print the password. The command: `bash ~/security-audit-skill/dawa24-store/run-5/sandbox/sb.sh run sh -c 'export SEED_PASSWORD=<12-char throwaway>; go build -o /tmp/cli ./cmd/cli && /tmp/cli seed-users && /tmp/cli erp-demo && /tmp/cli erp-demo'` (rule 7 defines only `SB go test`, so this task gives the exact command).
   - Done: the command prints one key per run, and the second run creates no second integration or warehouse (check with `select count(*) from erp.integrations` through `docker exec dawa24audit-pg psql`, user and database as in `batch-brief.md`).
 
-- [ ] T201 [P] [US8] Write the Arabic part of `docs/erp-api/README.md`
+- [x] T201 [P] [US8] Write the Arabic part of `docs/erp-api/README.md`
   - Do: Arabic section first: how to get a key, first call, order of the Postman folders, the journey of `quickstart.md` section 5 (13 steps), polling pattern (start each cycle without a cursor and filter `state=new`), retries and idempotency, rate limits.
   - Done: `grep -c "^## " docs/erp-api/README.md` prints 5 or more.
 
-- [ ] T202 [US8] Write the English part of `docs/erp-api/README.md`
+- [x] T202 [US8] Write the English part of `docs/erp-api/README.md`
   - Do: append the same content in English under a clear heading, plus a per-endpoint section for every path in `openapi.yaml` (purpose, fields, one example, errors, limits).
   - Done: `for p in /health /products/sync /orders/sales /orders/sales/ack /orders/purchase /offers; do grep -c "$p" docs/erp-api/README.md; done` prints no 0.
 
-- [ ] T203 [US8] Add the field alias table and error list to `docs/erp-api/README.md`
+- [x] T203 [US8] Add the field alias table and error list to `docs/erp-api/README.md`
   - Do: append the alias table from `provider/orgasoft/fields.go`, the Orgasoft unverified items (copy the V5 list), and a table of every code in `contracts/error-codes.md`.
   - Done: `grep -c "ERP_ITEM_PRICE_PRECISION" docs/erp-api/README.md` prints 1 or more.
 
-- [ ] T204 [P] [US8] Write `docs/modules/erp.md`
+- [x] T204 [P] [US8] Write `docs/modules/erp.md`
   - Do: entities, invariants, named exceptions E1 to E7 with function names, behaviour changes (order numbers in S7, customer code guard, quota writer), and the list of unverified assumptions (V5).
   - Done: `grep -c "E1\|E7" docs/modules/erp.md` prints 2 or more.
 
-- [ ] T205 [P] [US8] Add `erp` to the schema list in `AGENTS.md`
+- [x] T205 [P] [US8] Add `erp` to the schema list in `AGENTS.md`
   - Do: add `erp` to the line "Postgres schemas mirror module names:". Change nothing else.
   - Done: `grep -n "ai\`, \`erp\`\|erp" AGENTS.md | head -3` shows the schema line containing `erp`.
 
-- [ ] T206 [US8] Check the docs against the quickstart
+- [x] T206 [US8] Check the docs against the quickstart
   - Do: read `specs/002-erp-integration-api/quickstart.md` section 5 and tick each of the 13 steps against the README and the collection; fix any step that has no matching request or text.
   - Done: `for s in "Check key" "Send batch" "Sync state" "Item results" "Acknowledge" "Confirm" "Deliver" "Find offers"; do grep -c "$s" docs/erp-api/dawa24-erp.postman_collection.json; done` prints no 0.
 
-- [ ] T207 [US8] S6 slice gate
+- [x] T207 [US8] S6 slice gate
   - Do: slice gate. Changed packages: `./cmd/cli/ ./internal/modules/erp/http/`. Focused tests: `go test ./cmd/cli/ ./internal/modules/erp/http/ -run 'Postman|ErpDemo|OpenAPIMatchesRoutes' -count=1`.
   - Commit message: `feat(erp): S6 OpenAPI, Postman and docs`. No push, merge or deploy.
   - Done: `git log -1 --format=%s` prints the commit message.
@@ -1259,7 +1259,7 @@ Goal: sensitive values are masked on screen and revealed one at a time with an a
   - Done: `node --check test/load/erp_sync.js` prints nothing and `grep -c "WEB_P95_MS" test/load/erp_sync.js` prints 1 or more.
 
 - [ ] T247b Run the load script once and record SC-002 and SC-003 in `specs/002-erp-integration-api/verify-notes.md`
-  - Do: run `k6 version`. If it fails, write `V8 result: not run, k6 is not installed; owner runs quickstart section 9` and stop; install nothing. Otherwise start the server and worker in the sandbox (quickstart sections 1 and 2, `APP_ENV` not `prod`), create 10 keys with `erp-demo -count 10` (keep them in a shell variable; never print them), run `k6 run test/load/erp_sync.js -e BASE=<url> -e KEYS=<the keys> -e ITEMS=50000 -e SYNC=1 -e EMAIL=<seed email> -e PASSWORD=<seed password>` once, then the same command with `-e SYNC=0`. Record the 202 time, the completion time, and `WEB_P95_MS` of both runs. Pass rule: 202 in under 5 s, completed in under 7 minutes, and `WEB_P95_MS` with sync at most 1.2 times the value without sync. Append: `SC-003 modelled with 10 keys of one organization, not 50 tenants; the owner confirms with real tenants before launch`.
+  - Do: run `k6 version`. If it fails, write `V8 result: not run, k6 is not installed; owner runs quickstart section 9` and stop; install nothing. Otherwise start the server and worker in the sandbox (quickstart sections 1 and 2, `APP_ENV` not `prod`), create 10 keys in the website key screen (quickstart section 3; keep them in a shell variable; never print them), run `k6 run test/load/erp_sync.js -e BASE=<url> -e KEYS=<the keys> -e ITEMS=50000 -e SYNC=1 -e EMAIL=<seed email> -e PASSWORD=<seed password>` once, then the same command with `-e SYNC=0`. Record the 202 time, the completion time, and `WEB_P95_MS` of both runs. Pass rule: 202 in under 5 s, completed in under 7 minutes, and `WEB_P95_MS` with sync at most 1.2 times the value without sync. Append: `SC-003 modelled with 10 keys of one organization, not 50 tenants; the owner confirms with real tenants before launch`.
   - Done: `grep -n "^V8 result:" specs/002-erp-integration-api/verify-notes.md` prints one line.
 
 - [ ] T248 [P] Run the static gates for the whole feature

@@ -15,14 +15,13 @@ Done when `make migrate-status` shows 0 pending and `psql` lists schema `erp` wi
 The ERP API defaults to off. For this test flow, set `ERP_API_ENABLED=true` in the environment of the server and worker; configure `ERP_KEY_PEPPER` (at least 32 bytes in production). Deploy first with the API off, then set `ERP_KEY_PEPPER` and `ERP_API_ENABLED=true` when ready.
 ```
 SEED_PASSWORD='choose-12-chars+' go run ./cmd/cli seed-users     # vendor@, pharmacy@, admin@ dawa24.test
-go run ./cmd/cli erp-demo                                       # S6: warehouse, branch, one variant with SKU 100245, one pending link from pharmacy@ with no code, prints one demo key
 make run          # terminal 1: web on :8080
 make worker       # terminal 2: background jobs (queue erpsync must appear in its startup log)
 ```
-`erp-demo` refuses to run when `APP_ENV=prod`. It prints the key once; copy it now.
+There is no demo-data command: the key comes from the website (section 3), the first product send creates SKU `100245`, and the checkout screen creates the pharmacy's customer link.
 
 ## 3. Create a key in the website (owner path, no command)
-1. Sign in as the supplier owner (`vendor@dawa24.test`), open `/vendor/integrations`.
+1. Sign in as the supplier owner (`vendor@dawa24.test`). If the supplier has no warehouse or branch yet, create one of each in the website first. Open `/vendor/integrations`.
 2. Press "New key": provider Orgasoft, a name, the warehouse, the branch, tick the scopes `erp.products.sync`, `erp.orders.read`, `erp.orders.ack`, `erp.orders.decide`. Save.
 3. Copy the key shown once. Reload the page: only the first 8 characters (the prefix) remain.
 3a. Press "Change limit" on the key row, enter a number from 10 to 6000, save: the new limit shows in the table and in Health (`rateLimitPerMinute`) on the next call.
@@ -30,25 +29,26 @@ make worker       # terminal 2: background jobs (queue erpsync must appear in it
 
 ## 4. Import Postman (owner)
 1. Postman, Import, choose `docs/erp-api/dawa24-erp.postman_collection.json` and `docs/erp-api/dawa24-erp.postman_environment.json`.
-2. Pick the environment "Dawa24 ERP (local)". Set `baseUrl` to `http://localhost:8080` and `apiKey` to the key from section 3.
-3. Open the collection, press Run, keep the order of folders: 00 Health, 01 Products, 02 Sales orders, 03 Decide, 04 Purchase, 05 Errors.
+2. Pick the environment "Dawa24 ERP - test server". Set `baseUrl` to `http://localhost:8080` and `apiKey` to the key from section 3.
+3. Open the collection, press Run, keep the order of folders: 01 Start here, 02 Products, 03 Sales orders, 04 Purchase orders. The collection's requests are numbered inside each folder.
 
 ## 5. The journey as Orgasoft (owner, about 20 minutes)
+Request names are the ones shown in the collection. Steps 9, 11 and 12 use the same request as an earlier step with a different query or body.
 | Step | Request | You should see |
 |---|---|---|
-| 1 | 00 Health / Check key | 200, `organization`, `scopes`, `warehouse` |
-| 2 | 01 Products / Send batch (3 items: new, known (SKU `100245`, created by `erp-demo`), invalid price `12.345`) | 202, `syncId` saved to `{{syncId}}` |
-| 3 | 01 Products / Sync state (repeat until `completed`, under a minute with the worker running) | counts: 2 ok, 1 failed |
-| 4 | 01 Products / Item results | item 3 `failed`, `ERP_ITEM_PRICE_PRECISION`, Arabic and English text |
-| 5 | Send the same batch again | `unchanged` for the known items, no duplicates in `/vendor/products` |
+| 1 | 01 Start here / 1. Check my API key | 200, `organization`, `scopes`, `warehouse` |
+| 2 | 02 Products / 1. Send products (3 items: new, known (SKU `100245`, created by the first send; on a fresh database run this request twice), invalid price `12.345`) | 202, `syncId` saved to `{{syncId}}` |
+| 3 | 02 Products / 2. Check the upload (repeat until `completed`, under a minute with the worker running) | counts: 2 ok, 1 failed |
+| 4 | 02 Products / 3. See each product's result | item 3 `failed`, `ERP_ITEM_PRICE_PRECISION`, Arabic and English text |
+| 5 | 02 Products / 1. Send products, same batch again | `unchanged` for the known items, no duplicates in `/vendor/products` |
 | 6 | In the browser as `pharmacy@dawa24.test`: add the supplier's product to the cart, open `/checkout` | a modal asks for the customer code; enter `C-00871`; the cart is still there; place the order |
-| 7 | 02 Sales orders / New orders | the order, `customer.erpCode` = `C-00871`, `importState` = `new` |
-| 8 | 02 Sales orders / Acknowledge (`{{orderNumber}}`, `ORGA-1`) | `acknowledged` |
-| 9 | 02 Sales orders / New orders again | the order is gone from `state=new`; `state=imported` shows it |
-| 10 | 03 Decide / Confirm | `confirmed`; the website order page shows confirmed |
-| 11 | 03 Decide / Confirm again | 200 `already_confirmed` |
-| 12 | 03 Decide / Deliver | 403 `ERP_DELIVERY_NOT_ALLOWED` |
-| 13 | 04 Purchase / Find offers (`barcode`), then Create purchase order | 201 with an order number; send it again: 200, same number |
+| 7 | 03 Sales orders / 1. Get new orders | the order, `customer.erpCode` = `C-00871`, `importState` = `new` |
+| 8 | 03 Sales orders / 3. Mark orders as imported (`{{orderNumber}}`, `ORGA-1`) | `acknowledged` |
+| 9 | 03 Sales orders / 1. Get new orders, again | the order is gone from `state=new`; with `state=imported` it shows |
+| 10 | 03 Sales orders / 4. Confirm or reject an order (`status` `confirmed`) | `confirmed`; the website order page shows confirmed |
+| 11 | 03 Sales orders / 4. Confirm or reject an order, again | 200 `already_confirmed` |
+| 12 | 03 Sales orders / 4. Confirm or reject an order (`status` `delivered`) | 403 `ERP_DELIVERY_NOT_ALLOWED` |
+| 13 | 04 Purchase orders / 4. Find supplier offers by barcode, then 5. Create a purchase order | Coming soon: 201 with an order number; send it again: 200, same number |
 
 ## 6. Failure examples (owner)
 Folder 05 Errors holds one request per documented code and a test that the returned `error.code` equals the one in `contracts/error-codes.md`: no key (401 `ERP_AUTH_MISSING`), wrong key (`ERP_AUTH_INVALID`), a scope the key lacks (`ERP_SCOPE_MISSING`), a batch of 50,001 items (`ERP_BATCH_TOO_LARGE`), bad cursor (`ERP_CURSOR_INVALID`), wrong price on a purchase order (`ERP_PO_PRICE_MISMATCH`). Revoke the key in `/admin/integrations` and run Health again: 401 `ERP_KEY_REVOKED`.
@@ -75,9 +75,9 @@ The test builds the sync service with no Gateway client and a matcher stub that 
 ```
 k6 run test/load/erp_sync.js -e BASE=http://localhost:8080 -e KEY=$KEY -e ITEMS=50000
 ```
-`test/load/erp_sync.js` is new (the folder already holds `k6_pages.js`). Expect: the 202 in under 5 seconds (SC-002) and `completed` in under 7 minutes on the dev machine. Run again with `-e KEYS=k1,k2,...,k10` (ten keys from `go run ./cmd/cli erp-demo -count 10`) and watch `river_job` for the `erpsync` queue draining. If it does not drain in 7 minutes, raise `WORKER_ERPSYNC`.
+`test/load/erp_sync.js` is new (the folder already holds `k6_pages.js`). Expect: the 202 in under 5 seconds (SC-002) and `completed` in under 7 minutes on the dev machine. Run again with `-e KEYS=k1,k2,...,k10` (ten keys created in the website, section 3) and watch `river_job` for the `erpsync` queue draining. If it does not drain in 7 minutes, raise `WORKER_ERPSYNC`.
 
-SC-003 (website latency while syncs run): `k6 run test/load/erp_sync.js -e BASE=... -e KEYS=... -e EMAIL=... -e PASSWORD=... -e SYNC=0` records the baseline p95 of the website pages; the same command with `-e SYNC=1` repeats it while the keys send batches every 7 minutes. Pass when the p95 with `SYNC=1` is at most 1.2 times the p95 with `SYNC=0`. `erp-demo -count N` makes N keys of one organization, so this models fewer tenants than the 50 in SC-003; record the number of keys used and have the owner confirm with real tenants before launch.
+SC-003 (website latency while syncs run): `k6 run test/load/erp_sync.js -e BASE=... -e KEYS=... -e EMAIL=... -e PASSWORD=... -e SYNC=0` records the baseline p95 of the website pages; the same command with `-e SYNC=1` repeats it while the keys send batches every 7 minutes. Pass when the p95 with `SYNC=1` is at most 1.2 times the p95 with `SYNC=0`. Keys made in one supplier account model one organization, so this models fewer tenants than the 50 in SC-003; record the number of keys used and have the owner confirm with real tenants before launch.
 
 ## 10. Rollback
 Redeploy the previous image. The tables are unused by it; migrations are expand-only. To switch the API off without a rollback set `ERP_API_ENABLED=false`: no `/erp/v1` routes are mounted and the erpsync worker does not start. Existing n8n bridges and `/api/v1` routes are untouched either way.
