@@ -20,13 +20,14 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 )
 
-// registerMatchingWorkers wires match reaper, enhancement, and purge workers and returns periodic jobs.
+// registerMatchingWorkers wires match reaper, enhancement, and purge workers and returns the
+// matching service (for the ERP ports) and the periodic jobs.
 func registerMatchingWorkers(
 	workers *river.Workers,
 	db *database.DB,
 	ai gateway.Client,
 	log *slog.Logger,
-) []*river.PeriodicJob {
+) (matching.Service, []*river.PeriodicJob) {
 	matchingRepo := matchingPostgres.NewRepository(db)
 	matchingCuratedRepo := matchingPostgres.NewCuratedRepository(db)
 	matchingLoader := matching.NewLoader(db)
@@ -72,5 +73,5 @@ func registerMatchingWorkers(
 		nil,
 	)
 
-	return []*river.PeriodicJob{reaperJob, purgeJob}
+	return matchingSvc, []*river.PeriodicJob{reaperJob, purgeJob}
 }

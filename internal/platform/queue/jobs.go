@@ -175,3 +175,32 @@ func (MatchShadowArgs) Kind() string { return "catalog.matching.shadow" }
 func (MatchShadowArgs) InsertOpts() river.InsertOpts {
 	return river.InsertOpts{Queue: "maintenance", MaxAttempts: 2}
 }
+
+// ERPSyncChunkArgs carries one chunk of an accepted ERP product-sync batch.
+// The job holds only identifiers: the item payloads live in erp.sync_items, so
+// a retried chunk reads its rows again instead of trusting a stale payload.
+// MaxAttempts is 3 because chunks are idempotent (links and item states), and
+// the worker snoozes itself while an earlier chunk of the same batch is still
+// in flight (research D-09), rather than being retried blindly (trap 5: no
+// river.UniqueOpts exist in this repo and ordering is by snooze).
+type ERPSyncChunkArgs struct {
+	BatchID        int64 `json:"batch_id"`
+	OrganizationID int64 `json:"organization_id"`
+	ChunkNo        int   `json:"chunk_no"`
+}
+
+func (ERPSyncChunkArgs) Kind() string { return "erp.sync_chunk" }
+func (ERPSyncChunkArgs) InsertOpts() river.InsertOpts {
+	return river.InsertOpts{Queue: "erpsync", MaxAttempts: 3}
+}
+
+// ERPCleanupArgs runs the ERP retention sweep: api_calls 30 d, sync_items 7 d,
+// sync_batches 90 d, resolved or dismissed review items 180 d, and the ERP
+// match_runs after 30 d. Deleting in LIMIT batches is resumable, so one
+// attempt is enough; the next periodic run continues the sweep.
+type ERPCleanupArgs struct{}
+
+func (ERPCleanupArgs) Kind() string { return "erp.cleanup" }
+func (ERPCleanupArgs) InsertOpts() river.InsertOpts {
+	return river.InsertOpts{Queue: "maintenance", MaxAttempts: 1}
+}

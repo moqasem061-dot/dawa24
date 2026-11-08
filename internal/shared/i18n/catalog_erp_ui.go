@@ -43,5 +43,11 @@ func loadErpUIKeys(e *engine) {
 	addKey(e, "erp.keys.revoked_done", "erp", "تم إلغاء المفتاح.", "The key was revoked.", "ERP keys")
 	addKey(e, "erp.keys.limits_saved", "erp", "تم حفظ حد الطلبات.", "The rate limit was saved.", "ERP keys")
 	addKey(e, "erp.keys.paused", "erp", "تم إيقاف الربط مؤقتاً.", "The integration was paused.", "ERP keys")
+	addKey(e, "erp.review.title", "erp", "مراجعة البنود غير المطابقة", "Review unresolved items", "ERP review")
+	addKey(e, "erp.review.empty", "erp", "لا توجد بنود بحاجة إلى مراجعة.", "No items need your review.", "ERP review")
+	addKey(e, "erp.review.reason", "erp", "السبب", "Reason", "ERP review")
+	addKey(e, "erp.review.resolve", "erp", "ربط الصنف", "Link product", "ERP review")
+	addKey(e, "erp.review.dismiss", "erp", "تجاهل", "Dismiss", "ERP review")
+	addKey(e, "erp.review.done", "erp", "تم تحديث حالة البند.", "The item was updated.", "ERP review")
 	addKey(e, "erp.keys.resumed", "erp", "تم استئناف الربط.", "The integration was resumed.", "ERP keys")
 }

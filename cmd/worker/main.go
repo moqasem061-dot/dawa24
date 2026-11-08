@@ -147,9 +147,19 @@ func run() error {
 	river.AddWorker(workers, importjobs.NewStageWorker(db, importRunRepo, catSvcWorker, log))
 	river.AddWorker(workers, importjobs.NewCommitWorker(db, importRunRepo, catSvcWorker, log))
 
-	matchingPeriodicJobs := registerMatchingWorkers(workers, db, ai, log)
+	matchingSvc, matchingPeriodicJobs := registerMatchingWorkers(workers, db, ai, log)
 
-	queueClient, err := queue.New(db, workers, cfg.Worker, log, matchingPeriodicJobs...)
+	// The ERP sync runs only when the API is enabled (rule 13): the queue
+	// exists either way, but a disabled deployment registers no erpsync
+	// consumer and no cleanup job.
+	periodicJobs := append([]*river.PeriodicJob{}, matchingPeriodicJobs...)
+	if cfg.ERP.Enabled {
+		added, erpPeriodics := registerERPWorkers(workers, db, matchingSvc, log)
+		periodicJobs = append(periodicJobs, erpPeriodics...)
+		log.Info("erp workers registered", "workers", added)
+	}
+
+	queueClient, err := queue.New(db, workers, cfg.Worker, log, periodicJobs...)
 	if err != nil {
 		return err
 	}

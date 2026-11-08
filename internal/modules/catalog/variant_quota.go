@@ -76,6 +76,35 @@ type VariantQuotaBackend interface {
 	CountVariantsWithQuota(ctx context.Context, orgID int64) (int, error)
 }
 
+// QuotaLimitWriter is the bulk persistence the ERP sync needs: many variants'
+// caps in one call, inside one transaction on the repository side. Optional,
+// like VariantWriter, so a repository can be tested without it.
+type QuotaLimitWriter interface {
+	SetVariantQuotaLimits(ctx context.Context, orgID int64, limits map[int64]*int) error
+}
+
+// SetVariantQuotaLimits sets or clears per-branch caps for many variants at
+// once. It is called by the ERP product sync, so it takes the organization
+// explicitly (the caller's tenant context), normalises every cap through
+// NormalizeQuotaLimit (0 and negatives clear the column, exactly like the
+// single-variant screen), and writes nothing at all for an empty map — a chunk
+// with no quota-bearing items is the common case and must not become an empty
+// UPDATE.
+func (s *Service) SetVariantQuotaLimits(ctx context.Context, orgID int64, limits map[int64]*int) error {
+	writer, ok := s.repo.(QuotaLimitWriter)
+	if !ok {
+		return ErrBulkVariantsUnavailable
+	}
+	if len(limits) == 0 {
+		return nil
+	}
+	normalized := make(map[int64]*int, len(limits))
+	for id, limit := range limits {
+		normalized[id] = NormalizeQuotaLimit(limit)
+	}
+	return writer.SetVariantQuotaLimits(ctx, orgID, normalized)
+}
+
 // SetVariantQuotaLimit sets or removes the per-branch cap on one variant.
 //
 // A nil limit removes the quota entirely, which is the remove-quota action on

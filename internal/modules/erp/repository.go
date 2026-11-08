@@ -36,6 +36,7 @@ type HealthInfo struct {
 }
 
 type Repository interface {
+	SyncRepository
 	HealthData(context.Context, Principal) (HealthInfo, error)
 	FindKeyByPrefixAsSystem(context.Context, string) (KeyAuthRow, bool, error)
 	OrgStatusType(context.Context, int64) (status, orgType string, err error)

@@ -451,287 +451,287 @@ Goal: owners and staff create, rotate and revoke keys; `GET /erp/v1/health` work
 
 Goal: the ERP sends batches, reads per-item results; suppliers resolve review items. Depends on S1. Independent test: a batch with a new, a known and an invalid item reports each correctly; repeating it creates no duplicates.
 
-- [ ] T081 [US2] Write the queue args test in `internal/platform/queue/queue_erp_test.go`
+- [x] T081 [US2] Write the queue args test in `internal/platform/queue/queue_erp_test.go`
   - Do: `ERPSyncChunkArgs{BatchID, OrganizationID int64; ChunkNo int}` has Kind `erp.sync_chunk`, `InsertOpts` queue `erpsync` and `MaxAttempts 3`; `ERPCleanupArgs{}` has Kind `erp.cleanup`, queue `maintenance`, `MaxAttempts 1`. If V1 said yes, also `TestNewInsertOnly`: building the client from a `database.DB` returns no error and has no workers (use the same DB setup as the existing queue tests).
   - Traps: 4, 5, 20.
   - Done: `gofmt -l internal/platform/queue/queue_erp_test.go` prints nothing; `go test ./internal/platform/queue/ -run ERP -count=1` fails to compile (RED).
 
-- [ ] T082 [US2] Add the job args in `internal/platform/queue/jobs.go`
+- [x] T082 [US2] Add the job args in `internal/platform/queue/jobs.go`
   - Do: the two Args types with `Kind()` and `InsertOpts()` in the style of the existing args in the file. Do not use `river.UniqueOpts`.
   - Traps: 4, 5.
   - Done: `go test ./internal/platform/queue/ -count=1` (includes `TestEveryInsertedQueueIsConfigured`).
 
-- [ ] T083 [US2] Add `NewInsertOnly` in `internal/platform/queue/queue.go`
+- [x] T083 [US2] Add `NewInsertOnly` in `internal/platform/queue/queue.go`
   - Do: `func NewInsertOnly(db *database.DB, log *slog.Logger) (*Client, error)`: a River client with no `Queues` and no `Workers`; reuse the existing `Client` type and `EnqueueTx`. Do not start it.
   - Traps: 20.
   - Done: `go test ./internal/platform/queue/ -count=1`.
 
-- [ ] T084 [US2] Write the quota writer tests in `internal/modules/catalog/variant_quota_test.go`
+- [x] T084 [US2] Write the quota writer tests in `internal/modules/catalog/variant_quota_test.go`
   - Do: `TestSetVariantQuotaLimits`: values pass through `NormalizeQuotaLimit`; a nil pointer clears to NULL; an empty map is a no-op with no repository call; a repository without the optional interface returns a clear error. Copy the fake-repo style of the catalog tests next to `vendor_import.go`.
   - Done: `gofmt -l internal/modules/catalog/variant_quota_test.go` prints nothing; `go test ./internal/modules/catalog/ -run Quota -count=1` fails (RED).
 
-- [ ] T085 [US2] Add the quota writer in `internal/modules/catalog/variant_quota.go`
+- [x] T085 [US2] Add the quota writer in `internal/modules/catalog/variant_quota.go`
   - Do: `type QuotaLimitWriter interface{ SetVariantQuotaLimits(ctx context.Context, orgID int64, limits map[int64]*int) error }` and `func (s *Service) SetVariantQuotaLimits(...)` type-asserting the repository, same pattern as `VariantWriter` in `vendor_import.go:90`.
   - Done: `go test ./internal/modules/catalog/ -run Quota -count=1`.
 
-- [ ] T086 [US2] Add the quota SQL in `internal/modules/catalog/postgres/variant_quota.go`
+- [x] T086 [US2] Add the quota SQL in `internal/modules/catalog/postgres/variant_quota.go`
   - Do: one `UPDATE catalog.product_variants SET quota_limit = u.q FROM unnest($2::bigint[], $3::int[]) AS u(id, q) WHERE organization_id = $1 AND product_variants.id = u.id` inside `db.InTx`. Confirm the real column name first with `grep -rn "quota_limit" db/migrations | head -3` and use it.
   - Done: `go build ./internal/modules/catalog/...` (the SQL itself is proved by the S2 flow test).
 
-- [ ] T087 [P] [US2] Document the quota writer in `docs/modules/catalog.md`
+- [x] T087 [P] [US2] Document the quota writer in `docs/modules/catalog.md`
   - Do: add a short section: `SetVariantQuotaLimits` is called by the ERP sync, writes `quota_limit` only, null clears.
   - Done: `grep -n "SetVariantQuotaLimits" docs/modules/catalog.md` prints a line.
 
-- [ ] T088 [US2] Write the provider tests in `internal/modules/erp/provider/orgasoft/orgasoft_test.go`
+- [x] T088 [US2] Write the provider tests in `internal/modules/erp/provider/orgasoft/orgasoft_test.go`
   - Do: `DecodeProductBatch` on the two fixtures `../../testdata/orgasoft_products_camel.json` and `orgasoft_products_pascal.json`: code `4001` and `ORGA-100`, name from `arName`/`ArName`, price `1305.46` and `250` as `json.Number`, `quotaQuantity` 0 with `isQuota` false accepted, absent expiry accepted; inline cases: price as a JSON string `"62.50"`, `Items` PascalCase wrapper, unknown fields ignored, numeric code as a number and as a string, `clientBatchId`. `DecodeAck` on `orgasoft_order_ack_sample3.json` gives one entry with order number `{{orderNumber}}` and reference `ORG-9921` (and ignores `items`), and on the canonical `{"orders":[{"orderNumber":"10542","erpReference":"ORGA-77123"}]}`. Money fields must be `json.Number`, never `float64`.
   - Traps: 13, 28.
   - Done: `gofmt -l` on the file prints nothing; `go test ./internal/modules/erp/provider/... -count=1` fails to compile (RED).
 
-- [ ] T089 [US2] Add the provider contract in `internal/modules/erp/provider/provider.go`
+- [x] T089 [US2] Add the provider contract in `internal/modules/erp/provider/provider.go`
   - Do: `type Provider interface{ Name() string; DecodeProductBatch(body []byte) (Batch, error); DecodeAck(body []byte) ([]AckEntry, error) }`; `Batch{ClientBatchID string; Items []RawItem}`; `RawItem` as a typed struct, all numbers as `*json.Number`, internal names equal to the wire names: `Code, ArName, Barcode, Unit, Manufacturer, Batch, Expiry string; PublicPrice, Discount, Tax, Stock, QuotaQty *json.Number; IsQuota *bool` (there is no English name field: Orgasoft sends none; `Unit`, `Manufacturer` and `Batch`, wire name `batchNumber`, are optional, not in any Orgasoft sample, unverified, and ignored when absent); `AckEntry{OrderNumber, ErpReference string}`.
   - Traps: 13.
   - Done: `go build ./internal/modules/erp/provider/`.
 
-- [ ] T090 [US2] Add the alias table in `internal/modules/erp/provider/orgasoft/fields.go`
+- [x] T090 [US2] Add the alias table in `internal/modules/erp/provider/orgasoft/fields.go`
   - Do: `var productAliases = map[string][]string{...}` keyed by the canonical wire name: `externalProductCode`, `arName`, `publicPrice`, `stock`, `discount`, `tax`, `isQuota`, `quotaQuantity`, `barcode`, `expiryDate`, and the optional `unit`, `manufacturer`, `batchNumber` (not in Orgasoft's samples, unverified); `func foldKey(k string) string` lower-cases the first letter so PascalCase equals camelCase. This is the only place to add spellings.
   - Traps: 28.
   - Done: `go build ./internal/modules/erp/provider/orgasoft/`.
 
-- [ ] T091 [US2] Add the batch decoder in `internal/modules/erp/provider/orgasoft/orgasoft.go`
+- [x] T091 [US2] Add the batch decoder in `internal/modules/erp/provider/orgasoft/orgasoft.go`
   - Do: `New() *Orgasoft`, `Name()` returns `orgasoft`, `DecodeProductBatch`: `json.Decoder` with `UseNumber()`; decode `items`/`Items` as `[]map[string]json.RawMessage`; fold each key; fill `RawItem` through `productAliases`; accept strings or numbers for code and money; ignore unknown fields.
   - Traps: 13.
   - Done: `go test ./internal/modules/erp/provider/... -run 'Products|Batch' -count=1`.
 
-- [ ] T092 [US2] Add the ack decoder in `internal/modules/erp/provider/orgasoft/ack.go`
+- [x] T092 [US2] Add the ack decoder in `internal/modules/erp/provider/orgasoft/ack.go`
   - Do: `DecodeAck`: accept the canonical `orders[]` body, a single object with `order_number` and `orga_orderID`, and an array of those objects (sample 3); ignore `items`.
   - Done: `go test ./internal/modules/erp/provider/orgasoft/ -run Ack -count=1`.
 
-- [ ] T093 [US2] Add the registry in `internal/modules/erp/provider/registry.go`, `internal/modules/erp/provider/all/all.go`, and `internal/modules/erp/providers.go`
+- [x] T093 [US2] Add the registry in `internal/modules/erp/provider/registry.go`, `internal/modules/erp/provider/all/all.go`, and `internal/modules/erp/providers.go`
   - Do: extend `provider/registry.go` (created by T042a, which keeps `const DefaultProvider = "orgasoft"`) with `func Register(p Provider)`, which panics on a duplicate name, plus `func Get(name string) (Provider, bool)`, and make `func Names() []string` return the sorted registered names. `registry.go` must NOT import `provider/orgasoft`, because that is an import cycle. In `provider/orgasoft` add `func init() { provider.Register(New()) }`. Create `provider/all/all.go` with `package all` and a blank import of `provider/orgasoft`. Create `internal/modules/erp/providers.go` with `package erp` and a blank import of `provider/all`. A future ERP adds one blank import in `all.go`.
   - Traps: 28.
   - Done: `go test ./internal/modules/erp/provider/... -count=1`.
 
-- [ ] T094 [US2] Write the provider seam test in `internal/modules/erp/seam_test.go`
+- [x] T094 [US2] Write the provider seam test in `internal/modules/erp/seam_test.go`
   - Do: `TestNoOrgasoftOutsideProvider`: walk `internal/modules/erp` (not `provider/orgasoft`, not `_test.go`, not `docs`) and fail when a `.go` file contains `orgasoft` except `provider/registry.go`, `provider/all/all.go` (the registry line and `DefaultProvider`). `TestNeverCallsEnhancement`: no `.go` file in `internal/modules/erp` contains `StartEnhancement` or imports `gateway`.
   - Traps: 18, 28.
   - Done: `go test ./internal/modules/erp/ -run 'NoOrgasoft|NeverCallsEnhancement' -count=1`.
 
-- [ ] T095 [US2] Write the item tests in `internal/modules/erp/item_test.go`
+- [x] T095 [US2] Write the item tests in `internal/modules/erp/item_test.go`
   - Do: one table row per item rule in `contracts/error-codes.md` "Product sync (item level)": code required, name required, price missing and negative, `12.345` gives `ERP_ITEM_PRICE_PRECISION`, stock missing, `-1` gives `ERP_ITEM_STOCK_NEGATIVE`, stock `1.5`, discount `100.01`, tax `-1`, `isQuota true` with quantity 0, expiry `31/12/2027`, barcode `ABC`, barcode of 33 digits. Valid rows: both samples (quotaQuantity 0 with isQuota false is valid and gives `QuotaQty` nil and `IsQuota` false), `"2028-01-10"`, `"2027-09-30T00:00:00"` (date part kept), numeric text code. `Hash`: same item and warehouse and branch gives the same hash; a change in stock, price, warehouse or branch changes it. Prices as exact strings, for example `"1305.46"`.
   - Traps: 13.
   - Done: `gofmt -l internal/modules/erp/item_test.go` prints nothing; `go test ./internal/modules/erp/ -run Item -count=1` fails to compile (RED).
 
-- [ ] T096 [US2] Add item normalisation in `internal/modules/erp/item.go`
+- [x] T096 [US2] Add item normalisation in `internal/modules/erp/item.go`
   - Do: `type Item struct{ Code, ArName, Barcode, Unit, Manufacturer, Batch string; PublicPrice money.Amount; Discount, Tax *money.Amount; Stock int; Expiry *time.Time; IsQuota *bool; QuotaQty *int }` (no English name); `type ItemError struct{Code string; Details map[string]any}`; `func NormalizeItem(raw provider.RawItem) (Item, *ItemError)`; `func (i Item) Hash(warehouseID, branchID int64) string` (sha256 of a fixed-order text form). Money through `money.Parse`; percents compared with `money.FromMajor(100)`; no `float`.
   - Use: `internal/shared/money`.
   - Traps: 13.
   - Done: `go test ./internal/modules/erp/ -run Item -count=1`.
 
-- [ ] T097 [US2] Write the S2 isolation tests in `test/integration/erp_isolation_sync_test.go`
+- [x] T097 [US2] Write the S2 isolation tests in `test/integration/erp_isolation_sync_test.go`
   - Do: `TestTenantIsolation_ERPProductLinks`, `TestTenantIsolation_ERPSyncBatches`, `TestTenantIsolation_ERPSyncItems`, `TestTenantIsolation_ERPReviewItems` (separate file from the S1 one to keep both under 400 lines).
   - Traps: 19.
   - Done: `gofmt -l test/integration/erp_isolation_sync_test.go` prints nothing; `SB-6 go test -p 1 ./test/integration/ -run 'TestTenantIsolation_ERP(ProductLinks|SyncBatches|SyncItems|ReviewItems)' -count=1` passes (the tables already exist from 255).
 
-- [ ] T098 [US2] Write the sync flow tests in `test/integration/erp_sync_flow_test.go`
+- [x] T098 [US2] Write the sync flow tests in `test/integration/erp_sync_flow_test.go`
   - Do: `TestERPSyncFlow_Basic`: seed a vendor organization, warehouse, branch, key principal and one existing variant with SKU `4001`; call `AcceptBatch` then `ProcessChunk` directly (no River) with three items from the two fixtures plus one invalid price `12.345`; assert created, updated (known), failed `ERP_ITEM_PRICE_PRECISION`, stock row for the key's warehouse; absent product untouched; stock 0 writes quantity 0; duplicate code in one batch: last wins, earlier row `unchanged` `ERP_ITEM_SUPERSEDED`. Real adapters from `internal/composition/erpports` with the matcher stubbed to return `needs_review` for unknown items.
   - Traps: 6, 16, 18.
   - Done: `gofmt -l test/integration/erp_sync_flow_test.go` prints nothing; compile fails (RED) until the S2 wiring tasks exist.
 
-- [ ] T099 [US2] Write the sync repeat and order tests in `test/integration/erp_sync_repeat_test.go`
+- [x] T099 [US2] Write the sync repeat and order tests in `test/integration/erp_sync_repeat_test.go`
   - Do: `TestERPSyncFlow_Repeat100`: the same batch 100 times creates 0 new variants after the first run and 0 duplicate links (SC-004); `TestERPSyncFlow_TwoBatchesInOrder`: batch 2 chunk returns `ErrWaitForEarlierBatch` while batch 1 is `queued` or `processing`, then succeeds after batch 1 completes; `TestERPSyncFlow_SameBatchTwoChunks` with 2501 items completes with `chunks_done = chunk_count = 2`.
   - Traps: 5, 25.
   - Done: `gofmt -l test/integration/erp_sync_repeat_test.go` prints nothing; compile fails (RED) until the S2 wiring tasks exist.
 
-- [ ] T099a [US2] Write the SC-002 scale test in `test/integration/erp_sync_scale_test.go`
+- [x] T099a [US2] Write the SC-002 scale test in `test/integration/erp_sync_scale_test.go`
   - Do: `TestERPSyncFlow_Scale50000`: build one batch of 50,000 valid items in memory (numeric codes `900000` to `949999`, price `10.50`, stock 5); call `AcceptBatch` and fail when it takes 5 s or more; assert `chunk_count = 20` and 20 `ERPSyncChunkArgs` enqueued; call `ProcessChunk` for chunk 0 to 19 one after the other (the matcher stub returns `accepted` with one seeded product id; real catalog and inventory adapters from `internal/composition/erpports`) and fail when the whole processing takes 7 minutes or more; assert the batch is `completed`, no item is `pending`, and `created_count + needs_review_count + failed_count = 50000`. One worker is stricter than the three workers of production. Log both durations with `t.Logf`. Time-based fixture ids.
   - Traps: 3, 5, 19.
   - Done: `gofmt -l test/integration/erp_sync_scale_test.go` prints nothing; compile fails (RED) until the S2 wiring tasks exist.
 
-- [ ] T100 [US2] Add the sync repository interface in `internal/modules/erp/repository_sync.go`
+- [x] T100 [US2] Add the sync repository interface in `internal/modules/erp/repository_sync.go`
   - Do: `type SyncRepository interface` with: `InsertBatch(ctx, orgID int64, b NewBatch, items []NewItemRow) (SyncBatch, error)` (one tx: batch row, `CopyFrom` items, optional `Enqueue` callback `func(ctx, tx pgx.Tx) error`); `FindBatchByIdempotency(ctx, orgID, integrationID int64, key string) (SyncBatch, bool, error)`; `GetBatchByPublicID(ctx, orgID int64, publicID string) (SyncBatch, error)`; `GetBatchByID(ctx, orgID, batchID int64) (SyncBatch, error)`; `ListSyncItems(ctx, orgID, batchID, afterID int64, state string, limit int) ([]SyncItemRow, error)` (empty `state` means all); `EarlierBatchActive(ctx, orgID, integrationID, batchID int64) (bool, error)`; `MarkBatchProcessing(ctx, orgID, batchID int64) error`; `LoadPendingItems(ctx, orgID, batchID int64, chunkNo int) ([]SyncItemRow, error)`; `LoadLinksByCode(ctx, orgID, integrationID int64, codes []string) (map[string]ProductLink, error)`; `FindVariantsBySKU(ctx, orgID int64, codes []string) (map[string][]int64, error)`; `FindVariantsByBarcode(ctx, orgID int64, barcodes []string) (map[string][]int64, error)`; `WriteResults(ctx, orgID int64, res []ItemResult, links []LinkWrite, reviews []ReviewWrite) error`; `FinishChunk(ctx, orgID, batchID int64) (done bool, err error)`; `ListReview`, `GetReview`, `ResolveReviewRow`, `DismissReviewRow`; `PurgeExpiredAsSystem(ctx, cut Cutoffs) error`. Add the types in the same file (field names mirror the table columns in camel-to-Pascal case): `NewBatch{IntegrationID, APIKeyID, WarehouseID, BranchID int64; ClientBatchID, IdempotencyKey, BodySHA256 string; ItemCount, ChunkCount int}`; `NewItemRow{Position, ChunkNo int; ExternalCode string; Payload []byte; State, Code string; Message map[string]string}` (`Message` keys `ar` and `en`); `SyncBatch` = every column of `erp.sync_batches` plus `Provider string` read from `erp.integrations`; `SyncItemRow` = every column of `erp.sync_items`; `ItemResult{ItemID int64; State, Code string; Message map[string]string; VariantID *int64}`; `LinkWrite{IntegrationID, VariantID int64; ProductID *int64; ExternalCode, LinkSource, LastHash string; TaxPercent *money.Amount}`; `ReviewWrite{IntegrationID, BatchID int64; ExternalCode, ReasonCode string; Payload, Candidates []byte}`; `ProductLink` = every column of `erp.product_links`; `ReviewItem` = every column of `erp.review_items`; `Page{After int64; Limit int}`. Embed `SyncRepository` in `Repository` (edit `repository.go`).
   - Done: `go build ./internal/modules/erp/`.
 
-- [ ] T101 [P] [US2] Add batch SQL in `internal/modules/erp/postgres/sync.go`
+- [x] T101 [P] [US2] Add batch SQL in `internal/modules/erp/postgres/sync.go`
   - Do: `InsertBatch` (inside `db.InTx(database.WithTenant(ctx, orgID), func(ctx context.Context, tx pgx.Tx) error { ... tx.CopyFrom(ctx, pgx.Identifier{"erp","sync_items"}, cols, pgx.CopyFromRows(rows)) ... })`, never `db.Pool()`; calls the enqueue callback inside the same tx), `FindBatchByIdempotency`, `GetBatchByPublicID`, `GetBatchByID` (joined to `erp.integrations` for `provider`), `EarlierBatchActive` (query from research D-09), `MarkBatchProcessing` (`UPDATE ... WHERE state='queued'`), `FinishChunk` (`chunks_done = chunks_done + 1 ... RETURNING`, the chunk that reaches `chunk_count` sets `completed`, `finished_at` and the counters), plus product link reads and writes.
   - Traps: 1, 5.
   - Done: `gofmt -l internal/modules/erp/postgres/sync.go` prints nothing (`go vet` is not required: the package compiles as a whole at T118).
 
-- [ ] T102 [P] [US2] Add item SQL in `internal/modules/erp/postgres/sync_items.go`
+- [x] T102 [P] [US2] Add item SQL in `internal/modules/erp/postgres/sync_items.go`
   - Do: `ListSyncItems` (keyset by `sync_items.id`), `LoadPendingItems`, `WriteResults` (retried chunk skips rows that are not `pending`; clears `payload` when processed; writes links with `last_hash`, `tax_percent`, `link_source`); `ListSyncItems` filters on `state` when it is not empty.
   - Traps: 1, 25.
   - Done: `gofmt -l internal/modules/erp/postgres/sync_items.go` prints nothing (`go vet` is not required).
 
-- [ ] T103 [P] [US2] Add review SQL in `internal/modules/erp/postgres/review.go`
+- [x] T103 [P] [US2] Add review SQL in `internal/modules/erp/postgres/review.go`
   - Do: upsert one open `erp.review_items` row per `(integration, external_code)` (second sync updates `payload`, `candidates`, `batch_id`), `ListReview`, `GetReview`, `ResolveReviewRow`, `DismissReviewRow`.
   - Traps: 1.
   - Done: `gofmt -l internal/modules/erp/postgres/review.go` prints nothing (`go vet` is not required).
 
-- [ ] T104 [P] [US2] Add variant lookup SQL in `internal/modules/erp/postgres/variants_lookup.go`
+- [x] T104 [P] [US2] Add variant lookup SQL in `internal/modules/erp/postgres/variants_lookup.go`
   - Do: `FindVariantsBySKU`, `FindVariantsByBarcode`: read-only SQL on `catalog.product_variants`, live variants only (`deleted_at IS NULL`), `WithTenant`, using `unnest($2::text[])`.
   - Traps: 1.
   - Done: `gofmt -l internal/modules/erp/postgres/variants_lookup.go` prints nothing (`go vet` is not required).
 
-- [ ] T105 [US2] Add the S2 fakes in `internal/modules/erp/fake_sync_test.go`
+- [x] T105 [US2] Add the S2 fakes in `internal/modules/erp/fake_sync_test.go`
   - Do: in-memory `SyncRepository`; fake `VariantWriter`, `StockWriter`, `Matcher` (returns configured decisions), `MatchMemory` (records `Remember` calls), `Enqueuer` (records args). Add the `Ports` fields they fill (next task) as the contract. Embed the sync fake in `fakeRepo` (`fake_keys_test.go`): `type fakeRepo struct { ...; *fakeSync }`, and make `newFakeRepo()` allocate it, so `fakeRepo` still satisfies `erp.Repository`.
   - Done: `gofmt -l internal/modules/erp/fake_sync_test.go internal/modules/erp/fake_keys_test.go` prints nothing; `go vet ./internal/modules/erp/` passes once T106 has added the types the fakes use.
 
-- [ ] T106 [US2] Add the S2 ports in `internal/modules/erp/ports.go`
+- [x] T106 [US2] Add the S2 ports in `internal/modules/erp/ports.go`
   - Do: add `VariantWriter`, `StockWriter`, `Matcher`, `MatchMemory`, `Enqueuer` exactly as in plan.md "Ports" with these types, whose fields mirror the catalog and inventory rows: `VariantWrite{Ref int; VariantID, ProductID, BranchID int64; Name map[string]string; SKU, Barcode, Unit, BatchNumber string; Price, Discount money.Amount; ExpiryDate *time.Time}` (`VariantID` 0 means insert; the adapter sets the catalog status to active for inserts; names mirror `catalog.ProductVariant`); `VariantWriteResult{Inserted, Updated int; Failures map[int]string; IDs map[int]int64; InsertedRefs map[int]bool}` (mirrors `catalog.VariantWriteResult`, `Failures` keyed by `Ref`); `StockWrite{Ref int; WarehouseID, ProductID, VariantID int64; Quantity int; HasQuantity bool}` (mirrors `inventory.StockWriteRow` and its `Stock`); `KnowledgeWrite{SourceNamespace, QuestionSignature, Kind string; TargetProductID *int64; TargetGranularity, PolicyVersion, NormalizerVersion, DisplayText string}` (identical to `matching.KnowledgeWrite`); fields on `Ports`. `erp` may import `productmatch` and `matchflow` from `internal/shared`. No `OrderDecider` or `PurchasePlacer` yet.
   - Traps: 10, 18, 23.
   - Done: `go build ./internal/modules/erp/` and `go vet ./internal/modules/erp/` (this proves the `fakeRepo` embedding of T105).
 
-- [ ] T107 [US2] Write the intake tests in `internal/modules/erp/sync_intake_test.go`
+- [x] T107 [US2] Write the intake tests in `internal/modules/erp/sync_intake_test.go`
   - Do: invalid items stored as `failed` and counted in `rejectedAtIntake`; duplicate codes: last wins, earlier `unchanged` with `ERP_ITEM_SUPERSEDED`; empty batch `ERP_BATCH_EMPTY`; above `p.MaxBatchItems` gives `ERP_BATCH_TOO_LARGE` with `limit` and `received`; 2,500 items make 1 chunk and 2,501 make 2, one `ERPSyncChunkArgs` per chunk enqueued in the same transaction; same `Idempotency-Key` and body hash returns the first accepted result and enqueues nothing; same key with a different hash gives `ERP_IDEMPOTENCY_CONFLICT`; a vendor scope check `ERP_SCOPE_MISSING` and org type check `ERP_CAPABILITY_REQUIRED`.
   - Done: `gofmt -l internal/modules/erp/sync_intake_test.go` prints nothing; `go test ./internal/modules/erp/ -run Intake -count=1` fails (RED).
 
-- [ ] T108 [US2] Add intake in `internal/modules/erp/sync_intake.go`
+- [x] T108 [US2] Add intake in `internal/modules/erp/sync_intake.go`
   - Do: `func (s *Service) AcceptBatch(ctx context.Context, p Principal, body []byte, idemKey string) (Accepted, error)` as described in plan.md S2 step 6. Uses the provider from `provider.Get(p.Provider)`. Chunk number is `position / SyncChunkSize`. `Accepted{SyncID string; State string; ItemCount, RejectedAtIntake int}`. Never calls `StartEnhancement`.
   - Traps: 3, 5, 6, 25.
   - Done: `go test ./internal/modules/erp/ -run Intake -count=1`.
 
-- [ ] T109 [US2] Write the chunk processing tests in `internal/modules/erp/sync_process_test.go`
+- [x] T109 [US2] Write the chunk processing tests in `internal/modules/erp/sync_process_test.go`
   - Do: `ErrWaitForEarlierBatch` while an earlier batch is active; hash equal to `last_hash` gives `unchanged` and no writer call; SKU tier links without calling the matcher; barcode tier; two variants with one barcode gives review `ERP_ITEM_BARCODE_CONFLICT`; one `Matcher.Prepare` call per chunk for all remaining rows with `Scope{SourceNamespace:"supplier:<org>", Workflow: WorkflowVendor, EntryPoint:"erp_sync"}` and `ConsumerRef:"erp.sync:<batchID>:<chunkNo>"`; `accepted`/`confirmed` creates the link and calls `Remember` with `Kind: "supplier_code"` (tiers 1 and 2 never call `Remember`); other decisions create a review item and `needs_review`; soft-deleted linked variant gives review `ERP_ITEM_DELETED_LINK`; one `VariantWriter.Write` and one `StockWriter.Replace` per chunk with `HasQuantity: true` and the key's warehouse; quota set `SetQuotaLimits`; a failing item writes `ERP_ITEM_WRITE_FAILED` and the rest continue; the last chunk sets `completed`; a retried chunk does not rewrite finished rows; after the key is revoked or rotated following acceptance, `ProcessChunk` still completes the batch because the chunk context comes from the batch row, not from the key; `RetireVariantsExcept` is never called.
   - Traps: 5, 6, 17, 25.
   - Done: `gofmt -l internal/modules/erp/sync_process_test.go` prints nothing; `go test ./internal/modules/erp/ -run Process -count=1` fails (RED).
 
-- [ ] T110 [US2] Write the gateway-off tests in `internal/modules/erp/sync_ai_off_test.go`
+- [x] T110 [US2] Write the gateway-off tests in `internal/modules/erp/sync_ai_off_test.go`
   - Do: `TestSyncWithGatewayOff`: 20 items, matcher stub returns `needs_review`, no gateway object exists anywhere in the test; assert the batch completes, all 20 items have a terminal state, linked items update, unknown ones are `needs_review` with a review row. `TestSyncMatcherErrorKeepsReview`: matcher returns an error, items become `needs_review` with `ERP_ITEM_MATCHER_UNAVAILABLE`. `TestSyncNeverCallsEnhancement`: the `Matcher` interface has exactly the method `Prepare` (compile-time assignment of a struct with only `Prepare`) and `erp` contains no `StartEnhancement` (read the files).
   - Traps: 18.
   - Done: `gofmt -l internal/modules/erp/sync_ai_off_test.go` prints nothing; `go test ./internal/modules/erp/ -run 'GatewayOff|NeverCallsEnhancement|MatcherError' -count=1` fails (RED).
 
-- [ ] T111 [US2] Add item resolution in `internal/modules/erp/sync_resolve.go`
+- [x] T111 [US2] Add item resolution in `internal/modules/erp/sync_resolve.go`
   - Do: `type chunkCtx struct{ OrganizationID, IntegrationID, WarehouseID, BranchID int64; Provider string }` and `resolveItems(ctx, cc chunkCtx, batchID, chunkNo, items []pendingItem) (resolved, error)` implementing steps (c) to (f) of plan.md S2 step 7: links by code in one query, `unchanged` by hash, tiers SKU then barcode, then one `Matcher.Prepare` call. Use `productmatch.Row`, `productmatch.QuestionSignature`, `productmatch.ExtractRowFacts` (see V4).
   - Traps: 17, 18.
   - Done: `go build ./internal/modules/erp/`.
 
-- [ ] T112 [US2] Add the write step in `internal/modules/erp/sync_write.go`
+- [x] T112 [US2] Add the write step in `internal/modules/erp/sync_write.go`
   - Do: `writeResolved(ctx, cc chunkCtx, resolved) (writeOutcome, error)` for steps (g) and (h): one `VariantWriter.Write` (new variants `StatusActive`, `BranchID` from `cc`, `Unit` from the item when sent, and name `{ar: ArName, en: ArName}`), then `SetQuotaLimits`, then one `StockWriter.Replace`; write links, results and `Remember`. A per-row failure in the stock map becomes that item's `ERP_ITEM_WRITE_FAILED`.
   - Traps: 6, 8, 13, 16, 17.
   - Done: `go build ./internal/modules/erp/`.
 
-- [ ] T113 [US2] Add chunk orchestration in `internal/modules/erp/sync_process.go`
+- [x] T113 [US2] Add chunk orchestration in `internal/modules/erp/sync_process.go`
   - Do: `func (s *Service) ProcessChunk(ctx context.Context, batchID int64, chunkNo int) error` doing step (a) wait check, (b) mark processing once, calling `resolveItems` and `writeResolved`, then step (i) `FinishChunk`. Takes the organization from `database.TenantFrom(ctx)`. It loads the batch with `GetBatchByID(ctx, orgID, batchID)` and builds `chunkCtx{OrganizationID, IntegrationID, WarehouseID, BranchID int64; Provider string}` from `erp.sync_batches` (`warehouse_id`, `branch_id`) joined to `erp.integrations.provider`; it passes `chunkCtx`, not `Principal`, to `resolveItems` and `writeResolved`, and never re-reads the key.
   - Traps: 3, 5, 25.
   - Done: `go test ./internal/modules/erp/ -run 'Process|GatewayOff|NeverCallsEnhancement|MatcherError|Intake' -count=1`.
 
-- [ ] T114 [US2] Write the review service tests in `internal/modules/erp/sync_review_test.go`
+- [x] T114 [US2] Write the review service tests in `internal/modules/erp/sync_review_test.go`
   - Do: `ListReview` pages open items; `ResolveReview` creates the variant through the writer, links it, calls `Remember` with `Kind: "human_confirm"`, marks `resolved`, writes one audit row; `DismissReview` marks `dismissed`; resolving another organization's item returns `ERP_NOT_FOUND`.
   - Done: `gofmt -l internal/modules/erp/sync_review_test.go` prints nothing; `go test ./internal/modules/erp/ -run Review -count=1` fails (RED).
 
-- [ ] T115 [US2] Add the review service in `internal/modules/erp/sync_review.go`
+- [x] T115 [US2] Add the review service in `internal/modules/erp/sync_review.go`
   - Do: `ListReview(ctx, orgID int64, page Page) ([]ReviewItem, error)`, `ResolveReview(ctx, orgID, id, productID, actorUserID int64) error`, `DismissReview(ctx, orgID, id, actorUserID int64) error`.
   - Traps: 15, 17.
   - Done: `go test ./internal/modules/erp/ -run Review -count=1`.
 
-- [ ] T116 [US2] Write the cleanup tests in `internal/modules/erp/cleanup_test.go`
+- [x] T116 [US2] Write the cleanup tests in `internal/modules/erp/cleanup_test.go`
   - Do: `Cleanup` calls `PurgeExpiredAsSystem` once with cut-offs: api_calls 30 d, sync_items 7 d, sync_batches 90 d, resolved or dismissed review items 180 d, ERP `match_runs` 30 d, batch size `CleanupBatchRows`; `order_imports` and `idempotency_records` are never purged.
   - Done: `gofmt -l internal/modules/erp/cleanup_test.go` prints nothing; `go test ./internal/modules/erp/ -run Cleanup -count=1` fails (RED).
 
-- [ ] T117 [US2] Add the cleanup service in `internal/modules/erp/cleanup.go`
+- [x] T117 [US2] Add the cleanup service in `internal/modules/erp/cleanup.go`
   - Do: `type Cutoffs struct{ APICalls, SyncItems, SyncBatches, Review, MatchRuns time.Time; BatchRows int }`, `func (s *Service) Cleanup(ctx context.Context, now time.Time) error`.
   - Done: `go test ./internal/modules/erp/ -run Cleanup -count=1`.
 
-- [ ] T118 [US2] Add cleanup SQL in `internal/modules/erp/postgres/cleanup.go`
+- [x] T118 [US2] Add cleanup SQL in `internal/modules/erp/postgres/cleanup.go`
   - Do: `PurgeExpiredAsSystem` (comment `plan.md E3`): fixed table list, loops `DELETE ... WHERE id IN (SELECT id ... LIMIT 10000)` until none remain. For ERP `catalog.match_runs` delete only from `catalog.match_runs WHERE consumer_ref LIKE 'erp.sync:%' AND created_at < $cut`; children cascade or null out (V2). Add `var _ erp.Repository = (*Repository)(nil)` at the end of `postgres/repository.go`; it must compile now.
   - Traps: 1.
   - Done: `go build ./internal/modules/erp/postgres/` (including the `var _ erp.Repository` line), `go test ./internal/modules/erp/postgres/ -count=1` and `go build ./...`.
 
-- [ ] T119 [US2] Write the worker tests in `internal/modules/erp/jobs/sync_chunk_worker_test.go`
+- [x] T119 [US2] Write the worker tests in `internal/modules/erp/jobs/sync_chunk_worker_test.go`
   - Do: the worker sets `database.WithTenant(ctx, args.OrganizationID)` before `ProcessChunk`; `ErrWaitForEarlierBatch` returns `river.JobSnooze(time.Duration(erp.SyncSnoozeSeconds) * time.Second)`; other errors pass through; cleanup worker calls `Cleanup`.
   - Done: `gofmt -l internal/modules/erp/jobs/sync_chunk_worker_test.go` prints nothing; `go test ./internal/modules/erp/jobs/ -count=1` fails to compile (RED).
 
-- [ ] T120 [P] [US2] Add the chunk worker in `internal/modules/erp/jobs/sync_chunk_worker.go`
+- [x] T120 [P] [US2] Add the chunk worker in `internal/modules/erp/jobs/sync_chunk_worker.go`
   - Do: `NewSyncChunkWorker(svc *erp.Service, log *slog.Logger)`, `Work(ctx, job *river.Job[queue.ERPSyncChunkArgs]) error`. Import the args from `internal/platform/queue` as the other `internal/modules/*/jobs/` workers do. Map `ErrWaitForEarlierBatch` to `river.JobSnooze(time.Duration(erp.SyncSnoozeSeconds) * time.Second)`; never type `15`.
   - Traps: 3, 5.
   - Done: `go test ./internal/modules/erp/jobs/ -run Sync -count=1`.
 
-- [ ] T121 [P] [US2] Add the cleanup worker in `internal/modules/erp/jobs/cleanup_worker.go`
+- [x] T121 [P] [US2] Add the cleanup worker in `internal/modules/erp/jobs/cleanup_worker.go`
   - Do: `NewCleanupWorker(svc *erp.Service, log *slog.Logger)`, `Work(ctx, job *river.Job[queue.ERPCleanupArgs]) error`.
   - Done: `go test ./internal/modules/erp/jobs/ -count=1`.
 
-- [ ] T122 [P] [US2] Add the catalog adapter in `internal/composition/erpports/catalog.go`
+- [x] T122 [P] [US2] Add the catalog adapter in `internal/composition/erpports/catalog.go`
   - Do: `NewVariantWriter(svc *catalog.Service) erp.VariantWriter`; `Write` converts `erp.VariantWrite` to `catalog.VariantWriteRow` and calls `BulkWriteVariants`; `SetQuotaLimits` calls `SetVariantQuotaLimits`. Field conversion only.
   - Traps: 10.
   - Done: `go build ./internal/composition/...`.
 
-- [ ] T123 [P] [US2] Add the inventory adapter in `internal/composition/erpports/inventory.go`
+- [x] T123 [P] [US2] Add the inventory adapter in `internal/composition/erpports/inventory.go`
   - Do: `NewStockWriter(svc *inventory.Service) erp.StockWriter`; `Replace` calls `BulkWriteStocks(ctx, inventory.StockReplace, rows)` and returns the failure map keyed by `Ref`.
   - Traps: 10.
   - Done: `go build ./internal/composition/...`.
 
-- [ ] T124 [P] [US2] Add the matching adapter in `internal/composition/erpports/matching.go`
+- [x] T124 [P] [US2] Add the matching adapter in `internal/composition/erpports/matching.go`
   - Do: `NewMatcher(svc matching.Service) erp.Matcher` (`Prepare`) and `NewMatchMemory(svc matching.Service) erp.MatchMemory` (`Remember`, where `matching.Service` is an interface at `internal/modules/catalog/matching/service.go:22`, so no pointer; converting `erp.KnowledgeWrite` to `matching.KnowledgeWrite` at `internal/modules/catalog/matching/domain.go:104` field by field).
   - Traps: 10, 17.
   - Done: `go build ./internal/composition/... && go test ./test/ -run TestModulesDoNotImportEachOther -count=1`.
 
-- [ ] T124a [US2] Record ADR-ERP-1 in `docs/adr/decisions.md`
+- [x] T124a [US2] Record ADR-ERP-1 in `docs/adr/decisions.md`
   - Do: append `ADR-ERP-1` in the layout of the existing records (heading `## ADR-ERP-1 - Shared ERP port adapters`, line `**Status:** Accepted` with today's date from `date +%F`, then Context, Decision, Consequences). Context: the server and the worker both need the same four ports (catalog writer, stock writer, matcher, match memory). Decision: `internal/composition/erpports`, imported only from `cmd/`. Consequences: it is not covered by `TestModulesDoNotImportEachOther`; keep field conversion only. Do not edit `AGENTS.md` here (T205 only adds `erp` to the schema list).
   - Done: `grep -c "ADR-ERP-1" docs/adr/decisions.md` prints 1 or more.
 
-- [ ] T125 [US2] Add the worker wiring in `cmd/worker/erp.go`
+- [x] T125 [US2] Add the worker wiring in `cmd/worker/erp.go`
   - Do: `registerERPWorkers(workers *river.Workers, db *database.DB, matchSvc matching.Service, log *slog.Logger)` building the repository, the adapters, `erp.NewService` and registering both workers. Build the catalog and inventory services the same way `cmd/worker/matching.go` builds its services.
   - Done: `go build ./cmd/worker/`.
 
-- [ ] T126 [US2] Wire the worker in `cmd/worker/main.go` and `cmd/worker/matching.go`
+- [x] T126 [US2] Wire the worker in `cmd/worker/main.go` and `cmd/worker/matching.go`
   - Do: change `registerMatchingWorkers` to also return its `matching.Service` (an interface value, no pointer); only when `ERP.Enabled` is true call `registerERPWorkers` and start the erpsync queue; add a worker test asserting disabled mode does not register or start erpsync and enabled mode does; add `river.NewPeriodicJob(river.PeriodicInterval(24*time.Hour), ... ERPCleanupArgs ...)` to the returned periodic list.
   - Traps: 4.
   - Done: `go build ./cmd/worker/ && go test ./cmd/worker/ ./internal/platform/queue/ -count=1`.
 
-- [ ] T127 [US2] Write the body tests in `internal/modules/erp/http/body_test.go`
+- [x] T127 [US2] Write the body tests in `internal/modules/erp/http/body_test.go`
   - Do: body over 32 MiB gives 413 `ERP_BODY_TOO_LARGE`; gzip body with `Content-Encoding: gzip` is inflated; inflated size over 128 MiB is refused with the same code; `Content-Type` other than `application/json` gives 415; broken JSON gives 400 `ERP_BAD_JSON` with `position`.
   - Done: `gofmt -l internal/modules/erp/http/body_test.go` prints nothing; `go test ./internal/modules/erp/http/ -run Body -count=1` fails (RED).
 
-- [ ] T128 [US2] Add the body reader in `internal/modules/erp/http/body.go`
+- [x] T128 [US2] Add the body reader in `internal/modules/erp/http/body.go`
   - Do: `readBody(w, r) ([]byte, error)` with `http.MaxBytesReader(w, r.Body, erp.MaxBodyBytes)`, gzip with a `MaxInflatedBytes` limit reader, content type check.
   - Done: `go test ./internal/modules/erp/http/ -run Body -count=1`.
 
-- [ ] T129 [US2] Write the sync handler tests in `internal/modules/erp/http/sync_handlers_test.go`
+- [x] T129 [US2] Write the sync handler tests in `internal/modules/erp/http/sync_handlers_test.go`
   - Do: `POST /products/sync` returns 202 with `syncId`, `state`, `itemCount`, `rejectedAtIntake`, `statusUrl`; the 7th call in a minute with one key gets 429 (limit `SyncBatchesPerMinute`); `GET /products/sync/{syncId}` returns state, counts and chunk progress; another organization's `syncId` gives the same `ERP_SYNC_NOT_FOUND` as a missing id; `GET .../items` pages by `sync_items.id` (default 1000, max 5000), items carry `code`, `state`, bilingual `message`; `?state=failed` returns only failed items; scope `erp.products.sync` and vendor type enforced; every error body has `ar` and `en`.
   - Done: `gofmt -l internal/modules/erp/http/sync_handlers_test.go` prints nothing; `go test ./internal/modules/erp/http/ -run Sync -count=1` fails (RED).
 
-- [ ] T130 [US2] Add the sync handlers in `internal/modules/erp/http/sync_handlers.go`
+- [x] T130 [US2] Add the sync handlers in `internal/modules/erp/http/sync_handlers.go`
   - Do: `postSync`, `getSync`, `getSyncItems`; add the three routes to `handler.go` in the same task (two files). Shapes follow `openapi.yaml` paths `/products/sync`, `/products/sync/{syncId}`, `/products/sync/{syncId}/items`. Item messages are built from the stored `code` with `i18n.T`. `getSyncItems` reads `state`, `cursor`, `limit`; `limit` default 1000, max 5000.
   - Traps: 9, 24.
   - Done: `go test ./internal/modules/erp/http/ -count=1`.
 
-- [ ] T131 [US2] Add the lazy enqueuer and S2 ports in `cmd/server/erp_wiring.go`
+- [x] T131 [US2] Add the lazy enqueuer and S2 ports in `cmd/server/erp_wiring.go`
   - Do: `erpEnqueuer` that creates `queue.NewInsertOnly(db, log)` on first use (the database handle is not connected at mount time) and implements `erp.Enqueuer`; fill `erp.Ports` with the adapters from `internal/composition/erpports` (matching service for the server comes from the same place `cmd/server` builds it today; find it with `grep -rn "matching.New" cmd/server | head`).
   - Traps: 20.
   - Done: `go build ./cmd/server/ && go test ./cmd/server/ -run Router -count=1`.
 
-- [ ] T132 [US2] Write the review permission test (edit `internal/platform/rbac/erp_perms_test.go`)
+- [x] T132 [US2] Write the review permission test (edit `internal/platform/rbac/erp_perms_test.go`)
   - Do: add `vendor.integration.review` to the expected keys of `TestErpPermsVendor`; `view` is not implied by `review` and `manage` does not imply `review`.
   - Done: `go test ./internal/platform/rbac/ -run TestErpPermsVendor -count=1` fails (RED).
 
-- [ ] T133 [US2] Add `vendor.integration.review` in `internal/platform/rbac/catalog_vendor.go`
+- [x] T133 [US2] Add `vendor.integration.review` in `internal/platform/rbac/catalog_vendor.go`
   - Do: add the key next to the other integration keys.
   - Traps: 29.
   - Done: `go test ./internal/platform/rbac/ -run TestErpPermsVendor -count=1`.
 
-- [ ] T134 [US2] Write the review page tests in `internal/ui/erp_review_test.go`
+- [x] T134 [US2] Write the review page tests in `internal/ui/erp_review_test.go`
   - Do: names start with `TestErpReview`: the list shows open items with candidates; resolve with a candidate product id calls `ResolveReview`; dismiss works; both need `vendor.integration.review`; another organization's item id gives not found; search uses the existing `/vendor/catalog/search-json` (no new search endpoint).
   - Done: `gofmt -l internal/ui/erp_review_test.go` prints nothing; `go test ./internal/ui/ -run ErpReview -count=1` fails (RED).
 
-- [ ] T135 [US2] Add the review page in `internal/ui/pages/erp_review.templ`
+- [x] T135 [US2] Add the review page in `internal/ui/pages/erp_review.templ`
   - Do: `layouts.VendorShell` page listing open review items (code, name, price, reason, candidates) with resolve and dismiss forms. Run templ generate.
   - Traps: 22.
   - Done: `go build ./internal/ui/pages/`.
 
-- [ ] T136 [US2] Add the review handlers in `internal/ui/erp_review_handlers.go`
+- [x] T136 [US2] Add the review handlers in `internal/ui/erp_review_handlers.go`
   - Do: `ErpReviewPage`, `ErpReviewResolve`, `ErpReviewDismiss`, using `h.erpSvc`.
   - Traps: 29.
   - Done: `go test ./internal/ui/ -run ErpReview -count=1`.
 
-- [ ] T137 [US2] Register the review routes in `internal/ui/vendor_routes_erp.go`
+- [x] T137 [US2] Register the review routes in `internal/ui/vendor_routes_erp.go`
   - Do: do not edit `internal/ui/vendor_routes.go`. In `registerVendorERPRoutes(g chi.Router)` (created in T077, parameter name `g`, groups declared as `g.Group(func(gg chi.Router) {...})`) add `GET /vendor/integrations/review`, `POST /vendor/integrations/review/{id}/resolve`, `POST /vendor/integrations/review/{id}/dismiss`, gated by `vendor.integration.review`. Run `TestUIRoutesAreAudienceGated`. Add `erp.review.*` strings to `internal/shared/i18n/catalog_erp_ui.go` in the same task (two files) before building.
   - Traps: 11, 12, 29.
   - Done: `go test ./internal/ui/ -run 'Erp' -count=1 && go test ./test/ -run 'TestEveryRouteGateNamesADeclaredPermission|TestUIRoutesAreAudienceGated' -count=1 && make check-hardcoded-arabic check-file-size`.
 
-- [ ] T138 [US2] Run the S2 flow tests
+- [x] T138 [US2] Run the S2 flow tests
   - Do: run SB-3 and SB-4, then the flow tests. If one fails, fix the code of the earlier S2 task that owns the behavior; do not edit the test unless the test contradicts plan.md, and then record the reason in `verify-notes.md`.
   - Done: `SB-6 go test -p 1 ./test/integration/ -run 'ERPSyncFlow|TestTenantIsolation_ERP' -skip 'Scale50000' -count=1` passes.
 
-- [ ] T138a [US2] Run the SC-002 scale test
+- [x] T138a [US2] Run the SC-002 scale test
   - Do: run SB-3, then `docker restart dawa24audit-pg` and SB-4 (a clean database), then the command below on its own. The SB timeout of 400 s is stricter than the 7-minute window: if the run is killed by it, write `V8a result: SC-002 not met, killed at 400 s` in `verify-notes.md` and stop the slice.
   - Done: `SB go test -p 1 ./test/integration/ -run TestERPSyncFlow_Scale50000 -count=1 -v` passes; copy the two logged durations into `verify-notes.md` as `V8a result: accept <seconds> s, process <seconds> s`.
 

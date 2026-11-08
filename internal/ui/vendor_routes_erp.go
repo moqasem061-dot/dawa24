@@ -24,6 +24,12 @@ func (h *UIHandler) registerVendorERPRoutes(g chi.Router) {
 		gg.Get("/vendor/integrations", h.ErpKeysPage)
 	})
 	g.Group(func(gg chi.Router) {
+		gg.Use(authctx.RequireTenantPagePermission("vendor.integration.review"))
+		gg.Get("/vendor/integrations/review", h.ErpReviewPage)
+		gg.Post("/vendor/integrations/review/{id}/resolve", h.ErpReviewResolve)
+		gg.Post("/vendor/integrations/review/{id}/dismiss", h.ErpReviewDismiss)
+	})
+	g.Group(func(gg chi.Router) {
 		gg.Use(authctx.RequireTenantPagePermission("vendor.integration.manage"))
 		gg.Post("/vendor/integrations/keys", h.ErpKeyCreate)
 		gg.Post("/vendor/integrations/keys/{id}/rotate", h.ErpKeyRotate)

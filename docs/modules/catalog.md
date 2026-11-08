@@ -369,3 +369,7 @@ Discounts retain the existing two-decimal percentage precision.
 like every other tenant table. The former policy read `app.current_tenant`, which
 the application never sets, so owners saw none of their own rows. Code paths that
 use `database.AsSystem` now see every row, as the design intends.
+
+## ERP sync quota writer
+
+`SetVariantQuotaLimits` is called by the ERP product sync. It writes `quota_limit` only — one bulk `UPDATE` per call inside one transaction; `nil` (or a normalised 0/negative) clears the cap, and an empty map writes nothing. Variant ids outside the caller's organization are left untouched by the WHERE clause.

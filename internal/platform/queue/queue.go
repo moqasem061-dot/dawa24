@@ -72,6 +72,35 @@ func New(db *database.DB, workers *river.Workers, cfg config.Worker, log *slog.L
 	}, nil
 }
 
+// NewInsertOnly builds a client that can only enqueue. No queues, no workers,
+// never started: the web process has no River workers (they run in cmd/worker),
+// but it must still accept ERP batches and insert the chunk jobs in the same
+// transaction as the batch rows (the transactional outbox).
+//
+// The database handle must be connected by the time this is called — the
+// composition root wraps it in a lazy enqueuer, because the handle is not
+// connected at mount time (plan trap 20). River accepts a config with nil
+// Queues and nil Workers; that combination is an insert-only client (verify
+// note V1).
+func NewInsertOnly(db *database.DB, log *slog.Logger) (*Client, error) {
+	driver := riverpgxv5.New(db.Pool())
+	riverClient, err := river.NewClient(driver, &river.Config{
+		Queues:     nil,
+		Workers:    nil,
+		Logger:     log,
+		JobTimeout: DefaultJobTimeout,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("queue: create insert-only river client: %w", err)
+	}
+	return &Client{
+		riverClient: riverClient,
+		workers:     nil,
+		log:         log,
+		db:          db,
+	}, nil
+}
+
 // MigrateSchema applies pending River schema migrations (River versions its own
 // tables in river_migration). It runs from `cli migrate`, as the schema owner,
 // alongside the application's migrations: the worker connects as the

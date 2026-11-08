@@ -601,3 +601,33 @@ The wider point is the same one ADR 0017 makes from the other direction. A ratch
 and a proxy stops being useful at the boundary where the thing it counts and the thing you
 care about come apart. Driving this one to literal zero would have been measurable, defensible
 on the number, and a product regression.
+
+## ADR-ERP-1 - Shared ERP port adapters
+
+**Status:** Accepted (2026-11-08)
+
+### Context
+
+The ERP sync runs in two processes: the web process accepts batches and
+serves per-item results, the worker processes the chunks. Both need the same
+four sibling-module writes — catalog variants and quotas, inventory balances,
+the deterministic matcher, and its knowledge store. The module boundary rules
+forbid `internal/modules/erp` from importing sibling modules, and wiring the
+two processes independently would duplicate the adaptation logic with nothing
+holding the copies together.
+
+### Decision
+
+The four adapters live in `internal/composition/erpports`, one small package
+beside the composition root. They are field-conversion only and are imported
+exclusively from `cmd/server` (through the lazy ERP wiring) and `cmd/worker`
+(through `registerERPWorkers`). A future ERP provider adds no adapter: only a
+provider package.
+
+### Consequences
+
+The package is not covered by `TestModulesDoNotImportEachOther`, which inspects
+`internal/modules/*` only — that is deliberate, since the package exists to
+adapt modules for the composition root. Keeping the adapters to field
+conversion is what makes that safe: any judgment call that appears belongs in
+the owning module, behind a port.
