@@ -266,3 +266,77 @@ Deviations from the names in the task text (all additive, same behaviour as the 
 Migration 258 (`db/migrations/258_order_number_sequence.up.sql`, `.down.sql`): sequence start at MAX(numeric order number)+1000, grant to `dawa24_app` in the role block, Arabic comment. Expand-only; rollback to the old image is safe.
 
 Not done in this run: SB-5 for T230 is covered by the SB-6 run above (the stricter form). A comment-only edit to `offers.go` came after the SB-6 run and was checked on the host only.
+
+S8 (T231 to T246), run 3: PARTIAL, NOT COMMITTED. Stopped before T237; the slice gate (T246) and its commit are not run.
+
+Done in the working tree (uncommitted, outside the S7 commit):
+- T231 RED: `internal/shared/mask/mask_test.go` written; `go test ./internal/shared/mask/` failed to build (`undefined: Email`). GREEN after T232.
+- T232: `internal/shared/mask/mask.go` (`Number`, `Phone`, `Email`; last three characters kept, rune-based so Arabic-Indic digits mask the same way). `go test ./internal/shared/mask/` passes.
+- T233 to T235: `platform.reveal.sensitive` (admin catalog, `catalog_admin.go`) and `vendor.reveal.customer_contact` (vendor catalog, `catalog_vendor.go`), with `revealGranted` checks in `erp_perms_test.go`. Deviation: the test and the catalog entries were written in one step, so the RED run was not captured. `go test ./internal/platform/rbac/ -run 'TestErpPermsAdmin|TestErpPermsVendor'` passes.
+- T236: `reveal.button`, `reveal.hide`, `reveal.masked_hint` added to `catalog_erp_ui.go`. `go test ./internal/shared/i18n/` passes. `make check-hardcoded-arabic` was not run (make is not installed here), so T236 stays unchecked.
+
+Not done: T237 (reveal handler tests), T238 (`reveal_kinds.go`), T239 (`reveal_handlers.go`), T240 (route registration in `RegisterApprovedSharedRoutes`, gate `RequirePermission` over the two reveal keys with the kind check in the handler), T241 (`reveal_field.templ` and templ generate), T242 (page source tests), T243 to T245 (the three templ pages), T246 (gate and commit).
+
+Notes for the next run:
+- The admin org page renders `data.Organization.TaxNumber` and similar fields directly (`pages/admin_org_detail.templ` around lines 194 to 216, generated at about 428 to 470). Wrapping them with `RevealField(kind, id, mask.Number(...), canReveal)` inside the template keeps the clear value out of the HTML.
+- Gate patterns: `authctx.RequirePagePermission` (audience-wide page) and `authctx.RequireTenantPagePermission` (tenant pages), seen in `internal/ui/admin_routes_platform.go` and `internal/ui/vendor_routes_erp.go`.
+- Each reveal outcome must write its own audit row in its own transaction (a deny row survives), so the handler needs an unexported audit seam (rule 15) for the unit tests; the database-backed writer is the production path.
+
+S8 (T231 to T246), run 4: STOPPED at T237 on a BLOCKER. Nothing committed; the S8 working tree (T231 to T236) stays uncommitted. Polish (T247 to T252) not started, because S8 is its prerequisite.
+
+Checks this run:
+- SB-0: `df -h /c` 8.4 GB free. No sandbox step run (no database test was needed before the blocker).
+- T236 ticked. `make` is not installed here, so the `check-hardcoded-arabic` recipe body was run directly with bash: 0 user-facing Arabic literals in Go (ceiling 0). `go test ./internal/shared/i18n/ -count=1` ok.
+- T231 to T235 still pass: `go test ./internal/shared/mask/ ./internal/platform/rbac/ -count=1` ok; gofmt clean on the touched files.
+
+BLOCKER (T237 to T239, reveal handlers; owner decision needed):
+- What: the admin kinds `org.tax_number`, `org.commercial_register`, `org.pharmacist_license`, `org.phone` and `org.email` read another organization's row. The only read path is `org.Service.GetOrganization`, which calls `org/postgres/repository.go` `GetOrganizationByID`, and that runs `database.AsSystem`. Organization rows are visible to a tenant only through `platform.tenant_visible` (`db/migrations/001_foundation.up.sql`), so a non-system read cannot return them.
+- Why stopped: plan.md trap 1 allows system reads only for E1 to E8, and the owner rule says a new AsSystem read needs owner approval. A `POST /reveal` that takes an arbitrary `id` and returns the clear value is a new cross-tenant read surface. The existing admin detail page makes the same read, but it does not add a new route that does it per value.
+- Second conflict: research.md D-23 says "Only the gateway username can be revealed (owner decision, 2026-11-07, orgasoft-decisions item 15)" in the same bullet that lists seven allowlisted kinds. FR-032, plan.md step 3 and T237 require the seven. Both cannot hold.
+- Not blocked by this: `branch.phone` (supplier) uses `commSvc.GetVendorShipmentOrByOrderID(ctx, orderID, actor.OrganizationID)`, the call the vendor order page already makes under the supplier's tenant context, so it refuses any order the supplier did not ship. `gateway.admin_username` uses the existing `adminSvc.GetGatewaySettings`, the same call the admin developers page makes.
+- Options:
+  (a) Approve a named exception E9 in plan.md: the five organization kinds read through the existing `GetOrganization` (AsSystem inside the org repository), reachable only on the staff route gated by `platform.reveal.sensitive`. Every grant and deny writes its audit row in its own transaction. Also confirm D-23 means the seven kinds (fix the sentence that says only the username).
+  (b) Remove the five organization kinds from the allowlist. They stay masked with no reveal. Reveal then covers `branch.phone` and `gateway.admin_username` only. This needs FR-032, T237, T242 and T243 changed, and it matches D-23's sentence if that is what the 2026-11-07 decision meant.
+- Recommendation: (a), if the 2026-11-07 decision meant "of the secrets, only the gateway username is revealable". Ask the owner which meaning was decided, because (a) and (b) differ on the five kinds.
+- Gate effect: T237 to T246 not run; S8 not committed; no S8 gate tick; T247 to T252 not started. Nothing pushed.
+
+S8 owner decision (2026-11-08): option (a), "Yes, staff reveal".
+- Named exception E9 is approved: staff-only reveal of the five organization kinds (org.tax_number, org.commercial_register, org.pharmacist_license, org.phone, org.email).
+- The value is read through the existing `orgSvc.GetOrganization` system read that admin pages already use (admin_org_detail_handlers.go, admin_approvals_action_handlers.go), so no new SQL is added.
+- The read is gated by `platform.reveal.sensitive`. Every grant and every refusal is audited, and no value is logged.
+- Add E9 to plan.md's exceptions table.
+- Fix research.md D-23's sentence to say: of the gateway credentials, only the admin username is revealable. Passwords and keys never are.
+- FR-032 and T237 stand as written (seven kinds).
+
+S8 (T237 to T246), run 5: DONE, committed at the slice gate. Owner decision (2026-11-08, option a, named exception E9) applied as written; E9 is in plan.md's table.
+
+RED records:
+- T237: `go test ./internal/ui/ -run Reveal -count=1` failed to build (`f.handler.RevealSubmit undefined`). Before T239, the route test failed with 404 on `POST /reveal` (route not mounted yet, T240).
+- T242: `go test ./internal/ui/ -run RevealPages -count=1` failed to build (`undefined: maskedOrganization`, `maskedShipment`; unknown fields `CanReveal`, `GatewayAdminMasked`, `CanRevealGateway`). Before T243 to T245.
+- T233 RED: not captured (test and catalog entries were written together in run 3). Recorded in run 3.
+
+GREEN (run 5): `go test ./internal/ui/ -run TestReveal -count=1 -v` passes all 10 top-level tests (21 subtests). The tests use fake repositories that embed the service interfaces; no database, so SB-6 is not needed for them. Covered: each allowlisted kind grants with its permission and writes `reveal.grant`; wrong permission gives `REVEAL_FORBIDDEN` with a `reveal.deny` row; secrets and unknown kinds give `REVEAL_NOT_REVEALABLE` and never show a value; missing record or an order the caller did not ship gives `REVEAL_NOT_FOUND`; one audit row per outcome; a failed audit write refuses the grant (fail closed); a request without the CSRF token is refused (`httpx.CSRF(true)`) and writes no row; the route is mounted on the approved tier.
+
+Files: `internal/ui/reveal_kinds.go` (allowlist, T238), `internal/ui/reveal_handlers.go` (T239), `internal/ui/components/reveal_field.templ` (T241, with `_templ.go`), `internal/ui/reveal_views.go` (masked copies used by the three pages), the three page templates and their handlers (T243 to T245), `internal/ui/handlers.go` (T240).
+
+Deviations (owner to confirm):
+1. Route gate: `POST /reveal` has no route-level `Require...` gate. Each kind's permission is checked in `RevealSubmit`, and every refusal writes its row there. A route gate would refuse a caller without a reveal key before any row is written. To satisfy `TestEveryDashboardRouteSitsBehindAPermission`, the route is in `routesWithoutPermissionGate` with that reason (`internal/ui/route_guard_audit_test.go`).
+2. `RevealField` takes a `lang` argument (the spec signature had four arguments) so its button text follows the page language. The revealed value and the refusal use `RevealedValue` and `RevealRefusal`, which the handler renders.
+3. Hide is `data-on-click="location.reload()"`. The CSP forbids inline handlers, and the reload restores the masked page.
+4. `branch.phone` takes the ORDER id (the id the vendor order page already has). The scope check is `commSvc.GetVendorShipmentOrByOrderID(ctx, orderID, actor.OrganizationID)`, the same call the page makes. An order the caller did not ship answers `REVEAL_NOT_FOUND`.
+5. T243 asked for phone and email on `admin_org_detail.templ`. That page shows neither field, so no reveal control was added for `org.phone` or `org.email`. Both kinds are allowlisted and tested at the handler. Adding display rows would be new UI scope.
+6. A grant writes its audit row first and is refused when that row cannot be written (fail closed). Deny rows go through the identity service, which writes in its own transaction, so they survive. A request refused by the approval gate before the handler has no actor and writes no row.
+7. The admin developers page used to put the stored admin username in clear inside the `x-data` attribute of `admin_developers_ai.templ`. That is removed. The input now starts empty (`adminAIManager` default changed from `'admin'` to empty), as T245 requires.
+8. `vendor_order_detail_test.go`: the assertion "detail page must display branch phone" encoded the clear display, which FR-032 forbids. It now asserts that the clear number is absent and the masked form is present.
+
+Pre-existing failure (not caused by S8): `TestHomepageCriticalCSSIsCurrent` fails at HEAD `c3a8aa7`. Checked in a clean worktree of HEAD (since removed). The hash in `static/critical/home.sha256` covers every `.templ`, `.css` and `.woff2` under `internal/ui`, so every template edit makes it stale. Per rule 9 the hash was not refreshed (no CSS or homepage template changed). Owner decision needed: refresh it, or narrow the test's file list.
+
+FR-032 open items (found during T244, not fixed because they are outside T244's scope). The buyer branch phone is still shown in clear with a `tel:` link on these supplier screens: `internal/ui/pages/vendor_order_shipment_card.templ:155-156` (the supplier order list), `vendor_delivery_detail.templ:119-125, 222-229, 247-254`, `vendor_delivery_card.templ:222-240`, `vendor_dashboard_modals.templ:53-54`. Owner decision needed: mask them with `RevealField` (kind `branch.phone`, id = order id) or accept them.
+
+Gate results (run 5, host):
+- `go build ./...` ok. `go vet ./internal/shared/mask/ ./internal/platform/rbac/ ./internal/ui/... ./internal/shared/i18n/` ok. `gofmt -l` on the changed Go files prints nothing (templ files are not gofmt input).
+- `go test ./internal/shared/mask/ ./internal/platform/rbac/ ./internal/shared/i18n/ -count=1` ok.
+- `go test ./internal/ui/ -count=1`: only `TestHomepageCriticalCSSIsCurrent` fails (pre-existing, above). The vendor order detail and dashboard-route tests pass after deviations 1 and 8.
+- `go test ./test/ -run 'TestEveryRouteGateNamesADeclaredPermission|TestUIRoutesAreAudienceGated|TestTenantGatesUseTenantScopedPermissions|TestNoDashboardRouteIsRegisteredOutsideAGate' -count=1` ok. `go test ./test/ -run TestDeadcodeRatchet` ok.
+- `make` is not installed. The recipe bodies were run directly with bash (`$$` changed to `$`): `check-hardcoded-arabic` prints `ok: 0 user-facing Arabic literals in Go (ceiling 0)`; `check-unused-components` prints `ok: every component is referenced`.
+- `check-file-size`: not run as a gate; the owner says to ignore the 400-line limit.

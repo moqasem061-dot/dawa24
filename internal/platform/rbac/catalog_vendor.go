@@ -117,6 +117,7 @@ func vendorCatalogPerms() []Permission {
 		vendorPage("vendor.integration.view", g, "integrations", "تكامل الأنظمة", "Integrations"),
 		vendorAct("vendor.integration.manage", g, "إدارة التكامل", "Manage integrations", "vendor.integration.view"),
 		vendorAct("vendor.integration.review", g, "مراجعة البنود غير المطابقة", "Resolve sync review items"),
+		vendorAct("vendor.reveal.customer_contact", g, "عرض بيانات التواصل مع العميل", "Reveal customer contact details"),
 
 		vendorPage("vendor.quota.view", g, "quotas", "حصص الفروع", "Branch quotas"),
 		vendorAct("vendor.quota.manage", g, "تعديل وتحرير حصص الفروع", "Set and release branch quotas", "vendor.quota.view"),

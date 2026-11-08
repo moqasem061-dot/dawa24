@@ -15,6 +15,9 @@ type VendorOrderDetailData struct {
 	NoticeMsg  string
 	Lang       string
 	Dir        string
+	// CanReveal is the caller's vendor.reveal.customer_contact grant. Shipment already
+	// carries the masked branch phone; this decides only whether it gets a reveal control.
+	CanReveal bool
 }
 
 type VendorShipmentFinancialSummary struct {

@@ -1174,76 +1174,76 @@ Goal: the ERP creates a purchase order for its own organization at Dawa24 prices
 
 Goal: sensitive values are masked on screen and revealed one at a time with an audit row. Needs only T026 to T029 of S1 (the i18n files and the rbac test file); independent of S2 to S7. Independent test: open a masked field, reveal it as a permitted user, see the audit row; an unpermitted user is refused and logged.
 
-- [ ] T231 [P] [US7] Write the mask tests in `internal/shared/mask/mask_test.go`
+- [x] T231 [P] [US7] Write the mask tests in `internal/shared/mask/mask_test.go`
   - Do: table tests for `Phone`, `Email`, `Number`: keep the last 3 characters; values of 3 characters or fewer fully masked; empty stays empty; email keeps the domain; Arabic-Indic digits handled.
   - Done: `gofmt -l internal/shared/mask/mask_test.go` prints nothing; `go test ./internal/shared/mask/ -count=1` fails to compile (RED).
 
-- [ ] T232 [US7] Add the mask functions in `internal/shared/mask/mask.go`
+- [x] T232 [US7] Add the mask functions in `internal/shared/mask/mask.go`
   - Do: `Phone(s string) string`, `Email(s string) string`, `Number(s string) string`, pure; `shared` imports nothing from this repository.
   - Done: `go test ./internal/shared/mask/ -count=1`.
 
-- [ ] T233 [US7] Write the reveal permission tests (edit `internal/platform/rbac/erp_perms_test.go`)
+- [x] T233 [US7] Write the reveal permission tests (edit `internal/platform/rbac/erp_perms_test.go`)
   - Do: add `platform.reveal.sensitive` (admin catalog) to `TestErpPermsAdmin` and `vendor.reveal.customer_contact` (vendor catalog) to `TestErpPermsVendor`.
   - Done: `go test ./internal/platform/rbac/ -run 'TestErpPermsAdmin|TestErpPermsVendor' -count=1` fails (RED).
 
-- [ ] T234 [P] [US7] Add `platform.reveal.sensitive` in `internal/platform/rbac/catalog_admin.go`
+- [x] T234 [P] [US7] Add `platform.reveal.sensitive` in `internal/platform/rbac/catalog_admin.go`
   - Do: add the permission key.
   - Traps: 29.
   - Done: `go test ./internal/platform/rbac/ -run TestErpPermsAdmin -count=1`.
 
-- [ ] T235 [P] [US7] Add `vendor.reveal.customer_contact` in `internal/platform/rbac/catalog_vendor.go`
+- [x] T235 [P] [US7] Add `vendor.reveal.customer_contact` in `internal/platform/rbac/catalog_vendor.go`
   - Do: add the permission key.
   - Traps: 29.
   - Done: `go test ./internal/platform/rbac/ -run TestErpPermsVendor -count=1`.
 
-- [ ] T236 [US7] Add reveal button strings in `internal/shared/i18n/catalog_erp_ui.go`
+- [x] T236 [US7] Add reveal button strings in `internal/shared/i18n/catalog_erp_ui.go`
   - Do: `reveal.button`, `reveal.hide`, `reveal.masked_hint` bilingual (the three `erp.err.reveal_*` messages already exist from S1).
   - Traps: 12.
   - Done: `go test ./internal/shared/i18n/ -count=1 && make check-hardcoded-arabic`.
 
-- [ ] T237 [US7] Write the reveal handler tests in `internal/ui/reveal_handlers_test.go`
+- [x] T237 [US7] Write the reveal handler tests in `internal/ui/reveal_handlers_test.go`
   - Do: names start with `TestReveal`: each allowlisted kind (`org.tax_number`, `org.commercial_register`, `org.pharmacist_license`, `org.phone`, `org.email` admin only, `branch.phone` supplier only for a branch on an order shipped by the caller's organization, `gateway.admin_username` admin) grants with the right permission and returns an HTML fragment holding the value; wrong permission gives `REVEAL_FORBIDDEN`; unknown kind, gateway password, virtual key, AI key and ERP key give `REVEAL_NOT_REVEALABLE`; missing record gives `REVEAL_NOT_FOUND`; each outcome writes one audit row `reveal.grant` or `reveal.deny` with entity kind and id and no value, in its own transaction (a deny row survives); a request without CSRF is refused.
   - Done: `gofmt -l internal/ui/reveal_handlers_test.go` prints nothing; `go test ./internal/ui/ -run Reveal -count=1` fails (RED).
 
-- [ ] T238 [P] [US7] Add the reveal allowlist in `internal/ui/reveal_kinds.go`
+- [x] T238 [P] [US7] Add the reveal allowlist in `internal/ui/reveal_kinds.go`
   - Do: `type revealKind struct{ Permission string; Load func(ctx context.Context, h *UIHandler, actor authctx.Actor, id int64) (string, error); Audience string }` and `var revealKinds = map[string]revealKind{...}` for the seven kinds. Load each value through the service call the existing page already uses (find it with `grep -rn "tax_number\|commercial_register" internal/ui/*.go | head`), not new SQL in `ui`. Separate file because `reveal_handlers.go` would pass 350 lines.
   - Done: `go build ./internal/ui/`.
 
-- [ ] T239 [US7] Add the reveal handler in `internal/ui/reveal_handlers.go`
+- [x] T239 [US7] Add the reveal handler in `internal/ui/reveal_handlers.go`
   - Do: `func (h *UIHandler) Reveal(w, r)` for `POST /reveal` (fields `kind`, `id`): allowlist lookup, permission check, load, audit row, HTML fragment response for an htmx swap.
   - Traps: 24.
   - Done: `go test ./internal/ui/ -run Reveal -count=1`.
 
-- [ ] T240 [US7] Register `POST /reveal` in `internal/ui/handlers.go`
+- [x] T240 [US7] Register `POST /reveal` in `internal/ui/handlers.go`
   - Do: register it inside `RegisterApprovedSharedRoutes` (about line 287) with the gate naming the reveal permissions and CSRF protection.
   - Traps: 29.
   - Done: `go test ./test/ -run 'TestEveryRouteGateNamesADeclaredPermission|TestUIRoutesAreAudienceGated' -count=1`.
 
-- [ ] T241 [US7] Add the reveal field component in `internal/ui/components/reveal_field.templ`
+- [x] T241 [US7] Add the reveal field component in `internal/ui/components/reveal_field.templ`
   - Do: `RevealField(kind string, id int64, maskedValue string, canReveal bool)`: renders only the masked value; when `canReveal`, a button posting to `/reveal` with htmx and swapping the span. Run templ generate.
   - Traps: 22.
   - Done: `go build ./internal/ui/components/`. (`make check-unused-components` fails until a page uses the component; it runs in T245 and T246.)
 
-- [ ] T242 [US7] Write the page source tests in `internal/ui/reveal_pages_test.go`
+- [x] T242 [US7] Write the page source tests in `internal/ui/reveal_pages_test.go`
   - Do: `TestRevealPagesHideValues`: render the admin organization detail, the vendor order detail and the admin developers page with known sensitive values and assert with `strings.Contains` that the clear value is absent from the HTML (SC-010), the masked form is present, the buyer branch phone has no `tel:` link until revealed, and no gateway password, virtual key or AI provider key appears in any of the three pages. `TestRevealEveryGrantAuditsOnce`: n reveals produce n audit rows.
   - Done: `gofmt -l internal/ui/reveal_pages_test.go` prints nothing; `go test ./internal/ui/ -run RevealPages -count=1` fails (RED).
 
-- [ ] T243 [P] [US7] Use Reveal in `internal/ui/pages/admin_org_detail.templ`
+- [x] T243 [P] [US7] Use Reveal in `internal/ui/pages/admin_org_detail.templ`
   - Do: at lines about 196 to 215 replace commercial register, tax number, pharmacist license, phone and email with `RevealField`; the view struct and its handler pass the masked value (`mask.Number`, `mask.Phone`, `mask.Email`), never the clear one. Run templ generate. Touched: the templ file and the view builder file that fills it (find with `grep -rn "AdminOrgDetail" internal/ui/*.go | head -3`).
   - Traps: 22.
   - Done: `go test ./internal/ui/ -run RevealPages -count=1` (admin case passes).
 
-- [ ] T244 [P] [US7] Use Reveal in `internal/ui/pages/vendor_order_detail.templ`
+- [x] T244 [P] [US7] Use Reveal in `internal/ui/pages/vendor_order_detail.templ`
   - Do: at lines 105 to 108 mask the buyer branch phone with `RevealField` kind `branch.phone`, remove the `tel:` link until revealed; the handler passes the masked value. Run templ generate. Touched: the templ file and the vendor order detail handler file.
   - Traps: 22.
   - Done: `go test ./internal/ui/ -run RevealPages -count=1` (vendor case passes).
 
-- [ ] T245 [P] [US7] Use Reveal in `internal/ui/pages/admin_developers_ai.templ`
+- [x] T245 [P] [US7] Use Reveal in `internal/ui/pages/admin_developers_ai.templ`
   - Do: the gateway administrator username on this page is an editable input (`name="admin_username"`, lines 152 to 155), not a display field. Keep the `admin_username` input empty with its placeholder, and render `RevealField(kind=gateway.admin_username)` beside it as a read-only display of the stored value; the submit still posts only the typed value. If no value is stored, show nothing. The password stays unrendered as it is today. Run templ generate. Touched: the templ file and its handler file.
   - Traps: 22.
   - Done: `go test ./internal/ui/ -run Reveal -count=1` and `make check-unused-components`.
 
-- [ ] T246 [US7] S8 slice gate
+- [x] T246 [US7] S8 slice gate
   - Do: slice gate. Changed packages: `./internal/shared/mask/ ./internal/platform/rbac/ ./internal/ui/... ./internal/shared/i18n/`. Focused tests: `go test ./internal/shared/mask/ ./internal/platform/rbac/ -count=1`; `go test ./internal/ui/ -run Reveal -count=1`; `go test ./test/ -run 'TestEveryRouteGateNamesADeclaredPermission|TestUIRoutesAreAudienceGated' -count=1`; `make check-hardcoded-arabic check-unused-components`.
   - Commit message: `feat(erp): S8 reveal for sensitive values`. No push, merge or deploy.
   - Done: `git log -1 --format=%s` prints the commit message.

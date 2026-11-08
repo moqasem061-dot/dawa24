@@ -14,6 +14,7 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
 	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
 	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/shared/money"
@@ -141,8 +142,12 @@ func (h *UIHandler) AdminOrganizationDetailPage(w http.ResponseWriter, r *http.R
 		}
 	}
 
+	// The page gets a masked copy: the clear tax number, register and licence
+	// never reach the view (plan.md S8, FR-032).
+	actor, _ := authctx.From(ctx)
 	data := pages.AdminOrgDetailData{
-		Organization:        organization,
+		Organization:        maskedOrganization(organization),
+		CanReveal:           actor.Can(revealPermStaff),
 		Branches:            branches,
 		Employees:           employees,
 		Documents:           docs,

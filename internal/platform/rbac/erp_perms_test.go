@@ -31,6 +31,7 @@ func testERPAccess(t *testing.T, scope rbac.Scope, view, action string, implies 
 }
 func TestErpPermsVendor(t *testing.T) {
 	testERPAccess(t, rbac.ScopeVendor, "vendor.integration.view", "vendor.integration.manage", true)
+	revealGranted(t, rbac.ScopeVendor, "vendor.reveal.customer_contact")
 	c := rbac.Default()
 	review, ok := c.Lookup("vendor.integration.review")
 	if !ok || !review.InScope(rbac.ScopeVendor) {
@@ -50,4 +51,14 @@ func TestErpPermsPharmacy(t *testing.T) {
 }
 func TestErpPermsAdmin(t *testing.T) {
 	testERPAccess(t, rbac.ScopeAdmin, "platform.integration.view", "platform.integration.revoke", false)
+	revealGranted(t, rbac.ScopeAdmin, "platform.reveal.sensitive")
+}
+
+// revealGranted checks that a reveal permission is in the catalog for the scope.
+func revealGranted(t *testing.T, scope rbac.Scope, key string) {
+	t.Helper()
+	p, ok := rbac.Default().Lookup(key)
+	if !ok || !p.InScope(scope) {
+		t.Errorf("%s is missing from %s", key, scope)
+	}
 }

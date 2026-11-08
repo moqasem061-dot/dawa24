@@ -166,7 +166,10 @@ func (h *UIHandler) VendorOrderDetailPage(w http.ResponseWriter, r *http.Request
 	noticeMsg := r.URL.Query().Get("msg")
 
 	data := pages.VendorOrderDetailData{
-		Shipment:   shipment,
+		// The buyer branch phone is masked in the copy the page renders
+		// (plan.md S8, FR-032); the reveal control names the order.
+		Shipment:   maskedShipment(shipment),
+		CanReveal:  actor.Can(revealPermSupplier),
 		History:    history,
 		CanAssign:  canAssign,
 		CanEdit:    shipment.Status == commerce.StatusPending && actor.Can("vendor.order.update"),

@@ -15,6 +15,7 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/mask"
 	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 	"github.com/moqasem061-dot/dawa24/internal/ui"
 	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
@@ -188,8 +189,13 @@ func TestVendorOrderDetailPage_RenderAndData(t *testing.T) {
 		if !strings.Contains(body, "د. أحمد محمود") {
 			t.Error("detail page must display manager name")
 		}
-		if !strings.Contains(body, "01099887766") {
-			t.Error("detail page must display branch phone")
+		// FR-032 (S8): the buyer branch phone is masked until revealed, so the clear
+		// number must not be in the page and its masked form must be.
+		if strings.Contains(body, "01099887766") {
+			t.Error("detail page must not show the branch phone in clear (FR-032)")
+		}
+		if !strings.Contains(body, mask.Phone("01099887766")) {
+			t.Error("detail page must show the masked branch phone")
 		}
 
 		// 3. Line items & Discount Percentages

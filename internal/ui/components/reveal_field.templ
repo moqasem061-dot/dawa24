@@ -1,0 +1,55 @@
+package components
+
+import (
+	"encoding/json"
+	"strconv"
+	"strings"
+
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+)
+
+// RevealField shows a sensitive value masked (plan.md S8, FR-032). maskedValue is
+// the only text this markup holds: the clear value reaches the page only in the
+// response to a successful POST /reveal, which replaces this element with
+// RevealedValue. canReveal adds the button; a caller without the grant sees the
+// masked value alone.
+templ RevealField(kind string, id int64, maskedValue string, canReveal bool, lang string) {
+	<span class="d-inline-flex items-center gap-2 reveal-field" id={ revealFieldID(kind, id) } title={ i18n.T(lang, "reveal.masked_hint") }>
+		<span class="font-mono tabular-nums" dir="ltr">{ maskedValue }</span>
+		if canReveal {
+			<button
+				type="button"
+				class="btn btn-ghost btn-xs"
+				hx-post="/reveal"
+				hx-vals={ revealVals(kind, id) }
+				hx-target={ "#" + revealFieldID(kind, id) }
+				hx-swap="outerHTML"
+			>{ i18n.T(lang, "reveal.button") }</button>
+		}
+	</span>
+}
+
+// RevealedValue is the successful answer to POST /reveal: the clear value and a
+// hide control. Hide reloads the page, which renders the masked form again.
+templ RevealedValue(kind string, id int64, value string, lang string) {
+	<span class="d-inline-flex items-center gap-2 reveal-field" id={ revealFieldID(kind, id) }>
+		<span class="font-mono tabular-nums" dir="ltr" data-revealed="true">{ value }</span>
+		<button type="button" class="btn btn-ghost btn-xs" data-on-click="location.reload()">{ i18n.T(lang, "reveal.hide") }</button>
+	</span>
+}
+
+// RevealRefusal is the body of a refused reveal. htmx does not swap a 4xx answer,
+// so the app's error toast shows the status; the element keeps the code for tests
+// and for anyone reading the response.
+templ RevealRefusal(code string, message string) {
+	<span class="text-danger text-xs" data-reveal-error={ code }>{ message }</span>
+}
+
+func revealFieldID(kind string, id int64) string {
+	return "reveal-" + strings.ReplaceAll(kind, ".", "-") + "-" + strconv.FormatInt(id, 10)
+}
+
+func revealVals(kind string, id int64) string {
+	b, _ := json.Marshal(map[string]string{"kind": kind, "id": strconv.FormatInt(id, 10)})
+	return string(b)
+}

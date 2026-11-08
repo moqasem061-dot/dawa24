@@ -65,6 +65,7 @@ func adminOverviewPerms() []Permission {
 	return []Permission{
 		adminPage("platform.integration.view", g, "integrations", "تكامل الأنظمة", "Integrations"),
 		adminAct("platform.integration.revoke", g, "إلغاء مفاتيح التكامل", "Revoke integration keys", "platform.integration.view"),
+		adminAct("platform.reveal.sensitive", g, "عرض البيانات الحساسة", "Reveal sensitive values"),
 		adminPage("platform.dashboard.view", g, "dashboard", "لوحة المعلومات الرئيسية", "Main dashboard"),
 		adminPage("notifications.center.view", g, "notifications", "مركز الإشعارات والتنبيهات", "Notification centre"),
 		adminAct("notifications.center.send", g, "إرسال إشعار", "Send notification", "notifications.center.view"),

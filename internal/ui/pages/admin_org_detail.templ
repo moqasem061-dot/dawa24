@@ -31,6 +31,10 @@ type AdminOrgDetailData struct {
 	BaseMaxDevices      int
 	TotalMaxSessions    int
 	ActiveSessionsCount int
+	// CanReveal is the caller's platform.reveal.sensitive grant. The values in
+	// Organization are already masked by the handler; this decides only whether
+	// each one gets a reveal control.
+	CanReveal bool
 }
 
 templ AdminOrganizationDetailPage(data AdminOrgDetailData, lang, dir string) {
@@ -192,7 +196,7 @@ templ AdminOrganizationDetailPage(data AdminOrgDetailData, lang, dir string) {
 							<div class="label-strong">رقم السجل التجاري (CR)</div>
 							<div class="font-black text-primary text-base mt-0.5 tabular-nums">
 								if data.Organization.CommercialRegister != "" {
-									{ data.Organization.CommercialRegister }
+									@components.RevealField("org.commercial_register", data.Organization.ID, data.Organization.CommercialRegister, data.CanReveal, lang)
 								} else {
 									<span class="text-muted text-xs">غير مسجل</span>
 								}
@@ -203,7 +207,7 @@ templ AdminOrganizationDetailPage(data AdminOrgDetailData, lang, dir string) {
 							<div class="label-strong">الرقم الضريبي (Tax ID)</div>
 							<div class="font-black text-primary text-base mt-0.5 tabular-nums">
 								if data.Organization.TaxNumber != "" {
-									{ data.Organization.TaxNumber }
+									@components.RevealField("org.tax_number", data.Organization.ID, data.Organization.TaxNumber, data.CanReveal, lang)
 								} else {
 									<span class="text-muted text-xs">غير مسجل</span>
 								}
@@ -214,7 +218,7 @@ templ AdminOrganizationDetailPage(data AdminOrgDetailData, lang, dir string) {
 							<div class="label-strong">رقم ترخيص الصيدلي / المنشأة</div>
 							<div class="font-black text-brand text-base mt-0.5 tabular-nums">
 								if data.Organization.PharmacistLicense != "" {
-									{ data.Organization.PharmacistLicense }
+									@components.RevealField("org.pharmacist_license", data.Organization.ID, data.Organization.PharmacistLicense, data.CanReveal, lang)
 								} else {
 									<span class="text-muted text-xs">غير مسجل</span>
 								}

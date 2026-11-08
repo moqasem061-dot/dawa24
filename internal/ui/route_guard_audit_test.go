@@ -35,6 +35,11 @@ var routesWithoutPermissionGate = map[string]string{
 	"POST /customer/branches/active": "choosing your own active branch is an account action",
 	"GET /cart/count-badge":          "count badge on navbar for any authenticated caller",
 
+	// Reveal of one sensitive value (plan.md S8). RevealSubmit checks the kind's
+	// permission itself and writes an audit row for every grant and every refusal.
+	// A route-level gate would refuse a caller with no reveal key without that row.
+	"POST /reveal": "the kind's permission is checked in the handler, which audits every refusal",
+
 	// --- the shared tiers, in handlers.go --------------------------------
 	//
 	// These came into view when this audit stopped trusting the *routes*.go

@@ -371,6 +371,12 @@ func (h *UIHandler) RegisterApprovedSharedRoutes(r chi.Router) {
 	r.Get("/requests", h.RequestsPage)
 	r.Post("/messages/{id}/send", h.MessagesSendSubmit)
 	r.Post("/requests", h.RequestCreateSubmit)
+
+	// Reveal of one sensitive value (plan.md S8). Staff and supplier grants differ
+	// per kind, so there is no route-level gate: RevealSubmit checks the kind's
+	// permission itself, and every refusal writes its audit row. A route gate here
+	// would refuse without that row.
+	r.Post("/reveal", h.RevealSubmit)
 }
 
 // SetERP supplies the ERP integration service.

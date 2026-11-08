@@ -105,7 +105,7 @@ templ VendorOrderDetail(data VendorOrderDetailData) {
 						if sh.CustomerBranchPhone != "" {
 							<div>
 								<span class="text-muted d-block text-2xs">رقم الهاتف:</span>
-								<a href={ templ.SafeURL(fmt.Sprintf("tel:%s", sh.CustomerBranchPhone)) } class="text-brand font-mono dir-ltr d-inline-block hover:underline">{ sh.CustomerBranchPhone }</a>
+								@components.RevealField("branch.phone", sh.OrderID, sh.CustomerBranchPhone, data.CanReveal, data.Lang)
 							</div>
 						}
 					</div>

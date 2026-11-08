@@ -82,13 +82,13 @@ func getAIToolRows(configured []*platformadmin.AIRoleModel) []AIToolRow {
 
 templ AdminDevelopersAITab(values AdminDevelopersValues, lang string) {
 	{{
-		storedUser, storedPass := values.GatewaySettings.AdminCredentials()
+		_, storedPass := values.GatewaySettings.AdminCredentials()
 		hasStoredPassword := storedPass != ""
 	}}
 	<div
 		x-show="activeTab === 'ai'"
 		class="stack-lg"
-		x-data={ fmt.Sprintf("adminAIManager(%q, %q, %t)", values.GatewaySettings.EndpointURL, storedUser, hasStoredPassword) }
+		x-data={ fmt.Sprintf("adminAIManager(%q, %q, %t)", values.GatewaySettings.EndpointURL, "", hasStoredPassword) }
 		x-cloak
 	>
 		<!-- 1. الاتصال: Gateway Connection & Credentials -->
@@ -159,6 +159,12 @@ templ AdminDevelopersAITab(values AdminDevelopersValues, lang string) {
 							dir="ltr"
 							placeholder="admin"
 						/>
+						if values.GatewayAdminMasked != "" {
+							<div class="d-flex items-center gap-2 mt-1 text-xs text-muted">
+								<span>اسم المستخدم المحفوظ:</span>
+								@components.RevealField("gateway.admin_username", 0, values.GatewayAdminMasked, values.CanRevealGateway, lang)
+							</div>
+						}
 					</div>
 
 					<div class="form-group m-0">

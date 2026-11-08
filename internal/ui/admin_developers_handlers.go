@@ -10,6 +10,7 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/mask"
 	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
 	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
@@ -159,6 +160,13 @@ func (h *UIHandler) AdminDevelopersPage(w http.ResponseWriter, r *http.Request) 
 	}
 
 	values.GatewaySettings = gateway
+	// The stored username is shown masked and revealed on request (plan.md S8,
+	// FR-032). The password is never put in the view.
+	if user, _ := gateway.AdminCredentials(); user != "" {
+		values.GatewayAdminMasked = mask.Number(user)
+	}
+	revealer, _ := authctx.From(ctx)
+	values.CanRevealGateway = revealer.Can(revealPermStaff)
 	values.SQLLogs = sqlLogs
 	values.ErrorLogs = errorLogs
 	values.AuditEntries = auditEntries

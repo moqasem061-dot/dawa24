@@ -56,5 +56,8 @@ func loadErpUIKeys(e *engine) {
 	addKey(e, "erp.checkout.code_label", "erp", "رقم العميل", "Customer number", "ERP checkout")
 	addKey(e, "erp.checkout.code_submit", "erp", "حفظ والمتابعة", "Save and continue", "ERP checkout")
 	addKey(e, "erp.checkout.code_cancel", "erp", "إلغاء", "Cancel", "ERP checkout")
+	addKey(e, "reveal.button", "erp", "إظهار", "Reveal", "Reveal")
+	addKey(e, "reveal.hide", "erp", "إخفاء", "Hide", "Hide")
+	addKey(e, "reveal.masked_hint", "erp", "القيمة مخفية. يُسجَّل كل إظهار في سجل التدقيق.", "The value is hidden. Each reveal is written to the audit log.", "Reveal")
 	addKey(e, "customer.userorg.number_taken", "customer", "هذا الرقم مستخدم لعميل آخر لدى هذا المورد.", "This number is already used by another customer of this supplier.", "Customer number")
 }

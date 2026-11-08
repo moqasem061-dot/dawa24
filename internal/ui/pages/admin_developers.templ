@@ -11,6 +11,10 @@ import (
 type AdminDevelopersValues struct {
 	ActiveTab       string // "sql", "ai", "errors", "audit"
 	GatewaySettings *platformadmin.GatewaySettings
+	// GatewayAdminMasked is the stored gateway username, masked. The page shows it only
+	// with a reveal control; the clear username is never rendered (plan.md S8, FR-032).
+	GatewayAdminMasked string
+	CanRevealGateway   bool
 	AISettings      *platformadmin.AISettings
 	AIRoleModels    []*platformadmin.AIRoleModel
 	SQLLogs         []*platformadmin.SQLLog
@@ -246,7 +250,7 @@ templ AdminDevelopersPage(values AdminDevelopersValues, lang, dir string) {
 				return {
 					showKey: false,
 					gatewayURL: initURL || 'https://api.dawa24.com',
-					gatewayUser: initUser || 'admin',
+					gatewayUser: initUser || '',
 					gatewayKey: '',
 					hasStoredPassword: Boolean(hasStoredPassword),
 					isTesting: false,
