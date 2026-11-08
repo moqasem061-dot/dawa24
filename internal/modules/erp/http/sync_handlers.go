@@ -57,19 +57,23 @@ func (h *Handler) getSync(w http.ResponseWriter, r *http.Request) {
 		writeError(w, r, syncNotFound(err))
 		return
 	}
+	// Shape fixed by contracts/openapi.yaml (SyncStatus); chunk bookkeeping
+	// is internal and never leaves the server.
 	writeOK(w, r, http.StatusOK, map[string]any{
-		"syncId":           batch.PublicID,
-		"state":            batch.State,
-		"itemCount":        batch.ItemCount,
-		"chunkCount":       batch.ChunkCount,
-		"chunksDone":       batch.ChunksDone,
-		"created":          batch.CreatedCount,
-		"updated":          batch.UpdatedCount,
-		"unchanged":        batch.UnchangedCount,
-		"needsReviewCount": batch.NeedsReviewCount,
-		"failedCount":      batch.FailedCount,
-		"acceptedAt":       batch.AcceptedAt,
-		"finishedAt":       batch.FinishedAt,
+		"syncId":        batch.PublicID,
+		"clientBatchId": nullable(batch.ClientBatchID),
+		"state":         batch.State,
+		"acceptedAt":    batch.AcceptedAt,
+		"startedAt":     batch.StartedAt,
+		"finishedAt":    batch.FinishedAt,
+		"itemCount":     batch.ItemCount,
+		"counts": map[string]any{
+			"created":     batch.CreatedCount,
+			"updated":     batch.UpdatedCount,
+			"unchanged":   batch.UnchangedCount,
+			"needsReview": batch.NeedsReviewCount,
+			"failed":      batch.FailedCount,
+		},
 	})
 }
 
@@ -102,19 +106,25 @@ func (h *Handler) getSyncItems(w http.ResponseWriter, r *http.Request) {
 	}
 	out := make([]map[string]any, 0, len(items))
 	for _, item := range items {
+		// Shape fixed by contracts/openapi.yaml (SyncItem): internal ids stay
+		// on the server; code and message are null on success.
+		var code, message any
+		if item.Code != nil && *item.Code != "" {
+			code, message = *item.Code, itemMessage(item)
+		}
 		out = append(out, map[string]any{
-			"code":      item.ExternalCode,
-			"state":     item.State,
-			"message":   itemMessage(item),
-			"variantId": item.VariantID,
-			"cursor":    encodeItemCursor(item.ID),
+			"position":            item.Position,
+			"externalProductCode": item.ExternalCode,
+			"state":               item.State,
+			"code":                code,
+			"message":             message,
 		})
 	}
-	next := ""
+	var lastID int64
 	if len(items) == limit {
-		next = encodeItemCursor(items[len(items)-1].ID)
+		lastID = items[len(items)-1].ID
 	}
-	writeOK(w, r, http.StatusOK, map[string]any{"items": out, "nextCursor": next})
+	writePage(w, r, out, pageJSON(limit, lastID))
 }
 
 func syncNotFound(err error) error {
@@ -154,23 +164,8 @@ func itemsLimit(r *http.Request) (int, error) {
 	return limit, nil
 }
 
-// decodeCursorParam reads the optional `after` item id (keyset by sync_items.id);
-// garbage on the cursor parameter is a validation refusal.
+// decodeCursorParam reads the optional opaque `cursor` (the same v1 token the
+// order feeds use, keyset by sync_items.id); a bad token is ERP_CURSOR_INVALID.
 func decodeCursorParam(r *http.Request) (int64, error) {
-	raw := r.URL.Query().Get("after")
-	if raw == "" {
-		return 0, nil
-	}
-	id, err := strconv.ParseInt(raw, 10, 64)
-	if err != nil || id < 0 {
-		return 0, erp.NewError("ERP_CURSOR_INVALID", 400, nil)
-	}
-	return id, nil
-}
-
-// encodeItemCursor is the same base64url-of-v1:<id> cursor contract the orders
-// endpoints use (S3); the sync's pages are plain ints until then, wrapped in
-// the same shape.
-func encodeItemCursor(id int64) string {
-	return strconv.FormatInt(id, 10)
+	return DecodeCursor(r.URL.Query().Get("cursor"))
 }

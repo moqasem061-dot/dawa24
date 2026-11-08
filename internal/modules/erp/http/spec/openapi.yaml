@@ -232,9 +232,33 @@ paths:
                         shipmentNumber: "10542-1"
                         status: pending
                         importState: new
+                        createdAt: "2026-11-07T08:02:11Z"
+                        updatedAt: "2026-11-07T08:02:11Z"
+                        paymentMethod: cash_on_delivery
+                        paymentStatus: unpaid
+                        notes: ""
+                        subtotal: "1250.00"
+                        shippingFee: "25.00"
                         total: "1275.00"
-                        customer: { erpCode: "C-00871", mapped: true, name: { ar: "صيدلية الشفاء", en: "Al Shifa Pharmacy" } }
-                        lines: []
+                        customer:
+                          erpCode: "C-00871"
+                          mapped: true
+                          unmappedReason: null
+                          name: { ar: "صيدلية الشفاء", en: "Al Shifa Pharmacy" }
+                          branchName: { ar: "الفرع الرئيسي", en: "Main branch" }
+                          address: "12 شارع النيل، المعادي، القاهرة"
+                          phone: "01012345678"
+                        erp: { reference: null, acknowledgedAt: null }
+                        lines:
+                          - lineId: 88231
+                            variantId: 3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33
+                            externalProductCode: "100245"
+                            name: { ar: "بانادول اكسترا 24 قرص", en: "Panadol Extra 24 tablets" }
+                            barcode: "6221024000123"
+                            quantity: 20
+                            unitPrice: "54.69"
+                            discountAmount: "0.00"
+                            totalPrice: "1093.80"
                     page: { nextCursor: null, limit: 100 }
         "400": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
@@ -282,8 +306,8 @@ paths:
                 status: ok
                 requestId: 7f3a6d2e0c1b4a85
                 data:
-                  - { orderNumber: "10542", result: acknowledged }
-                  - { orderNumber: "10543", result: not_found }
+                  - { orderNumber: "10542", result: acknowledged, code: null, existingReference: null }
+                  - { orderNumber: "10543", result: not_found, code: null, existingReference: null }
         "422": { $ref: "#/components/responses/Error" }
   /orders/sales/{orderNumber}/status:
     post:
