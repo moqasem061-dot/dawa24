@@ -19,6 +19,8 @@ type ErpKeysPageData struct {
 	Audience      string
 	Owner         bool
 	Paused        bool
+	Warehouses    []erp.KeyTarget
+	Branches      []erp.KeyTarget
 	NoticeKind    string
 	NoticeMessage string
 }
@@ -115,6 +117,9 @@ templ erpKeysBody(data ErpKeysPageData, lang, dir string) {
 					</tbody>
 				</table>
 			</div>
+		}
+		if data.Owner {
+			@ErpKeyModals(data, lang, dir)
 		}
 	</div>
 }

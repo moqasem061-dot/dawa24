@@ -35,7 +35,11 @@ func (r *erpPageRepo) OrgStatusType(_ context.Context, org int64) (string, strin
 }
 func (r *erpPageRepo) WarehouseInOrg(context.Context, int64, int64) (bool, error) { return true, nil }
 func (r *erpPageRepo) BranchInOrg(context.Context, int64, int64) (bool, error)    { return true, nil }
-func (r *erpPageRepo) ActiveMember(context.Context, int64, int64) (bool, error)   { return true, nil }
+func (r *erpPageRepo) KeyTargets(context.Context, int64) ([]erp.KeyTarget, []erp.KeyTarget, error) {
+	return []erp.KeyTarget{{ID: 7, Name: map[string]string{"ar": "المخزن الرئيسي", "en": "Main warehouse"}}},
+		[]erp.KeyTarget{{ID: 9, Name: map[string]string{"ar": "الفرع الرئيسي", "en": "Main branch"}}}, nil
+}
+func (r *erpPageRepo) ActiveMember(context.Context, int64, int64) (bool, error) { return true, nil }
 func (r *erpPageRepo) InsertKey(_ context.Context, org int64, k erp.NewKey, _ erp.AuditRecord) (erp.APIKey, error) {
 	r.next++
 	k.ID = r.next
@@ -223,5 +227,29 @@ func TestErpStaffAndPharmacyPages(t *testing.T) {
 	h.ErpAdminKeyRevoke(w, erpPageRequest(staff, "/admin/integrations/keys/2/revoke", url.Values{"reason": {"test"}}, "2"))
 	if repo.keys[2].Status != "revoked" {
 		t.Error("staff revoke failed")
+	}
+}
+
+// The "new key" button opens erp-create-key-modal; the page must carry that
+// dialog (it was referenced but never rendered), with the organization's own
+// warehouses and branches as choices. A non-owner gets neither.
+func TestErpKeysPageRendersCreateDialogForOwner(t *testing.T) {
+	h, _ := erpPageFixture()
+	get := func(owner bool) string {
+		w := httptest.NewRecorder()
+		req := httptest.NewRequest("GET", "/vendor/integrations", nil)
+		req = req.WithContext(authctx.WithActor(req.Context(), erpPageActor(1, owner)))
+		h.ErpKeysPage(w, req)
+		return w.Body.String()
+	}
+	body := get(true)
+	for _, want := range []string{`id="erp-create-key-modal"`, `action="/vendor/integrations/keys"`,
+		`name="warehouse_id"`, `<option value="7">`, `name="branch_id"`, `<option value="9">`} {
+		if !strings.Contains(body, want) {
+			t.Errorf("owner page lacks %s", want)
+		}
+	}
+	if strings.Contains(get(false), `id="erp-create-key-modal"`) {
+		t.Error("non-owner page renders the create dialog")
 	}
 }

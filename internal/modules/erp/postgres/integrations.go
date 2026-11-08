@@ -46,6 +46,37 @@ func (r *Repository) WarehouseInOrg(ctx context.Context, orgID, id int64) (bool,
 func (r *Repository) BranchInOrg(ctx context.Context, orgID, id int64) (bool, error) {
 	return r.exists(ctx, orgID, id, `SELECT EXISTS(SELECT 1 FROM org.branches WHERE organization_id=$1 AND id=$2 AND deleted_at IS NULL)`)
 }
+
+// KeyTargets reads the organization's warehouses and branches under its own
+// tenant context, the same scoping WarehouseInOrg and BranchInOrg use.
+func (r *Repository) KeyTargets(ctx context.Context, orgID int64) (warehouses, branches []erp.KeyTarget, err error) {
+	err = r.db.InReadTx(database.WithTenant(ctx, orgID), func(ctx context.Context, tx pgx.Tx) error {
+		var qerr error
+		if warehouses, qerr = scanKeyTargets(ctx, tx, `SELECT id, jsonb_build_object('ar', name, 'en', name) FROM inventory.warehouses WHERE organization_id=$1 AND deleted_at IS NULL ORDER BY id`, orgID); qerr != nil {
+			return qerr
+		}
+		branches, qerr = scanKeyTargets(ctx, tx, `SELECT id, name FROM org.branches WHERE organization_id=$1 AND deleted_at IS NULL ORDER BY is_main DESC, id`, orgID)
+		return qerr
+	})
+	return warehouses, branches, err
+}
+
+func scanKeyTargets(ctx context.Context, tx pgx.Tx, query string, orgID int64) ([]erp.KeyTarget, error) {
+	rows, err := tx.Query(ctx, query, orgID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []erp.KeyTarget
+	for rows.Next() {
+		var t erp.KeyTarget
+		if err := rows.Scan(&t.ID, &t.Name); err != nil {
+			return nil, err
+		}
+		out = append(out, t)
+	}
+	return out, rows.Err()
+}
 func (r *Repository) ActiveMember(ctx context.Context, orgID, id int64) (bool, error) {
 	return r.exists(ctx, orgID, id, `SELECT EXISTS(SELECT 1 FROM org.members WHERE organization_id=$1 AND user_id=$2 AND status='active')`)
 }

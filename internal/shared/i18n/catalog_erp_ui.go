@@ -22,6 +22,7 @@ func loadErpUIKeys(e *engine) {
 	addKey(e, "erp.keys.shown_once", "erp", "يظهر المفتاح مرة واحدة فقط", "The key is shown only once", "ERP keys")
 	addKey(e, "erp.keys.copy", "erp", "نسخ", "Copy", "ERP keys")
 	addKey(e, "erp.keys.empty", "erp", "لا توجد مفاتيح", "No keys yet", "ERP keys")
+	addKey(e, "erp.keys.target_missing", "erp", "أضف مخزنًا وفرعًا أولًا من صفحتي المخازن والفروع.", "Add a warehouse and a branch first, from the Warehouses and Branches pages.", "ERP keys")
 	addKey(e, "erp.keys.owner_only", "erp", "هذه العملية لمالك المنشأة فقط", "Only the organization owner can do this", "ERP keys")
 	addKey(e, "erp.keys.revoke_reason", "erp", "سبب الإلغاء", "Revocation reason", "ERP keys")
 	addKey(e, "erp.keys.change_limit", "erp", "تغيير الحد", "Change limit", "ERP keys")

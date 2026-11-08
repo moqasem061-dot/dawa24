@@ -152,6 +152,12 @@ func (s *Service) PauseIntegration(ctx context.Context, orgID int64, pause bool,
 func (s *Service) ListKeys(ctx context.Context, orgID int64) ([]APIKey, error) {
 	return s.repo.ListKeys(ctx, orgID)
 }
+
+// KeyTargets lists the organization's own warehouses and branches, so the
+// create-key form offers names instead of raw ids.
+func (s *Service) KeyTargets(ctx context.Context, orgID int64) (warehouses, branches []KeyTarget, err error) {
+	return s.repo.KeyTargets(ctx, orgID)
+}
 func (s *Service) ListKeysAsStaff(ctx context.Context) ([]StaffKeyRow, error) {
 	return s.repo.ListKeysAsStaff(ctx)
 }

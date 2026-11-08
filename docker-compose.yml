@@ -76,6 +76,12 @@ services:
       - GATEWAY_BASE_URL=${GATEWAY_BASE_URL:-https://api.dawa24.com}
       - GATEWAY_VIRTUAL_KEY=${GATEWAY_VIRTUAL_KEY:-}
       - GATEWAY_CLIENT_APP=dawa24-store
+      # ERP integration API (specs/002). Off by default. Set ERP_KEY_PEPPER (32+ random
+      # bytes) before ERP_API_ENABLED=true; never change the pepper once keys exist.
+      - ERP_API_ENABLED=${ERP_API_ENABLED:-false}
+      - ERP_KEY_PEPPER=${ERP_KEY_PEPPER:-}
+      - ERP_DEFAULT_RATE_PER_MINUTE=${ERP_DEFAULT_RATE_PER_MINUTE:-600}
+      - ERP_MAX_BATCH_ITEMS=${ERP_MAX_BATCH_ITEMS:-50000}
       - GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY:-}
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - LOG_FORMAT=json
@@ -162,6 +168,13 @@ services:
       - WORKER_NOTIFICATIONS=4
       - WORKER_PROJECTIONS=2
       - WORKER_MAINTENANCE=1
+      - WORKER_ERPSYNC=${WORKER_ERPSYNC:-3}
+      # ERP integration API (specs/002). Off by default. Set ERP_KEY_PEPPER (32+ random
+      # bytes) before ERP_API_ENABLED=true; never change the pepper once keys exist.
+      - ERP_API_ENABLED=${ERP_API_ENABLED:-false}
+      - ERP_KEY_PEPPER=${ERP_KEY_PEPPER:-}
+      - ERP_DEFAULT_RATE_PER_MINUTE=${ERP_DEFAULT_RATE_PER_MINUTE:-600}
+      - ERP_MAX_BATCH_ITEMS=${ERP_MAX_BATCH_ITEMS:-50000}
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - LOG_FORMAT=json
       - SMTP_HOST=${SMTP_HOST:-smtp.hostinger.com}

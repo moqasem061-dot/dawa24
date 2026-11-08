@@ -38,6 +38,13 @@ x-app-env: &app-env
   GATEWAY_CLIENT_APP: ${GATEWAY_CLIENT_APP:-dawa24-store}
   GATEWAY_TIMEOUT: ${GATEWAY_TIMEOUT:-60s}
 
+  # ERP integration API (specs/002). Off by default. Set ERP_KEY_PEPPER (32+ random
+  # bytes) before ERP_API_ENABLED=true; never change the pepper once keys exist.
+  ERP_API_ENABLED: ${ERP_API_ENABLED:-false}
+  ERP_KEY_PEPPER: ${ERP_KEY_PEPPER:-}
+  ERP_DEFAULT_RATE_PER_MINUTE: ${ERP_DEFAULT_RATE_PER_MINUTE:-600}
+  ERP_MAX_BATCH_ITEMS: ${ERP_MAX_BATCH_ITEMS:-50000}
+
   # SMTP Outbound Email (Password Reset, Email Verification, Notifications)
   SMTP_HOST: ${SMTP_HOST:-smtp.hostinger.com}
   SMTP_PORT: ${SMTP_PORT:-465}
@@ -224,6 +231,7 @@ services:
       WORKER_NOTIFICATIONS: ${WORKER_NOTIFICATIONS:-4}
       WORKER_PROJECTIONS: ${WORKER_PROJECTIONS:-2}
       WORKER_MAINTENANCE: ${WORKER_MAINTENANCE:-1}
+      WORKER_ERPSYNC: ${WORKER_ERPSYNC:-3}
       GOMEMLIMIT: ${WORKER_GOMEMLIMIT:-700MiB}
       GOMAXPROCS: ${WORKER_GOMAXPROCS:-1}
     deploy:

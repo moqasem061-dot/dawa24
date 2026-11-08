@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -97,6 +98,7 @@ func (h *UIHandler) ErpKeysPage(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		data.Keys = keys
+		h.fillKeyTargets(ctx, &data, erpActorOrg(actor))
 	}
 	h.renderPage(ctx, w, "render erp keys page", erpKeysScreen(data, lang, dir, actor))
 }
@@ -268,8 +270,24 @@ func (h *UIHandler) renderKeysWithShownOnce(w http.ResponseWriter, r *http.Reque
 		Audience: erpAudienceName(ctx.vendor),
 		Owner:    ctx.actor.IsOwner,
 	}
+	h.fillKeyTargets(r.Context(), &data, ctx.orgID)
 	h.renderPage(r.Context(), w, "render erp key with show-once", erpKeysScreen(data, ctx.lang, ctx.dir, ctx.actor))
 	if rerr := pages.ErpKeyShownOnceModal(fullKey, ctx.lang).Render(r.Context(), w); rerr != nil {
 		h.log.ErrorContext(r.Context(), "render erp show-once modal", "error", rerr)
 	}
+}
+
+// fillKeyTargets loads the warehouses and branches the create form offers. Only
+// the owner sees that form, so nobody else pays for the read. A failed read
+// leaves the dropdowns empty with their hint; the page itself still renders.
+func (h *UIHandler) fillKeyTargets(ctx context.Context, data *pages.ErpKeysPageData, orgID int64) {
+	if !data.Owner || h.erpSvc == nil {
+		return
+	}
+	wh, br, err := h.erpSvc.KeyTargets(ctx, orgID)
+	if err != nil {
+		h.log.WarnContext(ctx, "erp key targets", "error", err)
+		return
+	}
+	data.Warehouses, data.Branches = wh, br
 }

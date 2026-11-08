@@ -55,6 +55,7 @@ type Repository interface {
 	SetIntegrationStatus(context.Context, int64, int64, string, AuditRecord) error
 	WarehouseInOrg(context.Context, int64, int64) (bool, error)
 	BranchInOrg(context.Context, int64, int64) (bool, error)
+	KeyTargets(context.Context, int64) (warehouses, branches []KeyTarget, err error)
 	ActiveMember(context.Context, int64, int64) (bool, error)
 	ListKeysAsStaff(context.Context) ([]StaffKeyRow, error)
 	RevokeKeyAsStaff(context.Context, int64, string, int64, AuditRecord) error

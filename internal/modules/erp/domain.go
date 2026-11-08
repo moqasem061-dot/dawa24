@@ -28,6 +28,13 @@ type Integration struct {
 	CreatedAt, UpdatedAt       time.Time
 }
 
+// KeyTarget is one warehouse or branch a new key can be bound to, for the
+// create-key form's dropdowns. Name holds {"ar","en"}.
+type KeyTarget struct {
+	ID   int64
+	Name map[string]string
+}
+
 type APIKey struct {
 	ID, OrganizationID, IntegrationID   int64
 	PublicID, Name, KeyPrefix           string

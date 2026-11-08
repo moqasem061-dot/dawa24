@@ -62,13 +62,13 @@ templ ErpCreateKeyModal(data ErpKeysPageData, lang, dir string) {
 					<label class="form-label text-xs font-bold" for="erp-key-warehouse">
 						{ i18n.T(lang, "erp.keys.warehouse") }
 					</label>
-					<input type="number" id="erp-key-warehouse" name="warehouse_id" min="1" required class="form-control" dir="ltr" />
+					@erpTargetSelect("erp-key-warehouse", "warehouse_id", data.Warehouses, lang)
 				</div>
 				<div class="form-group mb-0">
 					<label class="form-label text-xs font-bold" for="erp-key-branch">
 						{ i18n.T(lang, "erp.keys.branch") }
 					</label>
-					<input type="number" id="erp-key-branch" name="branch_id" min="1" required class="form-control" dir="ltr" />
+					@erpTargetSelect("erp-key-branch", "branch_id", data.Branches, lang)
 				</div>
 			</div>
 			<div class="d-grid grid-auto-fit-sm gap-3">
@@ -226,4 +226,28 @@ func erpDefaultScope(vendor bool, scope string) bool {
 		}
 	}
 	return false
+}
+
+// erpTargetSelect is the warehouse or branch dropdown of the create form. The
+// handler still checks the chosen id belongs to the caller's organization.
+templ erpTargetSelect(id, name string, targets []erp.KeyTarget, lang string) {
+	<select id={ id } name={ name } required class="form-control font-bold">
+		for _, t := range targets {
+			<option value={ fmt.Sprint(t.ID) }>{ erpTargetName(t, lang) }</option>
+		}
+	</select>
+	if len(targets) == 0 {
+		<p class="text-xs text-danger m-0 mt-1">{ i18n.T(lang, "erp.keys.target_missing") }</p>
+	}
+}
+
+// erpTargetName picks the caller's language, falling back to the other one.
+func erpTargetName(t erp.KeyTarget, lang string) string {
+	if v := t.Name[lang]; v != "" {
+		return v
+	}
+	if v := t.Name["ar"]; v != "" {
+		return v
+	}
+	return t.Name["en"]
 }
