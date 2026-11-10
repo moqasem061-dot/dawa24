@@ -409,7 +409,7 @@ paths:
               externalReference: ORGA-PO-2026-000451
               notes: "توريد الأسبوع"
               lines:
-                - { variantId: "91530", quantity: 12, unitPrice: "48.00" }
+                - { variantId: "91530", quantity: 12, unitPrice: "48.00", code: 100001 }
       responses:
         "201":
           description: Created
