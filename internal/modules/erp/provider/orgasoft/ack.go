@@ -67,11 +67,13 @@ func ackFromSlice(raw any) ([]provider.AckEntry, error) {
 // unknown keys (the sample's `items`) are ignored (research D-18).
 func ackEntry(obj map[string]any) (provider.AckEntry, error) {
 	entry := provider.AckEntry{}
-	orderNumber, err := ackString(obj, "orderNumber", "order_number")
+	// orderId is the id Orgasoft read in the order feed; it arrives as a JSON
+	// number or a string and is matched exactly as sent.
+	orderNumber, err := ackString(obj, "orderNumber", "order_number", "orderId")
 	if err != nil {
 		return entry, err
 	}
-	reference, err := ackString(obj, "erpReference", "orga_orderID")
+	reference, err := ackString(obj, "erpReference", "orga_orderID", "erpOrderId", "orgaOrderId")
 	if err != nil {
 		return entry, err
 	}

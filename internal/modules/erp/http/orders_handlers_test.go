@@ -26,6 +26,10 @@ type orderHandlerRepo struct {
 	purchase   []erp.PurchaseRow
 	lastFilter erp.OrderFilter
 	imports    []erp.OrderImport
+	// orgType is the organization type the key's org reports; empty means a vendor.
+	orgType string
+	// purchaseShipments are the supplier shipments of the purchase orders, by OrderID.
+	purchaseShipments []erp.PurchaseShipment
 }
 
 func (r *orderHandlerRepo) FindKeyByPrefixAsSystem(_ context.Context, prefix string) (erp.KeyAuthRow, bool, error) {
@@ -33,6 +37,9 @@ func (r *orderHandlerRepo) FindKeyByPrefixAsSystem(_ context.Context, prefix str
 	return row, ok, nil
 }
 func (r *orderHandlerRepo) OrgStatusType(context.Context, int64) (string, string, error) {
+	if r.orgType != "" {
+		return "approved", r.orgType, nil
+	}
 	return "approved", "vendor", nil
 }
 func (r *orderHandlerRepo) TouchLastUsed(context.Context, int64, int64, string) error { return nil }
@@ -71,8 +78,17 @@ func (r *orderHandlerRepo) GetPurchaseOrder(_ context.Context, _ int64, orderNum
 	return erp.PurchaseRow{}, erp.ErrNotFound
 }
 
-func (r *orderHandlerRepo) ListPurchaseShipmentsAsSystem(context.Context, int64, []int64) ([]erp.PurchaseShipment, error) {
-	return nil, nil
+// ListPurchaseShipmentsAsSystem returns the fixture shipments of the asked orders.
+func (r *orderHandlerRepo) ListPurchaseShipmentsAsSystem(_ context.Context, _ int64, orderIDs []int64) ([]erp.PurchaseShipment, error) {
+	var out []erp.PurchaseShipment
+	for _, sh := range r.purchaseShipments {
+		for _, id := range orderIDs {
+			if sh.OrderID == id {
+				out = append(out, sh)
+			}
+		}
+	}
+	return out, nil
 }
 
 func (r *orderHandlerRepo) UpsertOrderImport(_ context.Context, imp erp.OrderImport, _ erp.AuditRecord) (erp.AckOutcome, error) {

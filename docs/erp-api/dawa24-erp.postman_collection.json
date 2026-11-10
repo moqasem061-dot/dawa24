@@ -1,6 +1,6 @@
 {
   "info": {
-    "_postman_id": "ca14554a-d3f5-4c43-acda-3fe0cded52de",
+    "_postman_id": "047ad3df-a0c9-41c6-a510-72baa4a50fd9",
     "name": "Dawa24 ERP API for Orgasoft",
     "description": "**Dawa24 ERP API — for Orgasoft**\n\n**How to read this collection (no server needed):**\n1. Click a request on the left.\n2. Read the explanation on the right.\n3. Open the **Body** tab to see exactly what to send.\n4. Click **Examples** (top right) to see exactly what Dawa24 replies — for success and for each error.\n\n**How to run it (when Dawa24 gives you a test server and a key):**\n1. Choose the environment **Dawa24 ERP - test server** (top right).\n2. Put the server address in `baseUrl` and your key in `apiKey`. Nothing else to change.\n3. Run **01 Start here → Check my API key**. If it says `\"status\": \"ok\"`, you are connected.\n\n**Rules that apply to every request:**\n- Your key goes in the header `Authorization: Bearer <key>` (already set up here).\n- Every reply has `\"status\": \"ok\"` or `\"status\": \"error\"`. Errors have a `code` and a message in Arabic and English.\n- Prices are text with at most 2 decimals, like `\"125.50\"`. Discount and tax are percents.\n- Up to 600 requests per minute. If you get error 429, wait the seconds in the `Retry-After` header.\n- Keep the `requestId` from the reply when you report a problem — it lets us find your request.\n\n---\n\n**طريقة قراءة المجموعة (بدون سيرفر):** اضغط على أي طلب، اقرأ الشرح، افتح تبويب **Body** لترى ما يجب إرساله، واضغط **Examples** لترى رد دواء24 بالضبط في حالة النجاح وكل خطأ.\n\n**طريقة التشغيل (عندما نرسل لكم سيرفر تجريبي ومفتاح):** اختر البيئة **Dawa24 ERP - test server**، ضع عنوان السيرفر في `baseUrl` والمفتاح في `apiKey`، ثم شغّل **Check my API key**. إذا ظهر `\"status\": \"ok\"` فالربط يعمل.\n\n**قواعد عامة:** المفتاح يُرسل في `Authorization: Bearer`. كل رد فيه `status` ورسائل الخطأ بالعربي والإنجليزي. الأسعار بحد أقصى رقمين عشريين. احتفظوا بـ `requestId` عند الإبلاغ عن مشكلة.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -255,7 +255,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"4b1f9a6c22d34b10\",\n  \"data\": {\n    \"syncId\": \"7d0c3f1e-2b6a-4f3d-9a45-0c8d5e1b7a90\",\n    \"state\": \"queued\",\n    \"itemCount\": 2,\n    \"rejectedAtIntake\": 0,\n    \"statusUrl\": \"/erp/v1/products/sync/7d0c3f1e-2b6a-4f3d-9a45-0c8d5e1b7a90\"\n  }\n}"
+              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"4b1f9a6c22d34b10\",\n  \"data\": {\n    \"syncId\": \"4821\",\n    \"state\": \"queued\",\n    \"itemCount\": 2,\n    \"rejectedAtIntake\": 0,\n    \"statusUrl\": \"/erp/v1/products/sync/4821\"\n  }\n}"
             },
             {
               "name": "401 Wrong or missing key",
@@ -654,7 +654,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"6c20ab98f1e14d07\",\n  \"data\": {\n    \"syncId\": \"7d0c3f1e-2b6a-4f3d-9a45-0c8d5e1b7a90\",\n    \"clientBatchId\": \"orga-2026-11-07T10:15\",\n    \"state\": \"completed\",\n    \"acceptedAt\": \"2026-11-07T10:15:31Z\",\n    \"startedAt\": \"2026-11-07T10:15:33Z\",\n    \"finishedAt\": \"2026-11-07T10:15:35Z\",\n    \"itemCount\": 2,\n    \"counts\": {\n      \"created\": 1,\n      \"updated\": 0,\n      \"unchanged\": 0,\n      \"needsReview\": 1,\n      \"failed\": 0\n    }\n  }\n}"
+              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"6c20ab98f1e14d07\",\n  \"data\": {\n    \"syncId\": \"4821\",\n    \"clientBatchId\": \"orga-2026-11-07T10:15\",\n    \"state\": \"completed\",\n    \"acceptedAt\": \"2026-11-07T10:15:31Z\",\n    \"startedAt\": \"2026-11-07T10:15:33Z\",\n    \"finishedAt\": \"2026-11-07T10:15:35Z\",\n    \"itemCount\": 2,\n    \"counts\": {\n      \"created\": 1,\n      \"updated\": 0,\n      \"unchanged\": 0,\n      \"needsReview\": 1,\n      \"failed\": 0\n    }\n  }\n}"
             },
             {
               "name": "404 Upload not found",
@@ -1067,7 +1067,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"2d5b8a1c77e04f92\",\n  \"data\": [\n    {\n      \"orderNumber\": \"10542\",\n      \"shipmentNumber\": \"10542-1\",\n      \"status\": \"pending\",\n      \"importState\": \"new\",\n      \"createdAt\": \"2026-11-07T08:02:11Z\",\n      \"updatedAt\": \"2026-11-07T08:02:11Z\",\n      \"paymentMethod\": \"cash_on_delivery\",\n      \"paymentStatus\": \"unpaid\",\n      \"notes\": \"\",\n      \"subtotal\": \"1250.00\",\n      \"shippingFee\": \"25.00\",\n      \"total\": \"1275.00\",\n      \"customer\": {\n        \"erpCode\": \"C-00871\",\n        \"mapped\": true,\n        \"unmappedReason\": null,\n        \"name\": {\n          \"ar\": \"صيدلية الشفاء\",\n          \"en\": \"Al Shifa Pharmacy\"\n        },\n        \"branchName\": {\n          \"ar\": \"الفرع الرئيسي\",\n          \"en\": \"Main branch\"\n        },\n        \"address\": \"12 شارع النيل، المعادي، القاهرة\",\n        \"phone\": \"01012345678\"\n      },\n      \"erp\": {\n        \"reference\": null,\n        \"acknowledgedAt\": null\n      },\n      \"lines\": [\n        {\n          \"lineId\": 88231,\n          \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n          \"externalProductCode\": \"100245\",\n          \"name\": {\n            \"ar\": \"بانادول اكسترا 24 قرص\",\n            \"en\": \"Panadol Extra 24 tablets\"\n          },\n          \"barcode\": \"6221024000123\",\n          \"quantity\": 20,\n          \"unitPrice\": \"54.69\",\n          \"discountAmount\": \"0.00\",\n          \"totalPrice\": \"1093.80\"\n        }\n      ]\n    }\n  ],\n  \"page\": {\n    \"nextCursor\": null,\n    \"limit\": 100\n  }\n}"
+              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"2d5b8a1c77e04f92\",\n  \"data\": [\n    {\n      \"orderNumber\": \"10542\",\n      \"shipmentNumber\": \"10542-1\",\n      \"status\": \"pending\",\n      \"importState\": \"new\",\n      \"createdAt\": \"2026-11-07T08:02:11Z\",\n      \"updatedAt\": \"2026-11-07T08:02:11Z\",\n      \"paymentMethod\": \"cash_on_delivery\",\n      \"paymentStatus\": \"unpaid\",\n      \"notes\": \"\",\n      \"subtotal\": \"1250.00\",\n      \"shippingFee\": \"25.00\",\n      \"total\": \"1275.00\",\n      \"customer\": {\n        \"erpCode\": \"C-00871\",\n        \"mapped\": true,\n        \"unmappedReason\": null,\n        \"name\": {\n          \"ar\": \"صيدلية الشفاء\",\n          \"en\": \"Al Shifa Pharmacy\"\n        },\n        \"branchName\": {\n          \"ar\": \"الفرع الرئيسي\",\n          \"en\": \"Main branch\"\n        },\n        \"address\": \"12 شارع النيل، المعادي، القاهرة\",\n        \"phone\": \"01012345678\"\n      },\n      \"erp\": {\n        \"reference\": null,\n        \"acknowledgedAt\": null\n      },\n      \"lines\": [\n        {\n          \"lineId\": 88231,\n          \"variantId\": \"91530\",\n          \"externalProductCode\": \"100245\",\n          \"name\": {\n            \"ar\": \"بانادول اكسترا 24 قرص\",\n            \"en\": \"Panadol Extra 24 tablets\"\n          },\n          \"barcode\": \"6221024000123\",\n          \"quantity\": 20,\n          \"unitPrice\": \"54.69\",\n          \"discountAmount\": \"0.00\",\n          \"totalPrice\": \"1093.80\"\n        }\n      ]\n    }\n  ],\n  \"page\": {\n    \"nextCursor\": null,\n    \"limit\": 100\n  }\n}"
             },
             {
               "name": "400 Bad page cursor",
@@ -1205,7 +1205,259 @@
           ]
         },
         {
-          "name": "2. Get one order - جلب طلب واحد",
+          "name": "2. Orders in Orgasoft format - الطلبات بصيغة Orgasoft",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/erp/v1/orgasoft/orders/sales?state=new",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "erp",
+                "v1",
+                "orgasoft",
+                "orders",
+                "sales"
+              ],
+              "query": [
+                {
+                  "key": "state",
+                  "value": "new",
+                  "disabled": false
+                },
+                {
+                  "key": "from",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "to",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "cursor",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "**What it does:** the same new orders as step 1, written as a plain list in the layout Orgasoft asked for: one entry per shipment, with the pharmacy name, code, phone, city and address, and each item's code, quantity, price and discount percent.\n\n**More than one page?** The reply header `X-Next-Cursor` holds the cursor for the next page. It is absent on the last page.\n\n**ماذا يفعل:** نفس الطلبات الجديدة بالشكل الذي طلبته أوركاسوفت: قائمة مباشرة، طلب لكل شحنة، مع اسم الصيدلية وكودها وهاتفها ومدينتها وعنوانها، ولكل صنف كوده وكميته وسعره ونسبة خصمه.\n\n**الصفحة التالية:** الترويسة `X-Next-Cursor` تحمل مؤشر الصفحة التالية، وتغيب في الصفحة الأخيرة."
+          },
+          "response": [
+            {
+              "name": "200 Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/orgasoft/orders/sales?state=new",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "orgasoft",
+                    "orders",
+                    "sales"
+                  ],
+                  "query": [
+                    {
+                      "key": "state",
+                      "value": "new",
+                      "disabled": false
+                    },
+                    {
+                      "key": "from",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "to",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "limit",
+                      "value": "",
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "status": "Success",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n  {\n    \"orderId\": 21845,\n    \"status\": \"PENDING\",\n    \"total\": 1264.25,\n    \"pharmacyId\": 1,\n    \"pharmacyName\": \"Direct\",\n    \"pharmacyCode\": 263,\n    \"pharmacyNumber\": \"01008042755\",\n    \"pharmacyCity\": \"Fayoum\",\n    \"pharmacyAddress\": \"الفيوم\",\n    \"items\": [\n      {\n        \"code\": 100001,\n        \"name\": \"سبيركودا 20 قرص\",\n        \"qty\": 1,\n        \"price\": 265.0,\n        \"discount\": 21.0\n      },\n      {\n        \"code\": 100002,\n        \"name\": \"فيتامين د 1000 وحدة\",\n        \"qty\": 3,\n        \"price\": 385.0,\n        \"discount\": 22.0\n      },\n      {\n        \"code\": 100003,\n        \"name\": \"شراب الكحة\",\n        \"qty\": 1,\n        \"price\": 220.0,\n        \"discount\": 30.0\n      }\n    ]\n  }\n]"
+            },
+            {
+              "name": "400 Bad page cursor",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/orgasoft/orders/sales?state=new",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "orgasoft",
+                    "orders",
+                    "sales"
+                  ],
+                  "query": [
+                    {
+                      "key": "state",
+                      "value": "new",
+                      "disabled": false
+                    },
+                    {
+                      "key": "from",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "to",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "limit",
+                      "value": "",
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "status": "Bad page cursor",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_CURSOR_INVALID\",\n    \"message\": {\n      \"ar\": \"مؤشر الصفحات غير صالح. ابدأ من جديد بدون مؤشر.\",\n      \"en\": \"The page cursor is not valid. Start again without a cursor.\"\n    },\n    \"details\": null\n  }\n}"
+            },
+            {
+              "name": "403 Key lacks permission",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/orgasoft/orders/sales?state=new",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "orgasoft",
+                    "orders",
+                    "sales"
+                  ],
+                  "query": [
+                    {
+                      "key": "state",
+                      "value": "new",
+                      "disabled": false
+                    },
+                    {
+                      "key": "from",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "to",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "limit",
+                      "value": "",
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "status": "Key lacks permission",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_SCOPE_MISSING\",\n    \"message\": {\n      \"ar\": \"المفتاح لا يملك الصلاحية المطلوبة لهذه العملية.\",\n      \"en\": \"The key does not have the permission this call needs.\"\n    },\n    \"details\": {\n      \"requiredScope\": \"erp.orders.read\"\n    }\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Reply status is ok', () => pm.expect(pm.response.code).to.be.within(200, 299));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3. Get one order - جلب طلب واحد",
           "request": {
             "method": "GET",
             "header": [
@@ -1275,7 +1527,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"5a9e0c12b8d34f71\",\n  \"data\": {\n    \"orderNumber\": \"10542\",\n    \"shipmentNumber\": \"10542-1\",\n    \"status\": \"pending\",\n    \"importState\": \"new\",\n    \"createdAt\": \"2026-11-07T08:02:11Z\",\n    \"updatedAt\": \"2026-11-07T08:02:11Z\",\n    \"paymentMethod\": \"cash_on_delivery\",\n    \"paymentStatus\": \"unpaid\",\n    \"notes\": \"\",\n    \"subtotal\": \"1250.00\",\n    \"shippingFee\": \"25.00\",\n    \"total\": \"1275.00\",\n    \"customer\": {\n      \"erpCode\": \"C-00871\",\n      \"mapped\": true,\n      \"unmappedReason\": null,\n      \"name\": {\n        \"ar\": \"صيدلية الشفاء\",\n        \"en\": \"Al Shifa Pharmacy\"\n      },\n      \"branchName\": {\n        \"ar\": \"الفرع الرئيسي\",\n        \"en\": \"Main branch\"\n      },\n      \"address\": \"12 شارع النيل، المعادي، القاهرة\",\n      \"phone\": \"01012345678\"\n    },\n    \"erp\": {\n      \"reference\": null,\n      \"acknowledgedAt\": null\n    },\n    \"lines\": [\n      {\n        \"lineId\": 88231,\n        \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n        \"externalProductCode\": \"100245\",\n        \"name\": {\n          \"ar\": \"بانادول اكسترا 24 قرص\",\n          \"en\": \"Panadol Extra 24 tablets\"\n        },\n        \"barcode\": \"6221024000123\",\n        \"quantity\": 20,\n        \"unitPrice\": \"54.69\",\n        \"discountAmount\": \"0.00\",\n        \"totalPrice\": \"1093.80\"\n      }\n    ]\n  }\n}"
+              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"5a9e0c12b8d34f71\",\n  \"data\": {\n    \"orderNumber\": \"10542\",\n    \"shipmentNumber\": \"10542-1\",\n    \"status\": \"pending\",\n    \"importState\": \"new\",\n    \"createdAt\": \"2026-11-07T08:02:11Z\",\n    \"updatedAt\": \"2026-11-07T08:02:11Z\",\n    \"paymentMethod\": \"cash_on_delivery\",\n    \"paymentStatus\": \"unpaid\",\n    \"notes\": \"\",\n    \"subtotal\": \"1250.00\",\n    \"shippingFee\": \"25.00\",\n    \"total\": \"1275.00\",\n    \"customer\": {\n      \"erpCode\": \"C-00871\",\n      \"mapped\": true,\n      \"unmappedReason\": null,\n      \"name\": {\n        \"ar\": \"صيدلية الشفاء\",\n        \"en\": \"Al Shifa Pharmacy\"\n      },\n      \"branchName\": {\n        \"ar\": \"الفرع الرئيسي\",\n        \"en\": \"Main branch\"\n      },\n      \"address\": \"12 شارع النيل، المعادي، القاهرة\",\n      \"phone\": \"01012345678\"\n    },\n    \"erp\": {\n      \"reference\": null,\n      \"acknowledgedAt\": null\n    },\n    \"lines\": [\n      {\n        \"lineId\": 88231,\n        \"variantId\": \"91530\",\n        \"externalProductCode\": \"100245\",\n        \"name\": {\n          \"ar\": \"بانادول اكسترا 24 قرص\",\n          \"en\": \"Panadol Extra 24 tablets\"\n        },\n        \"barcode\": \"6221024000123\",\n        \"quantity\": 20,\n        \"unitPrice\": \"54.69\",\n        \"discountAmount\": \"0.00\",\n        \"totalPrice\": \"1093.80\"\n      }\n    ]\n  }\n}"
             },
             {
               "name": "404 Order not found",
@@ -1875,7 +2127,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"3b81f0c64e2a4d19\",\n  \"data\": [\n    {\n      \"orderNumber\": \"20871\",\n      \"status\": \"pending\",\n      \"importState\": \"new\",\n      \"createdAt\": \"2026-11-07T09:40:05Z\",\n      \"updatedAt\": \"2026-11-07T09:40:05Z\",\n      \"externalReference\": \"ORGA-PO-2026-000451\",\n      \"total\": \"626.00\",\n      \"shipments\": [\n        {\n          \"shipmentNumber\": \"20871-1\",\n          \"status\": \"pending\",\n          \"supplier\": {\n            \"name\": {\n              \"ar\": \"مؤسسة النور للأدوية\",\n              \"en\": \"Al Nour Pharma\"\n            }\n          },\n          \"subtotal\": \"601.00\",\n          \"shippingFee\": \"25.00\",\n          \"lines\": [\n            {\n              \"lineId\": 90412,\n              \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n              \"externalProductCode\": null,\n              \"name\": {\n                \"ar\": \"بانادول اكسترا 24 قرص\",\n                \"en\": \"Panadol Extra 24 tablets\"\n              },\n              \"barcode\": \"6221024000123\",\n              \"quantity\": 12,\n              \"unitPrice\": \"50.40\",\n              \"discountAmount\": \"3.80\",\n              \"totalPrice\": \"601.00\"\n            }\n          ]\n        }\n      ],\n      \"erp\": {\n        \"reference\": null,\n        \"acknowledgedAt\": null\n      }\n    }\n  ],\n  \"page\": {\n    \"nextCursor\": null,\n    \"limit\": 100\n  }\n}"
+              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"3b81f0c64e2a4d19\",\n  \"data\": [\n    {\n      \"orderNumber\": \"20871\",\n      \"status\": \"pending\",\n      \"importState\": \"new\",\n      \"createdAt\": \"2026-11-07T09:40:05Z\",\n      \"updatedAt\": \"2026-11-07T09:40:05Z\",\n      \"externalReference\": \"ORGA-PO-2026-000451\",\n      \"total\": \"626.00\",\n      \"shipments\": [\n        {\n          \"shipmentNumber\": \"20871-1\",\n          \"status\": \"pending\",\n          \"supplier\": {\n            \"name\": {\n              \"ar\": \"مؤسسة النور للأدوية\",\n              \"en\": \"Al Nour Pharma\"\n            }\n          },\n          \"subtotal\": \"601.00\",\n          \"shippingFee\": \"25.00\",\n          \"lines\": [\n            {\n              \"lineId\": 90412,\n              \"variantId\": \"91530\",\n              \"externalProductCode\": null,\n              \"name\": {\n                \"ar\": \"بانادول اكسترا 24 قرص\",\n                \"en\": \"Panadol Extra 24 tablets\"\n              },\n              \"barcode\": \"6221024000123\",\n              \"quantity\": 12,\n              \"unitPrice\": \"50.40\",\n              \"discountAmount\": \"3.80\",\n              \"totalPrice\": \"601.00\"\n            }\n          ]\n        }\n      ],\n      \"erp\": {\n        \"reference\": null,\n        \"acknowledgedAt\": null\n      }\n    }\n  ],\n  \"page\": {\n    \"nextCursor\": null,\n    \"limit\": 100\n  }\n}"
             },
             {
               "name": "400 Bad page cursor",
@@ -2013,7 +2265,259 @@
           ]
         },
         {
-          "name": "2. Get one purchase order - جلب طلب شراء واحد",
+          "name": "2. Purchase orders in Orgasoft format - طلبات الشراء بصيغة Orgasoft",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/erp/v1/orgasoft/orders/purchase?state=new",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "erp",
+                "v1",
+                "orgasoft",
+                "orders",
+                "purchase"
+              ],
+              "query": [
+                {
+                  "key": "state",
+                  "value": "new",
+                  "disabled": false
+                },
+                {
+                  "key": "from",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "to",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "cursor",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "**What it does:** the same purchase orders as step 1, as a plain list in Orgasoft's layout: one entry per order with all its lines. The entry describes the ordering pharmacy, and `pharmacyCode` is null.\n\n**More than one page?** Use the `X-Next-Cursor` header, absent on the last page.\n\n**ماذا يفعل:** نفس طلبات الشراء بالشكل الذي طلبته أوركاسوفت: طلب واحد لكل طلب شراء مع كل أصنافه. الطلب يصف الصيدلية التي طلبته، و`pharmacyCode` يكون null."
+          },
+          "response": [
+            {
+              "name": "200 Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/orgasoft/orders/purchase?state=new",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "orgasoft",
+                    "orders",
+                    "purchase"
+                  ],
+                  "query": [
+                    {
+                      "key": "state",
+                      "value": "new",
+                      "disabled": false
+                    },
+                    {
+                      "key": "from",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "to",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "limit",
+                      "value": "",
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "status": "Success",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n  {\n    \"orderId\": 21846,\n    \"status\": \"CONFIRMED\",\n    \"total\": 209.35,\n    \"pharmacyId\": 7,\n    \"pharmacyName\": \"صيدلية الشفاء\",\n    \"pharmacyCode\": null,\n    \"pharmacyNumber\": \"01008042755\",\n    \"pharmacyCity\": \"Fayoum\",\n    \"pharmacyAddress\": \"الفيوم\",\n    \"items\": [\n      {\n        \"code\": 100001,\n        \"name\": \"سبيركودا 20 قرص\",\n        \"qty\": 1,\n        \"price\": 265.0,\n        \"discount\": 21.0\n      }\n    ]\n  }\n]"
+            },
+            {
+              "name": "400 Bad page cursor",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/orgasoft/orders/purchase?state=new",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "orgasoft",
+                    "orders",
+                    "purchase"
+                  ],
+                  "query": [
+                    {
+                      "key": "state",
+                      "value": "new",
+                      "disabled": false
+                    },
+                    {
+                      "key": "from",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "to",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "limit",
+                      "value": "",
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "status": "Bad page cursor",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_CURSOR_INVALID\",\n    \"message\": {\n      \"ar\": \"مؤشر الصفحات غير صالح. ابدأ من جديد بدون مؤشر.\",\n      \"en\": \"The page cursor is not valid. Start again without a cursor.\"\n    },\n    \"details\": null\n  }\n}"
+            },
+            {
+              "name": "403 Key lacks permission",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/orgasoft/orders/purchase?state=new",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "orgasoft",
+                    "orders",
+                    "purchase"
+                  ],
+                  "query": [
+                    {
+                      "key": "state",
+                      "value": "new",
+                      "disabled": false
+                    },
+                    {
+                      "key": "from",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "to",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "limit",
+                      "value": "",
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "status": "Key lacks permission",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_SCOPE_MISSING\",\n    \"message\": {\n      \"ar\": \"المفتاح لا يملك الصلاحية المطلوبة لهذه العملية.\",\n      \"en\": \"The key does not have the permission this call needs.\"\n    },\n    \"details\": {\n      \"requiredScope\": \"erp.orders.read\"\n    }\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Reply status is ok', () => pm.expect(pm.response.code).to.be.within(200, 299));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3. Get one purchase order - جلب طلب شراء واحد",
           "request": {
             "method": "GET",
             "header": [
@@ -2083,7 +2587,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"4c7a2e19d05b4f68\",\n  \"data\": {\n    \"orderNumber\": \"20871\",\n    \"status\": \"pending\",\n    \"importState\": \"new\",\n    \"createdAt\": \"2026-11-07T09:40:05Z\",\n    \"updatedAt\": \"2026-11-07T09:40:05Z\",\n    \"externalReference\": \"ORGA-PO-2026-000451\",\n    \"total\": \"626.00\",\n    \"shipments\": [\n      {\n        \"shipmentNumber\": \"20871-1\",\n        \"status\": \"pending\",\n        \"supplier\": {\n          \"name\": {\n            \"ar\": \"مؤسسة النور للأدوية\",\n            \"en\": \"Al Nour Pharma\"\n          }\n        },\n        \"subtotal\": \"601.00\",\n        \"shippingFee\": \"25.00\",\n        \"lines\": [\n          {\n            \"lineId\": 90412,\n            \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n            \"externalProductCode\": null,\n            \"name\": {\n              \"ar\": \"بانادول اكسترا 24 قرص\",\n              \"en\": \"Panadol Extra 24 tablets\"\n            },\n            \"barcode\": \"6221024000123\",\n            \"quantity\": 12,\n            \"unitPrice\": \"50.40\",\n            \"discountAmount\": \"3.80\",\n            \"totalPrice\": \"601.00\"\n          }\n        ]\n      }\n    ],\n    \"erp\": {\n      \"reference\": null,\n      \"acknowledgedAt\": null\n    }\n  }\n}"
+              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"4c7a2e19d05b4f68\",\n  \"data\": {\n    \"orderNumber\": \"20871\",\n    \"status\": \"pending\",\n    \"importState\": \"new\",\n    \"createdAt\": \"2026-11-07T09:40:05Z\",\n    \"updatedAt\": \"2026-11-07T09:40:05Z\",\n    \"externalReference\": \"ORGA-PO-2026-000451\",\n    \"total\": \"626.00\",\n    \"shipments\": [\n      {\n        \"shipmentNumber\": \"20871-1\",\n        \"status\": \"pending\",\n        \"supplier\": {\n          \"name\": {\n            \"ar\": \"مؤسسة النور للأدوية\",\n            \"en\": \"Al Nour Pharma\"\n          }\n        },\n        \"subtotal\": \"601.00\",\n        \"shippingFee\": \"25.00\",\n        \"lines\": [\n          {\n            \"lineId\": 90412,\n            \"variantId\": \"91530\",\n            \"externalProductCode\": null,\n            \"name\": {\n              \"ar\": \"بانادول اكسترا 24 قرص\",\n              \"en\": \"Panadol Extra 24 tablets\"\n            },\n            \"barcode\": \"6221024000123\",\n            \"quantity\": 12,\n            \"unitPrice\": \"50.40\",\n            \"discountAmount\": \"3.80\",\n            \"totalPrice\": \"601.00\"\n          }\n        ]\n      }\n    ],\n    \"erp\": {\n      \"reference\": null,\n      \"acknowledgedAt\": null\n    }\n  }\n}"
             },
             {
               "name": "404 Order not found",
@@ -2356,7 +2860,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"0d9b7e5c3a1f4826\",\n  \"data\": [\n    {\n      \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n      \"supplier\": {\n        \"name\": {\n          \"ar\": \"مؤسسة النور للأدوية\",\n          \"en\": \"Al Nour Pharma\"\n        },\n        \"linked\": true\n      },\n      \"name\": {\n        \"ar\": \"بانادول اكسترا 24 قرص\",\n        \"en\": \"Panadol Extra 24 tablets\"\n      },\n      \"barcode\": \"6221024000123\",\n      \"publicPrice\": \"62.50\",\n      \"discountPercent\": \"12.50\",\n      \"unitPrice\": \"54.69\",\n      \"inStock\": true\n    }\n  ]\n}"
+              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"0d9b7e5c3a1f4826\",\n  \"data\": [\n    {\n      \"variantId\": \"91530\",\n      \"supplier\": {\n        \"name\": {\n          \"ar\": \"مؤسسة النور للأدوية\",\n          \"en\": \"Al Nour Pharma\"\n        },\n        \"linked\": true\n      },\n      \"name\": {\n        \"ar\": \"بانادول اكسترا 24 قرص\",\n        \"en\": \"Panadol Extra 24 tablets\"\n      },\n      \"barcode\": \"6221024000123\",\n      \"publicPrice\": \"62.50\",\n      \"discountPercent\": \"12.50\",\n      \"unitPrice\": \"54.69\",\n      \"inStock\": true\n    }\n  ]\n}"
             },
             {
               "name": "403 Key lacks erp.po.create",
@@ -2480,7 +2984,7 @@
             "description": "**What it does:** places a purchase order on Dawa24 from your system.\n\n**ماذا يفعل:** ينشئ طلب شراء على دواء24 من نظامكم.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\"\n    }\n  ]\n}",
+              "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"91530\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\"\n    }\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2517,7 +3021,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\"\n    }\n  ]\n}",
+                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"91530\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\"\n    }\n  ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -2534,7 +3038,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"4c7a2e19d05b4f68\",\n  \"data\": {\n    \"orderNumber\": \"20871\",\n    \"status\": \"pending\",\n    \"importState\": \"new\",\n    \"createdAt\": \"2026-11-07T09:40:05Z\",\n    \"updatedAt\": \"2026-11-07T09:40:05Z\",\n    \"externalReference\": \"ORGA-PO-2026-000451\",\n    \"total\": \"626.00\",\n    \"shipments\": [\n      {\n        \"shipmentNumber\": \"20871-1\",\n        \"status\": \"pending\",\n        \"supplier\": {\n          \"name\": {\n            \"ar\": \"مؤسسة النور للأدوية\",\n            \"en\": \"Al Nour Pharma\"\n          }\n        },\n        \"subtotal\": \"601.00\",\n        \"shippingFee\": \"25.00\",\n        \"lines\": [\n          {\n            \"lineId\": 90412,\n            \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n            \"externalProductCode\": null,\n            \"name\": {\n              \"ar\": \"بانادول اكسترا 24 قرص\",\n              \"en\": \"Panadol Extra 24 tablets\"\n            },\n            \"barcode\": \"6221024000123\",\n            \"quantity\": 12,\n            \"unitPrice\": \"50.40\",\n            \"discountAmount\": \"3.80\",\n            \"totalPrice\": \"601.00\"\n          }\n        ]\n      }\n    ],\n    \"erp\": {\n      \"reference\": null,\n      \"acknowledgedAt\": null\n    }\n  }\n}"
+              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"4c7a2e19d05b4f68\",\n  \"data\": {\n    \"orderNumber\": \"20871\",\n    \"status\": \"pending\",\n    \"importState\": \"new\",\n    \"createdAt\": \"2026-11-07T09:40:05Z\",\n    \"updatedAt\": \"2026-11-07T09:40:05Z\",\n    \"externalReference\": \"ORGA-PO-2026-000451\",\n    \"total\": \"626.00\",\n    \"shipments\": [\n      {\n        \"shipmentNumber\": \"20871-1\",\n        \"status\": \"pending\",\n        \"supplier\": {\n          \"name\": {\n            \"ar\": \"مؤسسة النور للأدوية\",\n            \"en\": \"Al Nour Pharma\"\n          }\n        },\n        \"subtotal\": \"601.00\",\n        \"shippingFee\": \"25.00\",\n        \"lines\": [\n          {\n            \"lineId\": 90412,\n            \"variantId\": \"91530\",\n            \"externalProductCode\": null,\n            \"name\": {\n              \"ar\": \"بانادول اكسترا 24 قرص\",\n              \"en\": \"Panadol Extra 24 tablets\"\n            },\n            \"barcode\": \"6221024000123\",\n            \"quantity\": 12,\n            \"unitPrice\": \"50.40\",\n            \"discountAmount\": \"3.80\",\n            \"totalPrice\": \"601.00\"\n          }\n        ]\n      }\n    ],\n    \"erp\": {\n      \"reference\": null,\n      \"acknowledgedAt\": null\n    }\n  }\n}"
             },
             {
               "name": "201 Created",
@@ -2564,7 +3068,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\"\n    }\n  ]\n}",
+                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"91530\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\"\n    }\n  ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -2581,7 +3085,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"4c7a2e19d05b4f68\",\n  \"data\": {\n    \"orderNumber\": \"20871\",\n    \"status\": \"pending\",\n    \"importState\": \"new\",\n    \"createdAt\": \"2026-11-07T09:40:05Z\",\n    \"updatedAt\": \"2026-11-07T09:40:05Z\",\n    \"externalReference\": \"ORGA-PO-2026-000451\",\n    \"total\": \"626.00\",\n    \"shipments\": [\n      {\n        \"shipmentNumber\": \"20871-1\",\n        \"status\": \"pending\",\n        \"supplier\": {\n          \"name\": {\n            \"ar\": \"مؤسسة النور للأدوية\",\n            \"en\": \"Al Nour Pharma\"\n          }\n        },\n        \"subtotal\": \"601.00\",\n        \"shippingFee\": \"25.00\",\n        \"lines\": [\n          {\n            \"lineId\": 90412,\n            \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n            \"externalProductCode\": null,\n            \"name\": {\n              \"ar\": \"بانادول اكسترا 24 قرص\",\n              \"en\": \"Panadol Extra 24 tablets\"\n            },\n            \"barcode\": \"6221024000123\",\n            \"quantity\": 12,\n            \"unitPrice\": \"50.40\",\n            \"discountAmount\": \"3.80\",\n            \"totalPrice\": \"601.00\"\n          }\n        ]\n      }\n    ],\n    \"erp\": {\n      \"reference\": null,\n      \"acknowledgedAt\": null\n    }\n  }\n}"
+              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"4c7a2e19d05b4f68\",\n  \"data\": {\n    \"orderNumber\": \"20871\",\n    \"status\": \"pending\",\n    \"importState\": \"new\",\n    \"createdAt\": \"2026-11-07T09:40:05Z\",\n    \"updatedAt\": \"2026-11-07T09:40:05Z\",\n    \"externalReference\": \"ORGA-PO-2026-000451\",\n    \"total\": \"626.00\",\n    \"shipments\": [\n      {\n        \"shipmentNumber\": \"20871-1\",\n        \"status\": \"pending\",\n        \"supplier\": {\n          \"name\": {\n            \"ar\": \"مؤسسة النور للأدوية\",\n            \"en\": \"Al Nour Pharma\"\n          }\n        },\n        \"subtotal\": \"601.00\",\n        \"shippingFee\": \"25.00\",\n        \"lines\": [\n          {\n            \"lineId\": 90412,\n            \"variantId\": \"91530\",\n            \"externalProductCode\": null,\n            \"name\": {\n              \"ar\": \"بانادول اكسترا 24 قرص\",\n              \"en\": \"Panadol Extra 24 tablets\"\n            },\n            \"barcode\": \"6221024000123\",\n            \"quantity\": 12,\n            \"unitPrice\": \"50.40\",\n            \"discountAmount\": \"3.80\",\n            \"totalPrice\": \"601.00\"\n          }\n        ]\n      }\n    ],\n    \"erp\": {\n      \"reference\": null,\n      \"acknowledgedAt\": null\n    }\n  }\n}"
             },
             {
               "name": "409 Price changed - correct price in details",
@@ -2611,7 +3115,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\"\n    }\n  ]\n}",
+                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"91530\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\"\n    }\n  ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -2658,7 +3162,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\"\n    }\n  ]\n}",
+                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"91530\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\"\n    }\n  ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -2705,7 +3209,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\"\n    }\n  ]\n}",
+                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"91530\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\"\n    }\n  ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -2752,7 +3256,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\"\n    }\n  ]\n}",
+                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"91530\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\"\n    }\n  ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -2799,7 +3303,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\"\n    }\n  ]\n}",
+                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"91530\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\"\n    }\n  ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -2846,7 +3350,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\"\n    }\n  ]\n}",
+                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"91530\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\"\n    }\n  ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -2893,7 +3397,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\"\n    }\n  ]\n}",
+                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"91530\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\"\n    }\n  ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -2940,7 +3444,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\"\n    }\n  ]\n}",
+                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"91530\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\"\n    }\n  ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -2957,7 +3461,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_PO_NO_ACTIVE_OFFER\",\n    \"message\": {\n      \"ar\": \"لا يوجد عرض نشط للصنف رقم 1.\",\n      \"en\": \"Line 1 has no active offer.\"\n    },\n    \"details\": {\n      \"line\": 1,\n      \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\"\n    }\n  }\n}"
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_PO_NO_ACTIVE_OFFER\",\n    \"message\": {\n      \"ar\": \"لا يوجد عرض نشط للصنف رقم 1.\",\n      \"en\": \"Line 1 has no active offer.\"\n    },\n    \"details\": {\n      \"line\": 1,\n      \"variantId\": \"91530\"\n    }\n  }\n}"
             }
           ],
           "event": [

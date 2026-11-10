@@ -19,10 +19,16 @@ type purchaseBody struct {
 	Lines             []purchaseLineBody `json:"lines"`
 }
 
+// purchaseLineBody keeps variantId, code and its aliases raw: the variant id may
+// be a JSON string or an integer, and the item code a string or a number.
+// lineCodeRaw (purchase_lines.go) picks the first of code, itemId and itemCode.
 type purchaseLineBody struct {
-	VariantID string          `json:"variantId"`
+	VariantID json.RawMessage `json:"variantId"`
 	Quantity  json.RawMessage `json:"quantity"`
 	UnitPrice json.RawMessage `json:"unitPrice"`
+	Code      json.RawMessage `json:"code"`
+	ItemID    json.RawMessage `json:"itemId"`
+	ItemCode  json.RawMessage `json:"itemCode"`
 }
 
 // request turns the body into the service request. A quantity that is not a whole
@@ -35,7 +41,11 @@ func (b purchaseBody) request() (erp.CreatePurchaseRequest, *erp.Error) {
 		if err != nil {
 			qty = 0
 		}
-		item := erp.PurchaseLine{VariantID: line.VariantID, Quantity: qty}
+		variantID, ok := variantIDText(line.VariantID)
+		if !ok {
+			return erp.CreatePurchaseRequest{}, erp.NewError("ERP_VALIDATION", 422, map[string]any{"fields": []string{"variantId"}, "line": i + 1})
+		}
+		item := erp.PurchaseLine{VariantID: variantID, Quantity: qty}
 		if price := strings.Trim(string(line.UnitPrice), `"`); len(line.UnitPrice) > 0 && string(line.UnitPrice) != "null" {
 			parsed, err := money.Parse(price)
 			if err != nil {
@@ -43,6 +53,11 @@ func (b purchaseBody) request() (erp.CreatePurchaseRequest, *erp.Error) {
 			}
 			item.UnitPrice = &parsed
 		}
+		code, present, ok := lineCode(line)
+		if present && !ok {
+			return erp.CreatePurchaseRequest{}, erp.NewError("ERP_VALIDATION", 422, map[string]any{"field": "lines[" + strconv.Itoa(i+1) + "].code"})
+		}
+		item.Code = code
 		req.Lines = append(req.Lines, item)
 	}
 	return req, nil

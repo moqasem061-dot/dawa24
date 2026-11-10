@@ -3,6 +3,7 @@ package integration_test
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
@@ -266,8 +267,8 @@ func TestERPOrders_ExternalProductCodeInLines(t *testing.T) {
 		t.Fatalf("lines = %+v, want one", row.Lines)
 	}
 	line := row.Lines[0]
-	if line.ExternalProductCode != "ORG-100" || line.VariantPublicID != fx.variantPublicA || line.Barcode != "6221024000123" {
-		t.Fatalf("line = %+v, want ORG-100, the variant public id and the barcode", line)
+	if line.ExternalProductCode != "ORG-100" || line.VariantPublicID != strconv.FormatInt(fx.variantA, 10) || line.Barcode != "6221024000123" {
+		t.Fatalf("line = %+v, want ORG-100, the decimal variant id and the barcode", line)
 	}
 }
 

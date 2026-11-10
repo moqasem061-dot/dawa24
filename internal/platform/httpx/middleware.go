@@ -12,6 +12,7 @@ import (
 	"net"
 	"net/http"
 	"runtime/debug"
+	"strconv"
 	"strings"
 	"time"
 
@@ -26,10 +27,13 @@ import (
 //
 // An inbound id is trusted only for correlation, never for authorisation, and is
 // length-capped so a hostile client cannot inflate every log line downstream.
+//
+// Ids are at most 20 characters from [0-9A-Za-z_-], because partner ERPs fail
+// on longer values. An inbound id that does not fit that shape is replaced.
 func RequestID(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := r.Header.Get("X-Request-ID")
-		if id == "" || len(id) > 64 {
+		if !isShortRequestID(id) {
 			id = newRequestID()
 		}
 		ctx := observability.WithRequestID(r.Context(), id)
@@ -38,12 +42,31 @@ func RequestID(next http.Handler) http.Handler {
 	})
 }
 
+// isShortRequestID reports whether an inbound id is 1 to 20 characters from
+// [0-9A-Za-z_-].
+func isShortRequestID(id string) bool {
+	if len(id) < 1 || len(id) > 20 {
+		return false
+	}
+	for i := 0; i < len(id); i++ {
+		c := id[i]
+		switch {
+		case c >= '0' && c <= '9', c >= 'a' && c <= 'z', c >= 'A' && c <= 'Z', c == '_', c == '-':
+		default:
+			return false
+		}
+	}
+	return true
+}
+
+// newRequestID returns 16 lowercase hex characters (8 random bytes).
 func newRequestID() string {
-	b := make([]byte, 12)
+	b := make([]byte, 8)
 	if _, err := rand.Read(b); err != nil {
 		// crypto/rand failing is close to unrecoverable, but a correlation id is
-		// not worth killing a request over; fall back to a timestamp.
-		return "ts-" + time.Now().UTC().Format("20060102T150405.000000000")
+		// not worth killing a request over; fall back to a timestamp in base 36
+		// (14 characters, inside the 20-character limit).
+		return "t" + strconv.FormatInt(time.Now().UnixNano(), 36)
 	}
 	return hex.EncodeToString(b)
 }

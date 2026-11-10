@@ -13,6 +13,8 @@ info:
 
     **Field names on input** may be camelCase or PascalCase (`externalProductCode` or `ExternalProductCode`). Output is always camelCase.
 
+    Every id Dawa24 returns is at most 20 characters of `0-9 A-Z a-z _ -`.
+
     **Polling orders.** Start each cycle without a cursor and filter `state=new`. The cursor only pages inside one cycle; it is the id of the last row, so no row is skipped or repeated while you page.
 
     **Limits.** 600 requests/minute per key by default (adjustable per key), 6 sync batches/minute, 50,000 items and 32 MiB per sync body (gzip accepted with `Content-Encoding: gzip`). On 429 read `Retry-After`.
@@ -126,11 +128,11 @@ paths:
                 status: ok
                 requestId: 4b1f9a6c22d34b10
                 data:
-                  syncId: 7d0c3f1e-2b6a-4f3d-9a45-0c8d5e1b7a90
+                  syncId: "4821"
                   state: queued
                   itemCount: 2
                   rejectedAtIntake: 0
-                  statusUrl: /erp/v1/products/sync/7d0c3f1e-2b6a-4f3d-9a45-0c8d5e1b7a90
+                  statusUrl: /erp/v1/products/sync/4821
         "401": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
         "409": { $ref: "#/components/responses/Error" }
@@ -166,7 +168,7 @@ paths:
                 status: ok
                 requestId: 6c20ab98f1e14d07
                 data:
-                  syncId: 7d0c3f1e-2b6a-4f3d-9a45-0c8d5e1b7a90
+                  syncId: "4821"
                   clientBatchId: orga-2026-11-07T10:15
                   state: completed
                   acceptedAt: "2026-11-07T10:15:31Z"
@@ -251,7 +253,7 @@ paths:
                         erp: { reference: null, acknowledgedAt: null }
                         lines:
                           - lineId: 88231
-                            variantId: 3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33
+                            variantId: "91530"
                             externalProductCode: "100245"
                             name: { ar: "بانادول اكسترا 24 قرص", en: "Panadol Extra 24 tablets" }
                             barcode: "6221024000123"
@@ -381,7 +383,7 @@ paths:
                             shippingFee: "25.00"
                             lines:
                               - lineId: 90412
-                                variantId: 3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33
+                                variantId: "91530"
                                 externalProductCode: null
                                 name: { ar: "بانادول اكسترا 24 قرص", en: "Panadol Extra 24 tablets" }
                                 barcode: "6221024000123"
@@ -407,7 +409,7 @@ paths:
               externalReference: ORGA-PO-2026-000451
               notes: "توريد الأسبوع"
               lines:
-                - { variantId: "3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33", quantity: 12, unitPrice: "48.00" }
+                - { variantId: "91530", quantity: 12, unitPrice: "48.00" }
       responses:
         "201":
           description: Created
@@ -474,6 +476,76 @@ paths:
                 requestId: 0d9e3b7c51a24f86
                 data:
                   - { orderNumber: "20871", result: acknowledged, code: null, existingReference: null }
+  /orgasoft/orders/sales:
+    get:
+      tags: [Sales orders]
+      operationId: listOrgasoftSalesOrders
+      summary: Sales orders in Orgasoft's shape
+      description: "The same reads as GET /orders/sales (same scope, filters and paging), answered as a bare array in the shape Orgasoft asked for. One entry per supplier shipment. The next page is in the `X-Next-Cursor` header, absent on the last page. Money is written as the decimal the database holds (265.00 stays 265.00). To confirm with Orgasoft: `pharmacyCity` uses the English city name (Arabic when there is none). Scope: `erp.orders.read`. Supplier organizations only."
+      parameters:
+        - { $ref: "#/components/parameters/OrderState" }
+        - { $ref: "#/components/parameters/From" }
+        - { $ref: "#/components/parameters/To" }
+        - { $ref: "#/components/parameters/Cursor" }
+        - { $ref: "#/components/parameters/OrderLimit" }
+      responses:
+        "200":
+          description: One page of orders, as a bare array
+          headers:
+            X-Next-Cursor: { schema: { type: string, maxLength: 20 }, description: "The cursor for the next page. Absent on the last page." }
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/OrgasoftOrder" } }
+              example:
+                - orderId: 21845
+                  status: PENDING
+                  total: 1264.25
+                  pharmacyId: 1
+                  pharmacyName: Direct
+                  pharmacyCode: 263
+                  pharmacyNumber: "01008042755"
+                  pharmacyCity: Fayoum
+                  pharmacyAddress: "الفيوم"
+                  items:
+                    - { code: 100001, name: "سبيركودا 20 قرص", qty: 1, price: 265.00, discount: 21.00 }
+                    - { code: 100002, name: "فيتامين د 1000 وحدة", qty: 3, price: 385.00, discount: 22.00 }
+                    - { code: 100003, name: "شراب الكحة", qty: 1, price: 220.00, discount: 30.00 }
+        "400": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /orgasoft/orders/purchase:
+    get:
+      tags: [Purchase orders]
+      operationId: listOrgasoftPurchaseOrders
+      summary: Purchase orders in Orgasoft's shape
+      description: "The same reads as GET /orders/purchase (same scope, filters and paging), answered as a bare array in Orgasoft's shape. One entry per order, with the lines of every shipment. `pharmacyId`, `pharmacyName`, `pharmacyNumber`, `pharmacyCity` and `pharmacyAddress` describe the ordering pharmacy, and `pharmacyCode` is null. To confirm with Orgasoft: purchase entries describe the ordering pharmacy, and `pharmacyCity` uses the English city name. The next page is in the `X-Next-Cursor` header, absent on the last page. Scope: `erp.orders.read`."
+      parameters:
+        - { $ref: "#/components/parameters/OrderState" }
+        - { $ref: "#/components/parameters/From" }
+        - { $ref: "#/components/parameters/To" }
+        - { $ref: "#/components/parameters/Cursor" }
+        - { $ref: "#/components/parameters/OrderLimit" }
+      responses:
+        "200":
+          description: One page of orders, as a bare array
+          headers:
+            X-Next-Cursor: { schema: { type: string, maxLength: 20 }, description: "The cursor for the next page. Absent on the last page." }
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/OrgasoftOrder" } }
+              example:
+                - orderId: 21846
+                  status: CONFIRMED
+                  total: 209.35
+                  pharmacyId: 7
+                  pharmacyName: "صيدلية الشفاء"
+                  pharmacyCode: null
+                  pharmacyNumber: "01008042755"
+                  pharmacyCity: Fayoum
+                  pharmacyAddress: "الفيوم"
+                  items:
+                    - { code: 100001, name: "سبيركودا 20 قرص", qty: 1, price: 265.00, discount: 21.00 }
+        "400": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
   /offers:
     get:
       tags: [Purchase orders]
@@ -492,7 +564,7 @@ paths:
                 status: ok
                 requestId: 0d9b7e5c3a1f4826
                 data:
-                  - variantId: 3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33
+                  - variantId: "91530"
                     supplier: { name: { ar: "مؤسسة النور للأدوية", en: "Al Nour Pharma" }, linked: true }
                     name: { ar: "بانادول اكسترا 24 قرص", en: "Panadol Extra 24 tablets" }
                     barcode: "6221024000123"
@@ -504,9 +576,9 @@ components:
   securitySchemes:
     ApiKey: { type: http, scheme: bearer, description: "Key shown once when the owner creates it, format d24_<live|test>_<prefix>_<secret>" }
   parameters:
-    SyncId: { name: syncId, in: path, required: true, schema: { type: string, format: uuid } }
+    SyncId: { name: syncId, in: path, required: true, schema: { type: string, pattern: "^[0-9]{1,20}$" }, description: "The sync id from the 202 answer, a decimal number. The UUID form that earlier syncs were given is still accepted." }
     OrderNumber: { name: orderNumber, in: path, required: true, schema: { type: string, maxLength: 32 } }
-    Cursor: { name: cursor, in: query, schema: { type: string, maxLength: 64 }, description: Opaque. Use `page.nextCursor` from the previous response. }
+    Cursor: { name: cursor, in: query, schema: { type: string, maxLength: 20 }, description: Opaque. Use `page.nextCursor` from the previous response. }
     OrderState: { name: state, in: query, schema: { type: string, enum: [new, imported, changed, all], default: new } }
     From: { name: from, in: query, schema: { type: string, format: date-time }, description: Orders created at or after this time. }
     To: { name: to, in: query, schema: { type: string, format: date-time }, description: Orders created before this time. }
@@ -546,7 +618,7 @@ components:
               shippingFee: "25.00"
               lines:
                 - lineId: 90412
-                  variantId: 3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33
+                  variantId: "91530"
                   externalProductCode: null
                   name: { ar: "بانادول اكسترا 24 قرص", en: "Panadol Extra 24 tablets" }
                   barcode: "6221024000123"
@@ -584,7 +656,7 @@ components:
           erp: { reference: null, acknowledgedAt: null }
           lines:
             - lineId: 88231
-              variantId: 3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33
+              variantId: "91530"
               externalProductCode: "100245"
               name: { ar: "بانادول اكسترا 24 قرص", en: "Panadol Extra 24 tablets" }
               barcode: "6221024000123"
@@ -674,7 +746,7 @@ components:
         data:
           type: object
           properties:
-            syncId: { type: string, format: uuid }
+            syncId: { type: string, maxLength: 20 }
             state: { type: string }
             itemCount: { type: integer }
             rejectedAtIntake: { type: integer }
@@ -687,7 +759,7 @@ components:
         data:
           type: object
           properties:
-            syncId: { type: string, format: uuid }
+            syncId: { type: string, maxLength: 20 }
             clientBatchId: { type: [string, "null"] }
             state: { type: string, enum: [queued, processing, completed, failed] }
             acceptedAt: { type: string, format: date-time }
@@ -726,7 +798,7 @@ components:
       type: object
       properties:
         lineId: { type: integer }
-        variantId: { type: [string, "null"], format: uuid }
+        variantId: { type: [string, "null"], maxLength: 20 }
         externalProductCode: { type: [string, "null"] }
         name: { $ref: "#/components/schemas/MultiLang" }
         barcode: { type: string }
@@ -863,9 +935,35 @@ components:
             type: object
             required: [variantId, quantity]
             properties:
-              variantId: { type: string, format: uuid }
+              variantId: { type: string, maxLength: 20, description: "The variant id from GET /offers. A JSON integer is accepted too." }
               quantity: { type: integer, minimum: 1, maximum: 100000 }
               unitPrice: { type: [string, number], description: Optional check against Dawa24's price. }
+              code: { type: [string, integer], maxLength: 64, description: "Optional. Your own item code for this product; the Orgasoft order feed shows it back. Also accepted as itemId or itemCode." }
+    OrgasoftOrder:
+      type: object
+      description: "One order in Orgasoft's shape. Field order is the wire order. Sales: one entry per supplier shipment. Purchase: one entry per order. Identifiers are a JSON number when they are plain digits (no leading zero), a string otherwise, and null when empty."
+      required: [orderId, status, total, pharmacyId, pharmacyName, pharmacyCode, pharmacyNumber, pharmacyCity, pharmacyAddress, items]
+      properties:
+        orderId: { type: [integer, string] }
+        status: { type: string, description: "Upper case. Shipment status on sales, order status on purchase." }
+        total: { type: number, description: "Raw decimal with two places." }
+        pharmacyId: { type: integer, description: "The buyer's organization id (0 when none)." }
+        pharmacyName: { type: string, description: "Arabic name, else English." }
+        pharmacyCode: { type: [integer, string, "null"], description: "The customer code the supplier uses. Null when unmapped and on purchase entries." }
+        pharmacyNumber: { type: string, description: "The ordering branch's phone, else the organization's." }
+        pharmacyCity: { type: string, description: "The ordering branch's city, English name, else Arabic, else empty." }
+        pharmacyAddress: { type: string, description: "The ordering branch's address, else the organization's." }
+        items:
+          type: array
+          items:
+            type: object
+            required: [code, name, qty, price, discount]
+            properties:
+              code: { type: [integer, string, "null"], description: "The product code: the supplier's on sales, the buyer's own item code on purchase." }
+              name: { type: string, description: "Arabic name, else English." }
+              qty: { type: integer }
+              price: { type: number, description: "The public (list) unit price when there is one, else the unit price. Raw decimal." }
+              discount: { type: number, description: "Percentage between price and the unit price paid. Raw decimal." }
     OfferList:
       type: object
       properties:
@@ -876,7 +974,7 @@ components:
           items:
             type: object
             properties:
-              variantId: { type: string, format: uuid }
+              variantId: { type: string, maxLength: 20 }
               supplier: { type: object, properties: { name: { $ref: "#/components/schemas/MultiLang" }, linked: { type: boolean } } }
               name: { $ref: "#/components/schemas/MultiLang" }
               barcode: { type: string }

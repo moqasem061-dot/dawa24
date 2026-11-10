@@ -22,7 +22,7 @@ var uuidPattern = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]
 // approved vendors with a positive balance, cheapest first. $1 buyer, $2 barcode,
 // $3 limit. It returns public fields only.
 const offerListSQL = `
-SELECT v.public_id::text, o.name, p.name, v.barcode, v.price, v.discount,
+SELECT v.id::text, o.name, p.name, v.barcode, v.price, v.discount,
        EXISTS (SELECT 1 FROM org.user_organizations uo
                WHERE uo.customer_org_id = $1 AND uo.vendor_org_id = v.organization_id
                  AND uo.status IN ('pending', 'approved') AND uo.deleted_at IS NULL) AS linked
@@ -36,15 +36,22 @@ WHERE v.barcode = $2 AND v.status = 'active' AND v.deleted_at IS NULL
 ORDER BY v.price * (1 - v.discount / 100), v.id
 LIMIT $3`
 
-// variantOfferSQL resolves one variant public id. $1 is the public id.
-// active is the purchase rule: live variant, approved vendor.
-const variantOfferSQL = `
+// variantOfferSelect reads one variant with the flags the purchase rules need.
+// active is the purchase rule: live variant, approved vendor. The two WHERE
+// forms below pick the variant by its numeric id or by its legacy public id.
+const variantOfferSelect = `
 SELECT v.id, v.organization_id, v.public_id::text, v.price, v.discount, o.name,
        (v.status = 'active' AND v.deleted_at IS NULL AND o.status IN ('approved', 'active', 'verified') AND o.type IN ` + orgVendorTypes + `) AS active,
        EXISTS (SELECT 1 FROM inventory.stocks s WHERE s.product_variant_id = v.id AND s.quantity > 0) AS in_stock
 FROM catalog.product_variants v
 JOIN org.organizations o ON o.id = v.organization_id
-WHERE v.public_id = $1::uuid`
+`
+
+// variantOfferByIDSQL reads a variant by its numeric id. $1 is the id.
+const variantOfferByIDSQL = variantOfferSelect + `WHERE v.id = $1`
+
+// variantOfferByPublicIDSQL reads a variant by its public UUID. $1 is the UUID.
+const variantOfferByPublicIDSQL = variantOfferSelect + `WHERE v.public_id = $1::uuid`
 
 // ListOffersAsSystem reads supplier offers across tenants. plan.md E6: the
 // supplier variants belong to other organizations, which the buyer cannot see
@@ -77,17 +84,21 @@ func (r *Repository) ListOffersAsSystem(ctx context.Context, buyerOrgID int64, b
 	return out, err
 }
 
-// VariantOfferAsSystem resolves one variant by public id across tenants.
-// plan.md E6: the buyer cannot read the supplier's variant under its own tenant.
-// An id that is not a UUID, or that matches no variant, returns erp.ErrNotFound.
-func (r *Repository) VariantOfferAsSystem(ctx context.Context, publicID string) (erp.VariantOfferRow, error) {
-	if !uuidPattern.MatchString(publicID) {
+// VariantOfferAsSystem resolves one variant by its id or public id across
+// tenants. plan.md E6: the buyer cannot read the supplier's variant under its own
+// tenant. Decimal text is the numeric id; a UUID is the legacy public id. Any
+// other text, or an id that matches no variant, returns erp.ErrNotFound.
+func (r *Repository) VariantOfferAsSystem(ctx context.Context, idOrPublicID string) (erp.VariantOfferRow, error) {
+	sql, arg := variantOfferByPublicIDSQL, any(idOrPublicID)
+	if id, ok := erp.ParseShortID(idOrPublicID); ok {
+		sql, arg = variantOfferByIDSQL, id
+	} else if !uuidPattern.MatchString(idOrPublicID) {
 		return erp.VariantOfferRow{}, erp.ErrNotFound
 	}
 	var row erp.VariantOfferRow
 	var supplier []byte
 	err := r.db.InReadTx(database.AsSystem(ctx), func(ctx context.Context, tx pgx.Tx) error {
-		return tx.QueryRow(ctx, variantOfferSQL, publicID).Scan(&row.ID, &row.OrganizationID, &row.PublicID,
+		return tx.QueryRow(ctx, sql, arg).Scan(&row.ID, &row.OrganizationID, &row.PublicID,
 			&row.PublicPrice, &row.DiscountPercent, &supplier, &row.Active, &row.InStock)
 	})
 	if errors.Is(err, pgx.ErrNoRows) {

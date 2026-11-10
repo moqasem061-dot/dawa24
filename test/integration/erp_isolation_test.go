@@ -77,3 +77,58 @@ func testERPIsolation(t *testing.T, table string) {
 		}
 	}
 }
+
+// erp.item_codes has no id column, so it gets its own test: a buyer's item code
+// for a variant is visible to that buyer organization only.
+func TestTenantIsolation_ERPItemCodes(t *testing.T) {
+	db := getTestDB(t)
+	if db == nil {
+		t.Fatal("isolation test requires a database")
+	}
+	t.Cleanup(db.Close)
+	ctx := context.Background()
+	orgA := time.Now().UnixNano()/1000 + 2
+	orgB := orgA + 1
+	var variantID int64
+	err := db.InTx(database.AsSystem(ctx), func(ctx context.Context, tx pgx.Tx) error {
+		if _, err := tx.Exec(ctx, `INSERT INTO org.organizations (id, name) VALUES ($1, '{"en":"Item code A"}'), ($2, '{"en":"Item code B"}')`, orgA, orgB); err != nil {
+			return err
+		}
+		var product int64
+		if err := tx.QueryRow(ctx, `INSERT INTO catalog.products (organization_id, name) VALUES ($1, '{"en":"Item code product"}') RETURNING id`, orgA).Scan(&product); err != nil {
+			return err
+		}
+		if err := tx.QueryRow(ctx, `INSERT INTO catalog.product_variants (organization_id, product_id, name, sku, price, status) VALUES ($1, $2, '{"en":"Item code variant"}', $3, 10.00, 'active') RETURNING id`, orgA, product, fmt.Sprintf("IC-%d", orgA)).Scan(&variantID); err != nil {
+			return err
+		}
+		_, err := tx.Exec(ctx, `INSERT INTO erp.item_codes (organization_id, variant_id, external_code) VALUES ($1, $2, '100001')`, orgA, variantID)
+		return err
+	})
+	if err != nil {
+		t.Fatalf("setup failed: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = db.InTx(database.AsSystem(ctx), func(ctx context.Context, tx pgx.Tx) error {
+			_, err := tx.Exec(ctx, `DELETE FROM org.organizations WHERE id IN ($1, $2)`, orgA, orgB)
+			return err
+		})
+	})
+	for _, tc := range []struct {
+		org  int64
+		want int
+	}{{orgA, 1}, {orgB, 0}} {
+		err := db.InReadTx(database.WithTenant(ctx, tc.org), func(ctx context.Context, tx pgx.Tx) error {
+			var count int
+			if err := tx.QueryRow(ctx, `SELECT count(*) FROM erp.item_codes WHERE variant_id = $1`, variantID).Scan(&count); err != nil {
+				return err
+			}
+			if count != tc.want {
+				return fmt.Errorf("organization %d sees %d item codes, want %d", tc.org, count, tc.want)
+			}
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+}

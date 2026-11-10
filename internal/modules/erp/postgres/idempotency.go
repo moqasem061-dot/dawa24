@@ -54,14 +54,23 @@ func (r *Repository) BeginIdempotency(ctx context.Context, orgID, integrationID 
 	return state, err
 }
 
-// FinishIdempotency stores the answer and, when the audit names an action,
-// writes the audit row, both in one transaction.
-func (r *Repository) FinishIdempotency(ctx context.Context, orgID, integrationID int64, ref string, orderID int64, orderNumber string, response []byte, audit erp.AuditRecord) error {
+// FinishIdempotency stores the answer, upserts the buyer's item codes and, when
+// the audit names an action, writes the audit row, all in one transaction.
+// Codes are keyed by the buyer organization and the numeric variant id.
+func (r *Repository) FinishIdempotency(ctx context.Context, orgID, integrationID int64, ref string, orderID int64, orderNumber string, response []byte, audit erp.AuditRecord, codes []erp.ItemCode) error {
 	return r.db.InTx(database.WithTenant(ctx, orgID), func(ctx context.Context, tx pgx.Tx) error {
 		if _, err := tx.Exec(ctx, `UPDATE erp.idempotency_records SET state = 'done', order_id = $4, order_number = $5, response = $6::jsonb, updated_at = now()
 			WHERE integration_id = $1 AND scope = $2 AND external_reference = $3`,
 			integrationID, purchaseScope, ref, orderID, orderNumber, string(response)); err != nil {
 			return err
+		}
+		for _, c := range codes {
+			if _, err := tx.Exec(ctx, `INSERT INTO erp.item_codes (organization_id, variant_id, integration_id, external_code, updated_at)
+				VALUES ($1, $2, $3, $4, now())
+				ON CONFLICT (organization_id, variant_id) DO UPDATE SET external_code = EXCLUDED.external_code, integration_id = EXCLUDED.integration_id, updated_at = now()`,
+				orgID, c.VariantID, integrationID, c.Code); err != nil {
+				return fmt.Errorf("erp: upsert item code: %w", err)
+			}
 		}
 		if audit.Action == "" {
 			return nil

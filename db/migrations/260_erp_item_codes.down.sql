@@ -1,0 +1,3 @@
+BEGIN;
+DROP TABLE IF EXISTS erp.item_codes;
+COMMIT;

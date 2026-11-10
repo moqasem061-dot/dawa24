@@ -177,6 +177,11 @@ One purchase order.
 #### POST /erp/v1/orders/purchase/ack
 Marks purchase orders as imported (scope `erp.orders.ack`). Same behaviour as the sales acknowledgement.
 
+#### GET /erp/v1/orgasoft/orders/sales and GET /erp/v1/orgasoft/orders/purchase
+The same orders as the two lists above (same scope, filters and paging), answered as a bare JSON array in Orgasoft's shape: `orderId`, `status`, `total`, `pharmacyId`, `pharmacyName`, `pharmacyCode`, `pharmacyNumber`, `pharmacyCity`, `pharmacyAddress` and `items` (`code`, `name`, `qty`, `price`, `discount` as a percent). The next page is in the `X-Next-Cursor` header, absent on the last page. Money keeps its two decimals (`265.00`).
+
+**Ids.** Every id Dawa24 returns is at most 20 characters of `0-9 A-Z a-z _ -`: `requestId` is 16 hex characters, `syncId` and `variantId` are decimal numbers, and `nextCursor` is a decimal number. Send the decimal `variantId` on a purchase line; a JSON integer works too. A purchase line may carry your own item code as `code` (or `itemId`, `itemCode`), and the Orgasoft purchase feed shows it back.
+
 #### POST /erp/v1/orders/purchase
 Creates a purchase order (scope `erp.po.create`). Prices are Dawa24's; a sent `unitPrice` that
 differs is refused with `ERP_PO_PRICE_MISMATCH`. Retrying with the same `externalReference`

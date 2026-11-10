@@ -45,7 +45,7 @@ func (r *purchaseHandlerRepo) BeginIdempotency(_ context.Context, _, _ int64, re
 	return erp.IdemState{Created: true, RequestSHA: sha}, nil
 }
 
-func (r *purchaseHandlerRepo) FinishIdempotency(_ context.Context, _, _ int64, ref string, _ int64, _ string, response []byte, _ erp.AuditRecord) error {
+func (r *purchaseHandlerRepo) FinishIdempotency(_ context.Context, _, _ int64, ref string, _ int64, _ string, response []byte, _ erp.AuditRecord, _ []erp.ItemCode) error {
 	state := r.idem[ref]
 	state.InProgress, state.Replay, state.Response = false, true, response
 	r.idem[ref] = state
@@ -72,7 +72,7 @@ func (r *purchaseHandlerRepo) ActiveMember(context.Context, int64, int64) (bool,
 func (r *purchaseHandlerRepo) GetPurchaseOrder(_ context.Context, _ int64, orderNumber string) (erp.PurchaseRow, error) {
 	created := time.Date(2026, 11, 7, 9, 40, 5, 0, time.UTC)
 	total := money.MustParse("626.00")
-	line := erp.OrderLine{LineID: 90412, VariantPublicID: "3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33", Name: map[string]string{"en": "Panadol Extra 24 tablets"},
+	line := erp.OrderLine{LineID: 90412, VariantPublicID: "91530", Name: map[string]string{"en": "Panadol Extra 24 tablets"},
 		Barcode: "6221024000123", Quantity: 12, UnitPrice: money.MustParse("50.40"), DiscountAmount: money.MustParse("3.80"), TotalPrice: money.MustParse("601.00")}
 	return erp.PurchaseRow{OrderID: 77, OrderNumber: orderNumber, Status: "pending", ImportState: "new", CreatedAt: created, UpdatedAt: created, Total: total,
 		Shipments: []erp.PurchaseShipment{{OrderID: 77, ShipmentNumber: orderNumber + "-1", Status: "pending", SupplierName: map[string]string{"en": "Al Nour Pharma"},
@@ -115,9 +115,9 @@ func newPurchaseFixture(t *testing.T) *purchaseFixture {
 		KeyHash: hash, IntegrationStatus: "active", Provider: provider.DefaultProvider,
 	}}}
 	repo := &purchaseHandlerRepo{orderHandlerRepo: base, idem: map[string]erp.IdemState{}, variants: map[string]erp.VariantOfferRow{
-		"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33": {ID: 11, OrganizationID: 20, PublicID: "3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33", PublicPrice: money.MustParse("62.50"), DiscountPercent: money.MustParse("12.50"), Active: true, InStock: true, SupplierName: map[string]string{"en": "Al Nour Pharma"}},
+		"91530": {ID: 11, OrganizationID: 20, PublicID: "91530", PublicPrice: money.MustParse("62.50"), DiscountPercent: money.MustParse("12.50"), Active: true, InStock: true, SupplierName: map[string]string{"en": "Al Nour Pharma"}},
 	}}
-	repo.offers = []erp.Offer{{VariantID: "3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33", SupplierName: map[string]string{"en": "Al Nour Pharma"}, SupplierLinked: true,
+	repo.offers = []erp.Offer{{VariantID: "91530", SupplierName: map[string]string{"en": "Al Nour Pharma"}, SupplierLinked: true,
 		Name: map[string]string{"en": "Panadol Extra 24 tablets"}, Barcode: "6221024000123", PublicPrice: money.MustParse("62.50"), DiscountPercent: money.MustParse("12.50"),
 		UnitPrice: money.MustParse("54.69"), InStock: true}}
 	placer := &stubPlacer{}
@@ -144,7 +144,7 @@ func errorCode(t *testing.T, w *httptest.ResponseRecorder) string {
 	return code
 }
 
-const purchaseBodyOK = `{"externalReference":"ORGA-PO-2026-000451","notes":"weekly","lines":[{"variantId":"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33","quantity":12,"unitPrice":"54.69"}]}`
+const purchaseBodyOK = `{"externalReference":"ORGA-PO-2026-000451","notes":"weekly","lines":[{"variantId":"91530","quantity":12,"unitPrice":"54.69"}]}`
 
 func TestPurchaseOffersHandler(t *testing.T) {
 	f := newPurchaseFixture(t)
@@ -176,8 +176,8 @@ func TestPurchaseOrderHandlerCreatesThenReplays(t *testing.T) {
 func TestPurchaseOrderHandlerRejectsBadLines(t *testing.T) {
 	f := newPurchaseFixture(t)
 	cases := map[string]string{
-		"fractional quantity": `{"externalReference":"BAD-1","lines":[{"variantId":"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33","quantity":1.5}]}`,
-		"string quantity":     `{"externalReference":"BAD-2","lines":[{"variantId":"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33","quantity":"12"}]}`,
+		"fractional quantity": `{"externalReference":"BAD-1","lines":[{"variantId":"91530","quantity":1.5}]}`,
+		"string quantity":     `{"externalReference":"BAD-2","lines":[{"variantId":"91530","quantity":"12"}]}`,
 		"bad json":            `{"externalReference":`,
 	}
 	want := map[string]string{"fractional quantity": "ERP_PO_QUANTITY_INVALID", "string quantity": "ERP_PO_QUANTITY_INVALID", "bad json": "ERP_BAD_JSON"}
@@ -194,7 +194,7 @@ func TestPurchaseOrderHandlerRejectsBadLines(t *testing.T) {
 
 func TestPurchaseOrderHandlerNumericUnitPrice(t *testing.T) {
 	f := newPurchaseFixture(t)
-	body := `{"externalReference":"NUM-1","lines":[{"variantId":"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33","quantity":12,"unitPrice":54.69}]}`
+	body := `{"externalReference":"NUM-1","lines":[{"variantId":"91530","quantity":12,"unitPrice":54.69}]}`
 	if w := f.do("POST", "/orders/purchase", body); w.Code != http.StatusCreated {
 		t.Fatalf("status = %d, body %s", w.Code, w.Body.String())
 	}

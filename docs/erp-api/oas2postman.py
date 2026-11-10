@@ -29,6 +29,8 @@ ERRORS = {
     "/orders/purchase": AUTH[1:2] + [(400, "Bad page cursor", "ERP_CURSOR_INVALID", None)],
     "/orders/purchase/{orderNumber}": [(404, "Order not found", "ERP_ORDER_NOT_FOUND", None)],
     "/orders/purchase/ack": [(422, "Invalid data", "ERP_VALIDATION", {"fields": ["orders"]})],
+    "/orgasoft/orders/sales": AUTH[1:2] + [(400, "Bad page cursor", "ERP_CURSOR_INVALID", None)],
+    "/orgasoft/orders/purchase": AUTH[1:2] + [(400, "Bad page cursor", "ERP_CURSOR_INVALID", None)],
     "/offers": [(403, "Key lacks erp.po.create", "ERP_SCOPE_MISSING", {"requiredScope": "erp.po.create"}),
                (422, "Barcode missing", "ERP_VALIDATION", {"fields": ["barcode"]})],
 }
@@ -36,12 +38,12 @@ PURCHASE_ERRORS = [
     (422, "Wrong quantity on a line", "ERP_PO_QUANTITY_INVALID", {"line": 1}),
     (409, "Price differs from Dawa24's", "ERP_PO_PRICE_MISMATCH", {"lines": [{"line": 1, "sentPrice": "48.00", "correctPrice": "50.40"}]}),
     (422, "Supplier not linked to your organization", "ERP_PO_SUPPLIER_NOT_LINKED", {"line": 1, "supplierName": "Al Nour Pharma"}),
-    (422, "No active offer for the product", "ERP_PO_NO_ACTIVE_OFFER", {"line": 1, "variantId": "3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33"}),
+    (422, "No active offer for the product", "ERP_PO_NO_ACTIVE_OFFER", {"line": 1, "variantId": "91530"}),
     (409, "Refused by the ordering rules", "ERP_PO_REFUSED", {"reason": "quota.exhausted"}),
     (409, "Same reference, different body", "ERP_IDEMPOTENCY_CONFLICT", None),
     (409, "Same reference still being processed", "ERP_PO_IN_PROGRESS", None),
 ]
-SCOPE = {"/offers": "erp.po.create", "/health": "", "/products/sync": "erp.products.sync", "/orders/sales": "erp.orders.read", "/orders/purchase": "erp.orders.read"}
+SCOPE = {"/offers": "erp.po.create", "/health": "", "/products/sync": "erp.products.sync", "/orders/sales": "erp.orders.read", "/orders/purchase": "erp.orders.read", "/orgasoft/orders/sales": "erp.orders.read", "/orgasoft/orders/purchase": "erp.orders.read"}
 
 
 def error_body(code, details):
@@ -55,7 +57,8 @@ def error_body(code, details):
     return {"status": "error", "requestId": "a41f7c2e9b0d4e63",
             "error": {"code": code, "message": {"ar": ar, "en": en}, "details": details}}
 d = yaml.safe_load(open(src, encoding="utf-8"))
-
+
+
 # (folder, request summary in contract) -> (new name, explanation). Order here is the order shown.
 PLAN = [
     ("01 Start here - ابدأ هنا", "Use these first to check that everything is connected. / استخدمها أولاً للتأكد من أن الربط يعمل.", [
@@ -101,7 +104,12 @@ PLAN = [
          "imported yet.\n\n**When:** every few minutes.\n\n"
          "**More than one page?** If `page.nextCursor` is not null, call again with `cursor=<that value>`.\n\n"
          "**ماذا يفعل:** يعرض طلبات الصيدليات. اترك `state=new` لجلب الطلبات التي لم تستوردها بعد. استدعه كل بضع دقائق."),
-        ("GET", "/orders/sales/{orderNumber}", "2. Get one order - جلب طلب واحد",
+        ("GET", "/orgasoft/orders/sales", "2. Orders in Orgasoft format - الطلبات بصيغة Orgasoft",
+         "**What it does:** the same new orders as step 1, written as a plain list in the layout Orgasoft asked for: one entry per shipment, with the pharmacy name, code, phone, city and address, and each item's code, quantity, price and discount percent.\n\n"
+         "**More than one page?** The reply header `X-Next-Cursor` holds the cursor for the next page. It is absent on the last page.\n\n"
+         "**ماذا يفعل:** نفس الطلبات الجديدة بالشكل الذي طلبته أوركاسوفت: قائمة مباشرة، طلب لكل شحنة، مع اسم الصيدلية وكودها وهاتفها ومدينتها وعنوانها، ولكل صنف كوده وكميته وسعره ونسبة خصمه.\n\n"
+         "**الصفحة التالية:** الترويسة `X-Next-Cursor` تحمل مؤشر الصفحة التالية، وتغيب في الصفحة الأخيرة."),
+        ("GET", "/orders/sales/{orderNumber}", "3. Get one order - جلب طلب واحد",
          "**What it does:** shows one order with the pharmacy, address, phone and all lines.\n\n"
          "**ماذا يفعل:** يعرض طلباً واحداً بكل تفاصيله: الصيدلية والعنوان والهاتف والأصناف."),
         ("POST", "/orders/sales/ack", "3. Mark orders as imported - تأكيد استيراد الطلبات",
@@ -117,7 +125,11 @@ PLAN = [
         ("GET", "/orders/purchase", "1. Get purchase orders - جلب طلبات الشراء",
          "**What it does:** lists the orders the pharmacy placed with suppliers on Dawa24.\n\n"
          "**ماذا يفعل:** يعرض طلبات الصيدلية من الموردين على دواء24."),
-        ("GET", "/orders/purchase/{orderNumber}", "2. Get one purchase order - جلب طلب شراء واحد",
+        ("GET", "/orgasoft/orders/purchase", "2. Purchase orders in Orgasoft format - طلبات الشراء بصيغة Orgasoft",
+         "**What it does:** the same purchase orders as step 1, as a plain list in Orgasoft's layout: one entry per order with all its lines. The entry describes the ordering pharmacy, and `pharmacyCode` is null.\n\n"
+         "**More than one page?** Use the `X-Next-Cursor` header, absent on the last page.\n\n"
+         "**ماذا يفعل:** نفس طلبات الشراء بالشكل الذي طلبته أوركاسوفت: طلب واحد لكل طلب شراء مع كل أصنافه. الطلب يصف الصيدلية التي طلبته، و`pharmacyCode` يكون null."),
+        ("GET", "/orders/purchase/{orderNumber}", "3. Get one purchase order - جلب طلب شراء واحد",
          "**What it does:** shows one purchase order with each supplier's shipment and lines.\n\n"
          "**ماذا يفعل:** يعرض طلب شراء واحداً مع شحنة كل مورد وأصنافها."),
         ("POST", "/orders/purchase/ack", "3. Mark purchase orders as imported - تأكيد استيراد طلبات الشراء",

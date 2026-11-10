@@ -10,7 +10,7 @@ package orgasoft
 // no Orgasoft sample; they are unverified with the owner and ignored when
 // absent (verify-notes "V5 unverified").
 var productAliases = map[string][]string{
-	"externalProductCode": {"externalProductCode"},
+	"externalProductCode": {"externalProductCode", "itemId", "itemCode", "productCode", "code"},
 	"arName":              {"arName"},
 	"publicPrice":         {"publicPrice"},
 	"stock":               {"stock"},
@@ -23,6 +23,21 @@ var productAliases = map[string][]string{
 	"unit":                {"unit"},
 	"manufacturer":        {"manufacturer"},
 	"batchNumber":         {"batchNumber"},
+}
+
+// codeOrder is the priority of the item-code spellings when one row carries
+// more than one. externalProductCode always wins over an alias.
+var codeOrder = []string{"externalProductCode", "itemId", "itemCode", "productCode", "code"}
+
+// pickCode returns the first non-empty item code in codeOrder, so the result
+// never depends on the order a map is iterated in.
+func pickCode(codes map[string]string) string {
+	for _, key := range codeOrder {
+		if v := codes[key]; v != "" {
+			return v
+		}
+	}
+	return ""
 }
 
 // foldKey lower-cases the first letter, so Orgasoft's PascalCase-dated sample

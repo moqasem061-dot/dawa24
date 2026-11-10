@@ -135,6 +135,7 @@ func (o *Orgasoft) DecodeProductBatch(body []byte) (provider.Batch, error) {
 	}
 	for _, row := range rows {
 		var item provider.RawItem
+		codes := map[string]string{} // item-code spellings in this row, by folded key
 		for key, raw := range row {
 			canonical, known := lookup[foldKey(key)]
 			if !known {
@@ -143,7 +144,7 @@ func (o *Orgasoft) DecodeProductBatch(body []byte) (provider.Batch, error) {
 			var err error
 			switch canonical {
 			case "externalProductCode":
-				item.Code, err = str(raw)
+				codes[foldKey(key)], err = str(raw)
 			case "arName":
 				item.ArName, err = str(raw)
 			case "barcode":
@@ -173,6 +174,7 @@ func (o *Orgasoft) DecodeProductBatch(body []byte) (provider.Batch, error) {
 				return provider.Batch{}, fmt.Errorf("orgasoft: field %s: %w", canonical, err)
 			}
 		}
+		item.Code = pickCode(codes)
 		batch.Items = append(batch.Items, item)
 	}
 	return batch, nil

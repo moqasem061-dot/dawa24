@@ -17,6 +17,7 @@ type fakePurchaseRepo struct {
 	poIdem        map[string]*fakeIdem
 	poMarkers     map[string]fakeMarker
 	poAudits      []AuditRecord
+	poItemCodes   []ItemCode
 	poOfferLimit  int
 	poIdemDeletes int
 	poIdemBegins  int
@@ -84,7 +85,8 @@ func (f *fakePurchaseRepo) BeginIdempotency(_ context.Context, _, _ int64, ref, 
 	return IdemState{Created: true, RequestSHA: requestSHA}, nil
 }
 
-func (f *fakePurchaseRepo) FinishIdempotency(_ context.Context, _, _ int64, ref string, orderID int64, orderNumber string, response []byte, audit AuditRecord) error {
+func (f *fakePurchaseRepo) FinishIdempotency(_ context.Context, _, _ int64, ref string, orderID int64, orderNumber string, response []byte, audit AuditRecord, codes []ItemCode) error {
+	f.poItemCodes = append(f.poItemCodes, codes...)
 	row, ok := f.poIdem[ref]
 	if !ok {
 		return errors.New("no idempotency row")

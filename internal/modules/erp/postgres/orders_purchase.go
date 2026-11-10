@@ -19,8 +19,15 @@ const purchaseHeaderInner = `
 SELECT o.id, o.order_number, o.status,
        CASE WHEN i.acked_status IS NULL THEN 'new' WHEN i.acked_status = o.status THEN 'imported' ELSE 'changed' END AS import_state,
        COALESCE(r.external_reference, ''), COALESCE(i.erp_reference, ''), i.acked_at,
-       o.created_at, o.updated_at, o.total_amount
+       o.created_at, o.updated_at, o.total_amount,
+       COALESCE(buyer.name, '{}'::jsonb),
+       COALESCE(NULLIF(br.phone, ''), buyer.phone, ''),
+       COALESCE(NULLIF(br.address, ''), buyer.address, ''),
+       COALESCE(NULLIF(ci.name->>'en', ''), ci.name->>'ar', '')
 FROM commerce.orders o
+LEFT JOIN org.organizations buyer ON buyer.id = o.organization_id
+LEFT JOIN org.branches br ON br.id = o.branch_id AND br.organization_id = o.organization_id
+LEFT JOIN platform_admin.cities ci ON ci.id = br.city_id
 LEFT JOIN LATERAL (
     SELECT x.erp_reference, x.acked_status, x.acked_at
     FROM erp.order_imports x
@@ -56,12 +63,15 @@ LIMIT 1`
 
 func scanPurchaseHeader(row scanner) (erp.PurchaseRow, error) {
 	var r erp.PurchaseRow
+	var buyerName []byte
 	err := row.Scan(&r.OrderID, &r.OrderNumber, &r.Status, &r.ImportState,
 		&r.ExternalReference, &r.ErpReference, &r.AckedAt,
-		&r.CreatedAt, &r.UpdatedAt, &r.Total)
+		&r.CreatedAt, &r.UpdatedAt, &r.Total,
+		&buyerName, &r.Ordering.Phone, &r.Ordering.Address, &r.Ordering.City)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return r, erp.ErrNotFound
 	}
+	r.BuyerName = decodeBilingual(buyerName)
 	return r, err
 }
 
@@ -107,15 +117,18 @@ WHERE o.organization_id = $1 AND s.order_id = ANY($2) AND o.deleted_at IS NULL
 ORDER BY s.id`
 
 // purchaseLinesSQL reads the lines of those shipments. Lines carry the variant's
-// public id and barcode; no external code, because the buyer's integration does
-// not link a supplier's variants.
+// numeric id and barcode. The external code is the buyer's own item code for the
+// variant (erp.item_codes), pinned to the buyer organization: this statement runs
+// as system (E7), so the join must not rely on RLS. It is empty when none is stored.
 const purchaseLinesSQL = `
-SELECT ol.shipment_id, ol.id, COALESCE(v.public_id::text, ''), COALESCE(v.barcode, ''),
-       ol.product_name, ol.quantity, ol.unit_price, ol.discount_amount, ol.total_price
+SELECT ol.shipment_id, ol.id, COALESCE(v.id::text, ''), COALESCE(v.barcode, ''),
+       ol.product_name, ol.quantity, ol.unit_price, ol.discount_amount, ol.total_price,
+       COALESCE(c.external_code, ''), COALESCE(ol.list_price, 0)
 FROM commerce.order_lines ol
 JOIN commerce.order_shipments s ON s.id = ol.shipment_id
 JOIN commerce.orders o ON o.id = s.order_id
 LEFT JOIN catalog.product_variants v ON v.id = ol.product_variant_id
+LEFT JOIN erp.item_codes c ON c.organization_id = $1 AND c.variant_id = ol.product_variant_id
 WHERE o.organization_id = $1 AND s.order_id = ANY($2) AND o.deleted_at IS NULL
 ORDER BY ol.id`
 
@@ -159,7 +172,8 @@ func (r *Repository) ListPurchaseShipmentsAsSystem(ctx context.Context, buyerOrg
 			var name []byte
 			var line erp.OrderLine
 			if err := lines.Scan(&shipmentID, &line.LineID, &line.VariantPublicID, &line.Barcode,
-				&name, &line.Quantity, &line.UnitPrice, &line.DiscountAmount, &line.TotalPrice); err != nil {
+				&name, &line.Quantity, &line.UnitPrice, &line.DiscountAmount, &line.TotalPrice,
+				&line.ExternalProductCode, &line.ListPrice); err != nil {
 				return err
 			}
 			line.Name = decodeBilingual(name)

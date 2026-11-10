@@ -18,8 +18,9 @@ type PurchaseRepository interface {
 	VariantOfferAsSystem(ctx context.Context, publicID string) (VariantOfferRow, error)
 	// BeginIdempotency inserts the in_progress row, or reads the row that exists.
 	BeginIdempotency(ctx context.Context, orgID, integrationID int64, ref, requestSHA string) (IdemState, error)
-	// FinishIdempotency stores the response and writes the audit row in one transaction.
-	FinishIdempotency(ctx context.Context, orgID, integrationID int64, ref string, orderID int64, orderNumber string, response []byte, audit AuditRecord) error
+	// FinishIdempotency stores the response, the buyer's item codes and the audit
+	// row in one transaction.
+	FinishIdempotency(ctx context.Context, orgID, integrationID int64, ref string, orderID int64, orderNumber string, response []byte, audit AuditRecord, codes []ItemCode) error
 	DeleteIdempotency(ctx context.Context, orgID, integrationID int64, ref string) error
 	// FindOrderByNoteMarker finds the buyer's order whose note carries the marker.
 	FindOrderByNoteMarker(ctx context.Context, buyerOrgID int64, marker string) (orderID int64, orderNumber string, found bool, err error)
@@ -66,12 +67,22 @@ type CreatePurchaseRequest struct {
 	Lines             []PurchaseLine
 }
 
-// PurchaseLine is one requested line. VariantID is the public id; UnitPrice is
-// the optional price the ERP sent, compared with Dawa24's.
+// PurchaseLine is one requested line. VariantID is the variant's id (decimal text,
+// or the legacy UUID); UnitPrice is the optional price the ERP sent, compared with
+// Dawa24's; Code is the buyer's own item code for the product, stored for the
+// order feed.
 type PurchaseLine struct {
 	VariantID string
 	Quantity  int
 	UnitPrice *money.Amount
+	Code      string
+}
+
+// ItemCode is the buyer's item code for one variant it purchased, as stored in
+// erp.item_codes. VariantID is the resolved numeric variant id.
+type ItemCode struct {
+	VariantID int64
+	Code      string
 }
 
 // PurchaseResult is the order the call answers with. Replay is true when the

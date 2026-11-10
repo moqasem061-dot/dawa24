@@ -78,7 +78,8 @@ func (s *Service) CreatePurchaseOrder(ctx context.Context, p Principal, req Crea
 	if s.ports.Placer == nil {
 		return PurchaseResult{}, NewError("ERP_UNAVAILABLE", 503, nil)
 	}
-	if _, err := s.checkPurchaseLines(ctx, p, req.Lines); err != nil {
+	checked, err := s.checkPurchaseLines(ctx, p, req.Lines)
+	if err != nil {
 		return PurchaseResult{}, err
 	}
 
@@ -141,7 +142,7 @@ func (s *Service) CreatePurchaseOrder(ctx context.Context, p Principal, req Crea
 	keyID := p.KeyID
 	audit := AuditRecord{Action: purchaseAuditAction, EntityType: "order", EntityID: placed.OrderNumber,
 		After: map[string]any{"orderNumber": placed.OrderNumber, "externalReference": ref}, ActorKeyID: &keyID, ActorKind: "api_key"}
-	if err := s.repo.FinishIdempotency(ctx, p.OrganizationID, p.IntegrationID, ref, placed.OrderID, placed.OrderNumber, body, audit); err != nil {
+	if err := s.repo.FinishIdempotency(ctx, p.OrganizationID, p.IntegrationID, ref, placed.OrderID, placed.OrderNumber, body, audit, itemCodesFor(req.Lines, checked)); err != nil {
 		return PurchaseResult{}, NewError("ERP_INTERNAL", 500, nil)
 	}
 	return PurchaseResult{OrderID: placed.OrderID, OrderNumber: placed.OrderNumber, Row: row}, nil
@@ -209,7 +210,8 @@ func (s *Service) repairPurchase(ctx context.Context, p Principal, ref string) (
 	if err != nil {
 		return PurchaseResult{}, false, NewError("ERP_INTERNAL", 500, nil)
 	}
-	if err := s.repo.FinishIdempotency(ctx, p.OrganizationID, p.IntegrationID, ref, orderID, number, body, AuditRecord{}); err != nil {
+	// A repaired order has no request lines in hand, so no item codes are stored.
+	if err := s.repo.FinishIdempotency(ctx, p.OrganizationID, p.IntegrationID, ref, orderID, number, body, AuditRecord{}, nil); err != nil {
 		return PurchaseResult{}, false, NewError("ERP_INTERNAL", 500, nil)
 	}
 	return PurchaseResult{OrderID: orderID, OrderNumber: number, Replay: true, Row: row}, true, nil
@@ -237,6 +239,19 @@ func replayPurchase(stored []byte) (PurchaseResult, error) {
 		return PurchaseResult{}, NewError("ERP_INTERNAL", 500, nil)
 	}
 	return PurchaseResult{OrderID: row.OrderID, OrderNumber: row.OrderNumber, Replay: true, Row: row}, nil
+}
+
+// itemCodesFor pairs each line's item code with the variant the line resolved to.
+// rows is the checked list, in line order. A line without a code stores nothing.
+func itemCodesFor(lines []PurchaseLine, rows []VariantOfferRow) []ItemCode {
+	var out []ItemCode
+	for i, line := range lines {
+		if line.Code == "" || i >= len(rows) {
+			continue
+		}
+		out = append(out, ItemCode{VariantID: rows[i].ID, Code: line.Code})
+	}
+	return out
 }
 
 // offerUnitPrice is the website's effective price: the public price less the

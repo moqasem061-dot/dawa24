@@ -26,11 +26,15 @@ SELECT s.id, s.order_id, o.order_number, s.shipment_number, s.status,
        COALESCE(o.organization_id, 0), o.customer_id,
        COALESCE(co.name, '{}'::jsonb), COALESCE(b.name, '{}'::jsonb),
        COALESCE(CASE WHEN o.branch_id IS NULL THEN co.address ELSE b.address END, ''),
-       COALESCE(CASE WHEN o.branch_id IS NULL THEN co.phone ELSE b.phone END, '')
+       COALESCE(CASE WHEN o.branch_id IS NULL THEN co.phone ELSE b.phone END, ''),
+       COALESCE(NULLIF(b.phone, ''), co.phone, ''),
+       COALESCE(NULLIF(b.address, ''), co.address, ''),
+       COALESCE(NULLIF(ci.name->>'en', ''), ci.name->>'ar', '')
 FROM commerce.order_shipments s
 JOIN commerce.orders o ON o.id = s.order_id
 LEFT JOIN org.organizations co ON co.id = o.organization_id
 LEFT JOIN org.branches b ON b.id = o.branch_id AND b.organization_id = o.organization_id
+LEFT JOIN platform_admin.cities ci ON ci.id = b.city_id
 LEFT JOIN LATERAL (
     SELECT x.erp_reference, x.acked_status, x.acked_at
     FROM erp.order_imports x
@@ -71,7 +75,8 @@ func scanSalesHeader(row scanner) (erp.SalesRow, orderRef, error) {
 		&r.Subtotal, &r.ShippingFee, &r.Total,
 		&ref.CustomerOrgID, &ref.CustomerUserID,
 		&custName, &branch,
-		&r.Customer.Address, &r.Customer.Phone)
+		&r.Customer.Address, &r.Customer.Phone,
+		&r.Customer.Ordering.Phone, &r.Customer.Ordering.Address, &r.Customer.Ordering.City)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return r, ref, erp.ErrNotFound
 	}
@@ -79,6 +84,7 @@ func scanSalesHeader(row scanner) (erp.SalesRow, orderRef, error) {
 		return r, ref, err
 	}
 	ref.OrderID = r.OrderID
+	r.BuyerOrgID = ref.CustomerOrgID
 	r.Customer.Name = decodeBilingual(custName)
 	r.Customer.BranchName = decodeBilingual(branch)
 	return r, ref, nil
@@ -186,8 +192,8 @@ func (r *Repository) attachSalesLines(ctx context.Context, orgID, integrationID 
 }
 
 const salesLinesSQL = `
-SELECT ol.shipment_id, ol.id, COALESCE(v.public_id::text, ''), COALESCE(pl.external_code, ''), COALESCE(v.barcode, ''),
-       ol.product_name, ol.quantity, ol.unit_price, ol.discount_amount, ol.total_price
+SELECT ol.shipment_id, ol.id, COALESCE(v.id::text, ''), COALESCE(pl.external_code, ''), COALESCE(v.barcode, ''),
+       ol.product_name, ol.quantity, ol.unit_price, ol.discount_amount, ol.total_price, COALESCE(ol.list_price, 0)
 FROM commerce.order_lines ol
 LEFT JOIN catalog.product_variants v ON v.id = ol.product_variant_id
 LEFT JOIN LATERAL (
@@ -214,7 +220,7 @@ func (r *Repository) loadSalesLines(ctx context.Context, orgID, integrationID in
 			var name []byte
 			var line erp.OrderLine
 			if err := cursor.Scan(&shipmentID, &line.LineID, &line.VariantPublicID, &line.ExternalProductCode, &line.Barcode,
-				&name, &line.Quantity, &line.UnitPrice, &line.DiscountAmount, &line.TotalPrice); err != nil {
+				&name, &line.Quantity, &line.UnitPrice, &line.DiscountAmount, &line.TotalPrice, &line.ListPrice); err != nil {
 				return err
 			}
 			line.Name = decodeBilingual(name)

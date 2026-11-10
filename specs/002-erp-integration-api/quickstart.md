@@ -57,6 +57,8 @@ The collection has no errors folder; send these by hand (Postman or curl) and co
 
 Pass criteria: every Postman test is green, and SC-001 holds (key to acknowledged order in under 30 minutes).
 
+**Orgasoft format and short ids (2026-11-10).** Two more reads return Orgasoft's shape: `GET /erp/v1/orgasoft/orders/sales` and `GET /erp/v1/orgasoft/orders/purchase`, bare arrays with the next page in `X-Next-Cursor`. Every id Dawa24 returns is at most 20 characters: `syncId` and `variantId` are decimal (for example `"4821"` and `"91530"`), `requestId` is 16 hex characters, and `nextCursor` is decimal. Two shapes are still to confirm with Orgasoft: purchase entries describe the ordering pharmacy, and `pharmacyCity` uses the English city name.
+
 ## 7. Automated checks (implementer)
 ```
 go test ./internal/modules/erp/... -count=1                      # unit + http

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/jackc/pgx/v5"
 
@@ -16,14 +17,17 @@ import (
 // too, so a chunk job can never outlive a rolled-back batch), and the chunk
 // lifecycle advances through queued -> processing -> completed.
 
-const batchColumns = `b.id, b.public_id::text, b.organization_id, b.integration_id, b.api_key_id, b.warehouse_id, b.branch_id, COALESCE(b.client_batch_id, ''), COALESCE(b.idempotency_key, ''), b.body_sha256, b.state, b.item_count, b.chunk_count, b.chunks_done, b.created_count, b.updated_count, b.unchanged_count, b.needs_review_count, b.failed_count, COALESCE(b.error_code, ''), b.accepted_at, b.started_at, b.finished_at, i.provider`
+const batchColumns = `b.id, b.organization_id, b.integration_id, b.api_key_id, b.warehouse_id, b.branch_id, COALESCE(b.client_batch_id, ''), COALESCE(b.idempotency_key, ''), b.body_sha256, b.state, b.item_count, b.chunk_count, b.chunks_done, b.created_count, b.updated_count, b.unchanged_count, b.needs_review_count, b.failed_count, COALESCE(b.error_code, ''), b.accepted_at, b.started_at, b.finished_at, i.provider`
 
 func scanBatch(row scanner) (erp.SyncBatch, error) {
 	var b erp.SyncBatch
-	err := row.Scan(&b.ID, &b.PublicID, &b.OrganizationID, &b.IntegrationID, &b.APIKeyID, &b.WarehouseID, &b.BranchID, &b.ClientBatchID, &b.IdempotencyKey, &b.BodySHA256, &b.State, &b.ItemCount, &b.ChunkCount, &b.ChunksDone, &b.CreatedCount, &b.UpdatedCount, &b.UnchangedCount, &b.NeedsReviewCount, &b.FailedCount, &b.ErrorCode, &b.AcceptedAt, &b.StartedAt, &b.FinishedAt, &b.Provider)
+	err := row.Scan(&b.ID, &b.OrganizationID, &b.IntegrationID, &b.APIKeyID, &b.WarehouseID, &b.BranchID, &b.ClientBatchID, &b.IdempotencyKey, &b.BodySHA256, &b.State, &b.ItemCount, &b.ChunkCount, &b.ChunksDone, &b.CreatedCount, &b.UpdatedCount, &b.UnchangedCount, &b.NeedsReviewCount, &b.FailedCount, &b.ErrorCode, &b.AcceptedAt, &b.StartedAt, &b.FinishedAt, &b.Provider)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return b, erp.ErrNotFound
 	}
+	// The sync id the API returns is the decimal batch id (at most 20
+	// characters). PublicID keeps its name and now holds that id as text.
+	b.PublicID = strconv.FormatInt(b.ID, 10)
 	return b, err
 }
 
@@ -35,10 +39,9 @@ func (r *Repository) InsertBatch(ctx context.Context, orgID int64, b erp.NewBatc
 		row := tx.QueryRow(ctx, `INSERT INTO erp.sync_batches
 			(organization_id, integration_id, api_key_id, warehouse_id, branch_id, client_batch_id, idempotency_key, body_sha256, item_count, chunk_count)
 			VALUES ($1,$2,NULLIF($3,0),$4,$5,NULLIF($6,''),NULLIF($7,''),$8,$9,$10)
-			RETURNING id, public_id::text`, orgID, b.IntegrationID, b.APIKeyID, b.WarehouseID, b.BranchID, b.ClientBatchID, b.IdempotencyKey, b.BodySHA256, b.ItemCount, b.ChunkCount)
+			RETURNING id`, orgID, b.IntegrationID, b.APIKeyID, b.WarehouseID, b.BranchID, b.ClientBatchID, b.IdempotencyKey, b.BodySHA256, b.ItemCount, b.ChunkCount)
 		var id int64
-		var publicID string
-		if err := row.Scan(&id, &publicID); err != nil {
+		if err := row.Scan(&id); err != nil {
 			return fmt.Errorf("erp: insert batch: %w", err)
 		}
 		// The plan's CopyFrom is refused by PostgreSQL on tables with RLS
@@ -112,13 +115,22 @@ func (r *Repository) FindBatchByIdempotency(ctx context.Context, orgID, integrat
 	return out, err == nil, err
 }
 
-func (r *Repository) GetBatchByPublicID(ctx context.Context, orgID int64, publicID string) (erp.SyncBatch, error) {
+// GetBatchByPublicID reads a batch by the sync id the caller holds. The id is
+// the decimal batch id; the UUID that older clients were given is still
+// accepted and looked up by public_id. Any other text is not found.
+func (r *Repository) GetBatchByPublicID(ctx context.Context, orgID int64, syncID string) (erp.SyncBatch, error) {
+	if id, ok := erp.ParseShortID(syncID); ok {
+		return r.GetBatchByID(ctx, orgID, id)
+	}
+	if !uuidPattern.MatchString(syncID) {
+		return erp.SyncBatch{}, erp.ErrNotFound
+	}
 	var out erp.SyncBatch
 	err := r.db.InReadTx(database.WithTenant(ctx, orgID), func(ctx context.Context, tx pgx.Tx) error {
 		var err error
 		out, err = scanBatch(tx.QueryRow(ctx, `SELECT `+batchColumns+`
 			FROM erp.sync_batches b JOIN erp.integrations i ON i.id = b.integration_id
-			WHERE b.organization_id = $1 AND b.public_id = $2`, orgID, publicID))
+			WHERE b.organization_id = $1 AND b.public_id = $2::uuid`, orgID, syncID))
 		return err
 	})
 	return out, err
