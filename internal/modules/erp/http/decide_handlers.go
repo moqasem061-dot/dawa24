@@ -33,6 +33,7 @@ func (h *Handler) decideSale(w http.ResponseWriter, r *http.Request) {
 		writeError(w, r, erp.NewError("ERP_BAD_JSON", 400, map[string]any{"position": 0}))
 		return
 	}
+	setCallRef(r.Context(), chi.URLParam(r, "orderNumber"))
 	res, err := h.svc.Decide(r.Context(), principal, chi.URLParam(r, "orderNumber"), body.Status, body.Reason)
 	if err != nil {
 		writeError(w, r, err)

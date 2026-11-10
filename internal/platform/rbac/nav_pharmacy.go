@@ -51,6 +51,8 @@ func pharmacyNav() []NavSection {
 			Items: []NavItem{
 				{Key: "integrations", Href: "/customer/integrations", Icon: "layers",
 					NameAr: "تكامل الأنظمة", NameEn: "Integrations", Perm: "pharmacy.integration.view"},
+				{Key: "integration_activity", Href: "/customer/integrations/activity", Icon: "activity",
+					NameAr: "سجل التكامل", NameEn: "Integration activity", Perm: "pharmacy.integration.view"},
 			},
 		},
 		{

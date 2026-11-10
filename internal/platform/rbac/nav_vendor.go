@@ -128,6 +128,8 @@ func vendorNav() []NavSection {
 			Items: []NavItem{
 				{Key: "integrations", Href: "/vendor/integrations", Icon: "layers",
 					NameAr: "تكامل الأنظمة", NameEn: "Integrations", Perm: "vendor.integration.view"},
+				{Key: "integration_activity", Href: "/vendor/integrations/activity", Icon: "activity",
+					NameAr: "سجل التكامل", NameEn: "Integration activity", Perm: "vendor.integration.view"},
 				{Key: "integration_review", Href: "/vendor/integrations/review", Icon: "alert-triangle",
 					NameAr: "مراجعة أصناف التكامل", NameEn: "Integration item review", Perm: "vendor.integration.review"},
 			},

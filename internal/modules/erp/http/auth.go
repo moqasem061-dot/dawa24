@@ -2,10 +2,13 @@ package http
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/moqasem061-dot/dawa24/internal/modules/erp"
@@ -21,14 +24,79 @@ func principalFromContext(ctx context.Context) (erp.Principal, bool) {
 	return p, ok
 }
 
-// callState carries per-call flags from the handler to the call recorder. It
-// holds flags only, never request data (trap 24).
-type callState struct{ sensitiveRead bool }
+// callState carries per-call facts from the handler to the call recorder. It
+// holds flags, the error code and details the handler returned, and the ref
+// the call touched. Never request data, never the key or the Authorization
+// header (trap 24).
+type callState struct {
+	sensitiveRead bool
+	errorCode     string
+	errorDetail   []byte
+	ref           string
+}
+
+// The call log keeps at most this much of the error details and of the refs
+// and request-line text.
+const (
+	maxErrorDetailBytes = 2048
+	maxQueryChars       = 500
+	maxUserAgentChars   = 200
+	maxRefChars         = 100
+)
 
 type callStateKey struct{}
 
 func withCallState(ctx context.Context, st *callState) context.Context {
 	return context.WithValue(ctx, callStateKey{}, st)
+}
+
+// noteError copies a handler's error code and details onto the call state, so
+// the call log records ERP_VALIDATION and the like instead of an empty code.
+// Details over 2 KB are replaced by a truncation marker.
+func noteError(ctx context.Context, e *erp.Error) {
+	st, ok := ctx.Value(callStateKey{}).(*callState)
+	if !ok {
+		return
+	}
+	st.errorCode = e.Code
+	st.errorDetail = nil
+	if len(e.Details) == 0 {
+		return
+	}
+	raw, err := json.Marshal(e.Details)
+	if err != nil {
+		return
+	}
+	if len(raw) > maxErrorDetailBytes {
+		raw = []byte(`{"truncated":true}`)
+	}
+	st.errorDetail = raw
+}
+
+// setCallRef records the identifier the call touched (a sync id, an order
+// number, an external reference). Only the identifier goes in, never a body.
+func setCallRef(ctx context.Context, ref string) {
+	if st, ok := ctx.Value(callStateKey{}).(*callState); ok {
+		st.ref = clip(ref, maxRefChars)
+	}
+}
+
+// clip shortens s to at most max bytes without splitting a UTF-8 sequence, so
+// the text stays valid for PostgreSQL.
+func clip(s string, max int) string {
+	if len(s) <= max {
+		return s
+	}
+	cut := 0
+	for i := 0; i < len(s); {
+		_, width := utf8.DecodeRuneInString(s[i:])
+		if i+width > max {
+			break
+		}
+		i += width
+		cut = i
+	}
+	return s[:cut]
 }
 
 // markSensitiveRead flags the call as a read of sensitive data (customer names,
@@ -49,6 +117,7 @@ type authLayer struct {
 type statusWriter struct {
 	http.ResponseWriter
 	status int
+	bytes  int
 }
 
 func (w *statusWriter) WriteHeader(status int) {
@@ -61,7 +130,9 @@ func (w *statusWriter) Write(p []byte) (int, error) {
 	if w.status == 0 {
 		w.WriteHeader(http.StatusOK)
 	}
-	return w.ResponseWriter.Write(p)
+	n, err := w.ResponseWriter.Write(p)
+	w.bytes += n
+	return n, err
 }
 func (a *authLayer) logRedis(ctx context.Context, err error) {
 	if err != nil && a.log != nil {
@@ -75,6 +146,7 @@ func (a *authLayer) middleware(next http.Handler) http.Handler {
 		sw := &statusWriter{ResponseWriter: w}
 		state := &callState{}
 		var principal *erp.Principal
+		var refusal *erp.AuthRefusal
 		var code string
 		defer func() {
 			if a.record == nil {
@@ -84,7 +156,17 @@ func (a *authLayer) middleware(next http.Handler) http.Handler {
 			if rc := chi.RouteContext(r.Context()); rc != nil {
 				route = rc.RoutePattern()
 			}
+			if code == "" {
+				// A handler's own error (ERP_VALIDATION and the like) reaches
+				// the log through the call state, not the middleware's code.
+				code = state.errorCode
+			}
 			record := erp.CallRecord{RequestID: observability.RequestIDFrom(r.Context()), Method: r.Method, Route: route, Status: sw.status, ErrorCode: code, DurationMS: int(time.Since(start).Milliseconds()), IP: &ip, SensitiveRead: state.sensitiveRead, CreatedAt: time.Now()}
+			record.BytesOut = sw.bytes
+			record.Query = clip(r.URL.RawQuery, maxQueryChars)
+			record.UserAgent = clip(r.UserAgent(), maxUserAgentChars)
+			record.Ref = state.ref
+			record.ErrorDetail = state.errorDetail
 			if r.ContentLength > 0 {
 				record.BytesIn = int(r.ContentLength)
 			}
@@ -92,6 +174,14 @@ func (a *authLayer) middleware(next http.Handler) http.Handler {
 				record.OrganizationID = &principal.OrganizationID
 				record.APIKeyID = &principal.KeyID
 				record.KeyPrefix = principal.KeyPrefix
+			}
+			if refusal != nil {
+				// A refused key with a known prefix is attributed to its own
+				// organization, so the owner sees it in the activity log.
+				record.OrganizationID = &refusal.OrganizationID
+				record.APIKeyID = &refusal.KeyID
+				record.KeyPrefix = refusal.KeyPrefix
+				record.AuthReason = refusal.Reason
 			}
 			a.record(record)
 		}()
@@ -114,6 +204,10 @@ func (a *authLayer) middleware(next http.Handler) http.Handler {
 		if authErr != nil {
 			a.logRedis(r.Context(), a.lim.IncrementAuthFailure(r.Context(), failureKey(ip), time.Minute))
 			code = "ERP_AUTH_INVALID"
+			if errors.As(authErr, &refusal) {
+				// The answer is the same 401 as any refusal; only the log differs.
+				code = refusal.Err.Code
+			}
 			writeError(sw, r, authErr)
 			return
 		}

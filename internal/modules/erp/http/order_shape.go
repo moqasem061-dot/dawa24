@@ -10,9 +10,9 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
-// The Orgasoft order feed (2026-11-10). Same scopes, filters and paging as the
-// order feeds, but the body is a bare JSON array in the shape Orgasoft asked
-// for, and the next page is in the X-Next-Cursor header. Field order and number
+// The order shape Orgasoft asked for (2026-11-10), used by every order read and
+// by purchase creation: a list is a bare JSON array with the next page in the
+// X-Next-Cursor header; one order is a bare object. Field order and number
 // text are part of that contract: money is written as the raw decimal the
 // database holds, so 265.00 stays 265.00.
 
@@ -84,13 +84,22 @@ func feedLine(l erp.OrderLine) feedItem {
 	}
 }
 
-// feedSalesOrder renders one supplier shipment: the buyer's pharmacy and
-// the shipment's total (subtotal plus shipping).
-func feedSalesOrder(row erp.SalesRow) feedOrder {
-	total, err := row.Subtotal.Add(row.ShippingFee)
-	if err != nil {
-		total = row.Total
+// feedTotal is Orgasoft's total: what the items cost after discount (the sum of
+// the line totals) plus shipping. The stored subtotal is the price before
+// discount and the order header total is too, so neither is used.
+func feedTotal(lines []erp.OrderLine, shipping money.Amount) money.Amount {
+	total := shipping
+	for _, l := range lines {
+		if sum, err := total.Add(l.TotalPrice); err == nil {
+			total = sum
+		}
 	}
+	return total
+}
+
+// feedSalesOrder renders one supplier shipment for the buyer's pharmacy.
+func feedSalesOrder(row erp.SalesRow) feedOrder {
+	total := feedTotal(row.Lines, row.ShippingFee)
 	code := json.RawMessage("null")
 	if row.Customer.Mapped {
 		code = feedScalar(row.Customer.ErpCode)
@@ -117,15 +126,19 @@ func feedSalesOrder(row erp.SalesRow) feedOrder {
 // organization and ordering branch, with the lines of every shipment.
 func feedPurchaseOrder(row erp.PurchaseRow, buyerOrgID int64) feedOrder {
 	items := []feedItem{}
+	total := money.Zero
 	for _, sh := range row.Shipments {
 		for _, l := range sh.Lines {
 			items = append(items, feedLine(l))
+		}
+		if sum, err := total.Add(feedTotal(sh.Lines, sh.ShippingFee)); err == nil {
+			total = sum
 		}
 	}
 	return feedOrder{
 		OrderID:         feedScalar(row.OrderNumber),
 		Status:          strings.ToUpper(row.Status),
-		Total:           rawMoney(row.Total),
+		Total:           rawMoney(total),
 		PharmacyID:      buyerOrgID,
 		PharmacyName:    feedName(row.BuyerName),
 		PharmacyCode:    json.RawMessage("null"),
@@ -136,9 +149,9 @@ func feedPurchaseOrder(row erp.PurchaseRow, buyerOrgID int64) feedOrder {
 	}
 }
 
-// writeOrgasoftFeed writes the bare array. X-Next-Cursor is set only when a next
-// page exists.
-func writeOrgasoftFeed(w http.ResponseWriter, r *http.Request, rows []feedOrder, nextAfter int64) {
+// writeOrderFeed writes a list of orders as a bare array. X-Next-Cursor is set
+// only when a next page exists.
+func writeOrderFeed(w http.ResponseWriter, r *http.Request, rows []feedOrder, nextAfter int64) {
 	requestID(w, r)
 	w.Header().Set("Content-Type", "application/json")
 	if nextAfter > 0 {
@@ -148,51 +161,10 @@ func writeOrgasoftFeed(w http.ResponseWriter, r *http.Request, rows []feedOrder,
 	_ = json.NewEncoder(w).Encode(rows)
 }
 
-// listSalesOrgasoft is GET /<provider>/orders/sales: the same read as /orders/sales.
-func (h *Handler) listSalesOrgasoft(w http.ResponseWriter, r *http.Request) {
-	principal, ok := principalFromContext(r.Context())
-	if !ok {
-		writeError(w, r, erp.NewError("ERP_AUTH_MISSING", 401, nil))
-		return
-	}
-	filter, err := orderFilterFromQuery(r)
-	if err != nil {
-		writeError(w, r, err)
-		return
-	}
-	page, err := h.svc.ListSales(r.Context(), principal, filter)
-	if err != nil {
-		writeError(w, r, err)
-		return
-	}
-	markSensitiveRead(r.Context())
-	rows := make([]feedOrder, 0, len(page.Rows))
-	for _, row := range page.Rows {
-		rows = append(rows, feedSalesOrder(row))
-	}
-	writeOrgasoftFeed(w, r, rows, page.NextAfter)
-}
-
-// listPurchaseOrgasoft is GET /<provider>/orders/purchase: the same read as /orders/purchase.
-func (h *Handler) listPurchaseOrgasoft(w http.ResponseWriter, r *http.Request) {
-	principal, ok := principalFromContext(r.Context())
-	if !ok {
-		writeError(w, r, erp.NewError("ERP_AUTH_MISSING", 401, nil))
-		return
-	}
-	filter, err := orderFilterFromQuery(r)
-	if err != nil {
-		writeError(w, r, err)
-		return
-	}
-	page, err := h.svc.ListPurchase(r.Context(), principal, filter)
-	if err != nil {
-		writeError(w, r, err)
-		return
-	}
-	rows := make([]feedOrder, 0, len(page.Rows))
-	for _, row := range page.Rows {
-		rows = append(rows, feedPurchaseOrder(row, principal.OrganizationID))
-	}
-	writeOrgasoftFeed(w, r, rows, page.NextAfter)
+// writeOrder writes one order as a bare object.
+func writeOrder(w http.ResponseWriter, r *http.Request, status int, order feedOrder) {
+	requestID(w, r)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(order)
 }

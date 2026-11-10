@@ -15,7 +15,9 @@ import (
 // The order feeds (S3): sales orders are the supplier's own shipments, purchase
 // orders are the buyer's own orders. Every handler takes the organization from
 // the principal. A successful sales read is flagged as sensitive, so the call
-// log shows who read customer data.
+// log shows who read customer data. Every order is written in the partner's
+// order shape (order_shape.go): lists are a bare array with the next cursor
+// in X-Next-Cursor, one order is a bare object.
 
 func (h *Handler) listSales(w http.ResponseWriter, r *http.Request) {
 	principal, ok := principalFromContext(r.Context())
@@ -34,11 +36,11 @@ func (h *Handler) listSales(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	markSensitiveRead(r.Context())
-	rows := make([]map[string]any, 0, len(page.Rows))
+	rows := make([]feedOrder, 0, len(page.Rows))
 	for _, row := range page.Rows {
-		rows = append(rows, salesJSON(row))
+		rows = append(rows, feedSalesOrder(row))
 	}
-	writePage(w, r, rows, pageJSON(page.Limit, page.NextAfter))
+	writeOrderFeed(w, r, rows, page.NextAfter)
 }
 
 func (h *Handler) getSale(w http.ResponseWriter, r *http.Request) {
@@ -47,13 +49,14 @@ func (h *Handler) getSale(w http.ResponseWriter, r *http.Request) {
 		writeError(w, r, erp.NewError("ERP_AUTH_MISSING", 401, nil))
 		return
 	}
+	setCallRef(r.Context(), chi.URLParam(r, "orderNumber"))
 	row, err := h.svc.GetSales(r.Context(), principal, chi.URLParam(r, "orderNumber"))
 	if err != nil {
 		writeError(w, r, err)
 		return
 	}
 	markSensitiveRead(r.Context())
-	writeOK(w, r, http.StatusOK, salesJSON(row))
+	writeOrder(w, r, http.StatusOK, feedSalesOrder(row))
 }
 
 func (h *Handler) listPurchase(w http.ResponseWriter, r *http.Request) {
@@ -72,11 +75,11 @@ func (h *Handler) listPurchase(w http.ResponseWriter, r *http.Request) {
 		writeError(w, r, err)
 		return
 	}
-	rows := make([]map[string]any, 0, len(page.Rows))
+	rows := make([]feedOrder, 0, len(page.Rows))
 	for _, row := range page.Rows {
-		rows = append(rows, purchaseJSON(row))
+		rows = append(rows, feedPurchaseOrder(row, principal.OrganizationID))
 	}
-	writePage(w, r, rows, pageJSON(page.Limit, page.NextAfter))
+	writeOrderFeed(w, r, rows, page.NextAfter)
 }
 
 func (h *Handler) getPurchase(w http.ResponseWriter, r *http.Request) {
@@ -85,12 +88,13 @@ func (h *Handler) getPurchase(w http.ResponseWriter, r *http.Request) {
 		writeError(w, r, erp.NewError("ERP_AUTH_MISSING", 401, nil))
 		return
 	}
+	setCallRef(r.Context(), chi.URLParam(r, "orderNumber"))
 	row, err := h.svc.GetPurchase(r.Context(), principal, chi.URLParam(r, "orderNumber"))
 	if err != nil {
 		writeError(w, r, err)
 		return
 	}
-	writeOK(w, r, http.StatusOK, purchaseJSON(row))
+	writeOrder(w, r, http.StatusOK, feedPurchaseOrder(row, principal.OrganizationID))
 }
 
 func (h *Handler) ackSales(w http.ResponseWriter, r *http.Request) { h.ack(w, r, "sales") }
@@ -174,7 +178,7 @@ func parseTimeParam(r *http.Request, name string) (*time.Time, error) {
 	return &t, nil
 }
 
-// writePage is the orders envelope: data and a page object beside it.
+// writePage is the paged envelope (sync item results): data and a page object.
 func writePage(w http.ResponseWriter, r *http.Request, data any, page map[string]any) {
 	id := requestID(w, r)
 	w.Header().Set("Content-Type", "application/json")
@@ -195,90 +199,4 @@ func nullable(s string) any {
 		return nil
 	}
 	return s
-}
-
-func timeOrNil(t *time.Time) any {
-	if t == nil {
-		return nil
-	}
-	return *t
-}
-
-func erpJSON(reference string, ackedAt *time.Time) map[string]any {
-	return map[string]any{"reference": nullable(reference), "acknowledgedAt": timeOrNil(ackedAt)}
-}
-
-func customerJSON(c erp.CustomerInfo) map[string]any {
-	return map[string]any{
-		"erpCode":        nullable(c.ErpCode),
-		"mapped":         c.Mapped,
-		"unmappedReason": nullable(c.UnmappedReason),
-		"name":           c.Name,
-		"branchName":     c.BranchName,
-		"address":        c.Address,
-		"phone":          c.Phone,
-	}
-}
-
-func linesJSON(lines []erp.OrderLine) []map[string]any {
-	out := make([]map[string]any, 0, len(lines))
-	for _, l := range lines {
-		out = append(out, map[string]any{
-			"lineId":              l.LineID,
-			"variantId":           nullable(l.VariantPublicID),
-			"externalProductCode": nullable(l.ExternalProductCode),
-			"name":                l.Name,
-			"barcode":             l.Barcode,
-			"quantity":            l.Quantity,
-			"unitPrice":           l.UnitPrice,
-			"discountAmount":      l.DiscountAmount,
-			"totalPrice":          l.TotalPrice,
-		})
-	}
-	return out
-}
-
-func salesJSON(row erp.SalesRow) map[string]any {
-	return map[string]any{
-		"orderNumber":    row.OrderNumber,
-		"shipmentNumber": row.ShipmentNumber,
-		"status":         row.Status,
-		"importState":    row.ImportState,
-		"createdAt":      row.CreatedAt,
-		"updatedAt":      row.UpdatedAt,
-		"paymentMethod":  row.PaymentMethod,
-		"paymentStatus":  row.PaymentStatus,
-		"notes":          row.Notes,
-		"subtotal":       row.Subtotal,
-		"shippingFee":    row.ShippingFee,
-		"total":          row.Total,
-		"customer":       customerJSON(row.Customer),
-		"erp":            erpJSON(row.ErpReference, row.AckedAt),
-		"lines":          linesJSON(row.Lines),
-	}
-}
-
-func purchaseJSON(row erp.PurchaseRow) map[string]any {
-	shipments := make([]map[string]any, 0, len(row.Shipments))
-	for _, sh := range row.Shipments {
-		shipments = append(shipments, map[string]any{
-			"shipmentNumber": sh.ShipmentNumber,
-			"status":         sh.Status,
-			"supplier":       map[string]any{"name": sh.SupplierName},
-			"subtotal":       sh.Subtotal,
-			"shippingFee":    sh.ShippingFee,
-			"lines":          linesJSON(sh.Lines),
-		})
-	}
-	return map[string]any{
-		"orderNumber":       row.OrderNumber,
-		"status":            row.Status,
-		"importState":       row.ImportState,
-		"createdAt":         row.CreatedAt,
-		"updatedAt":         row.UpdatedAt,
-		"externalReference": nullable(row.ExternalReference),
-		"total":             row.Total,
-		"shipments":         shipments,
-		"erp":               erpJSON(row.ErpReference, row.AckedAt),
-	}
 }

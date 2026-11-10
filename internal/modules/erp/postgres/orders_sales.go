@@ -15,10 +15,12 @@ import (
 // buyer organization under WithTenant; it reads them here as system, and every
 // row is pinned to the supplier by s.organization_id = $1 (trap 2). The branch
 // join also requires the branch to belong to the buyer organization. The
-// import state is computed from the stored acknowledgement of this shipment.
+// import state is computed from the stored acknowledgement of this shipment;
+// a shipment that ended (cancelled, rejected, failed, returned, refunded) before
+// the ERP ever imported it is 'closed', so state=new never lists it.
 const salesHeaderInner = `
 SELECT s.id, s.order_id, o.order_number, s.shipment_number, s.status,
-       CASE WHEN i.acked_status IS NULL THEN 'new' WHEN i.acked_status = s.status THEN 'imported' ELSE 'changed' END AS import_state,
+       CASE WHEN i.acked_status IS NULL AND s.status IN ('cancelled','rejected','failed','returned','refunded') THEN 'closed' WHEN i.acked_status IS NULL THEN 'new' WHEN i.acked_status = s.status THEN 'imported' ELSE 'changed' END AS import_state,
        o.payment_method, o.payment_status, COALESCE(o.notes, ''),
        COALESCE(i.erp_reference, ''), i.acked_at,
        o.created_at, o.updated_at,

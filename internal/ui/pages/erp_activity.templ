@@ -1,0 +1,823 @@
+package pages
+
+import (
+	"encoding/json"
+	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/moqasem061-dot/dawa24/internal/modules/erp"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
+)
+
+// ErpActivityData is what the integration activity screen renders. Audience
+// names the path prefix ("vendor" or "customer"); Owner gates the resume button
+// (the signed-in actor's ownership, never a submitted value). Tab picks the body:
+// overview, syncs (vendor only), calls or orders.
+type ErpActivityData struct {
+	Audience                  string
+	Owner                     bool
+	Tab                       string
+	Summary                   erp.ActivitySummary
+	Recent                    []erp.CallRow
+	Live                      []erp.BatchRow
+	Batches                   []erp.BatchRow
+	BatchNextURL              string
+	Calls                     []erp.CallRow
+	CallNextURL               string
+	Filter                    ErpCallFilterView
+	Orders                    []erp.OrderImportRow
+	NoticeKind, NoticeMessage string
+}
+
+// ErpCallFilterView is the call log's filter as the form shows it.
+type ErpCallFilterView struct {
+	Result, KeyPrefix, Route, From, To string
+}
+
+// ErpBatchPageData is one batch with a page of its items.
+type ErpBatchPageData struct {
+	Batch                     erp.BatchRow
+	Items                     []erp.SyncItemRow
+	State                     string
+	NextURL                   string
+	Purged                    bool
+	NoticeKind, NoticeMessage string
+}
+
+// ErpActivityVendorPage renders /vendor/integrations/activity.
+templ ErpActivityVendorPage(data ErpActivityData, lang, dir string) {
+	@layouts.VendorShell(i18n.T(lang, "erp.activity.title"), "integration_activity", lang, dir) {
+		@erpActivityBody(data, lang)
+	}
+}
+
+// ErpActivityCustomerPage renders /customer/integrations/activity for a pharmacy.
+templ ErpActivityCustomerPage(data ErpActivityData, lang, dir string, actor authctx.Actor) {
+	@layouts.ShellFor(i18n.T(lang, "erp.activity.title"), "integration_activity", lang, dir, actor) {
+		@erpActivityBody(data, lang)
+	}
+}
+
+// ErpBatchVendorPage renders one sync batch with its items.
+templ ErpBatchVendorPage(data ErpBatchPageData, lang, dir string) {
+	@layouts.VendorShell(i18n.T(lang, "erp.activity.batch.title"), "integration_activity", lang, dir) {
+		<div class="page-container">
+			<div class="glass-panel p-6 mb-6">
+				<div class="d-flex items-center justify-between flex-wrap gap-3">
+					<div class="stack-sm">
+						<h1 class="text-2xl font-black text-primary m-0">
+							{ i18n.T(lang, "erp.activity.batch.title") }
+							<span class="tabular-nums" dir="ltr">#{ data.Batch.PublicID }</span>
+						</h1>
+						<a href={ templ.SafeURL("/vendor/integrations/activity?tab=syncs") } class="text-xs font-bold">
+							{ i18n.T(lang, "erp.activity.batch.back") }
+						</a>
+					</div>
+					@components.Badge(components.BadgeProps{Label: erpStateLabel(lang, data.Batch.SyncBatch), Tone: erpStateTone(data.Batch.SyncBatch)})
+				</div>
+			</div>
+			if data.NoticeMessage != "" {
+				if data.NoticeKind == "error" {
+					<div class="alert alert-danger mb-4 p-4 d-flex items-center gap-3">
+						@components.IconAlertCircle("icon-xs")
+						<span class="font-bold text-sm">{ data.NoticeMessage }</span>
+					</div>
+				}
+			}
+			<div class="d-grid grid-auto-fit-sm gap-3 mb-4">
+				@erpStatCard(i18n.T(lang, "erp.activity.col.accepted"), erpTimeText(data.Batch.AcceptedAt))
+				@erpStatCard(i18n.T(lang, "erp.activity.col.wait"), erpSpanText(data.Batch.AcceptedAt, data.Batch.StartedAt))
+				@erpStatCard(i18n.T(lang, "erp.activity.col.run"), erpSpanText(derefTime(data.Batch.StartedAt), data.Batch.FinishedAt))
+				@erpStatCard(i18n.T(lang, "erp.activity.col.progress"), erpPercentText(erpBatchPercent(data.Batch.SyncBatch)))
+			</div>
+			<div class="glass-panel p-4 mb-4">
+				<div class="d-flex flex-wrap gap-3 text-xs tabular-nums" dir="ltr">
+					<span>{ i18n.T(lang, "erp.activity.batch.filter.created") }: <strong>{ strconv.Itoa(data.Batch.CreatedCount) }</strong></span>
+					<span>{ i18n.T(lang, "erp.activity.batch.filter.updated") }: <strong>{ strconv.Itoa(data.Batch.UpdatedCount) }</strong></span>
+					<span>{ i18n.T(lang, "erp.activity.batch.filter.unchanged") }: <strong>{ strconv.Itoa(data.Batch.UnchangedCount) }</strong></span>
+					<span>{ i18n.T(lang, "erp.activity.batch.filter.needs_review") }: <strong>{ strconv.Itoa(data.Batch.NeedsReviewCount) }</strong></span>
+					<span>{ i18n.T(lang, "erp.activity.batch.filter.failed") }: <strong>{ strconv.Itoa(data.Batch.FailedCount) }</strong></span>
+					<span>{ i18n.T(lang, "erp.activity.batch.counts") }: <strong>{ strconv.Itoa(data.Batch.ItemCount) }</strong></span>
+				</div>
+				if data.Batch.NeedsReviewCount > 0 {
+					<a href={ templ.SafeURL("/vendor/integrations/review") } class="text-xs font-bold d-inline-block mt-2">
+						{ i18n.T(lang, "erp.activity.batch.review_link") }
+					</a>
+				}
+			</div>
+			if data.Purged {
+				<div class="alert alert-warning mb-4 p-4 text-sm">{ i18n.T(lang, "erp.activity.batch.purged") }</div>
+			}
+			<nav class="tabs-nav mb-4" aria-label={ i18n.T(lang, "erp.activity.batch.title") }>
+				@erpBatchStateLink(data, "", i18n.T(lang, "erp.activity.batch.filter.all"))
+				@erpBatchStateLink(data, "created", i18n.T(lang, "erp.activity.batch.filter.created"))
+				@erpBatchStateLink(data, "updated", i18n.T(lang, "erp.activity.batch.filter.updated"))
+				@erpBatchStateLink(data, "unchanged", i18n.T(lang, "erp.activity.batch.filter.unchanged"))
+				@erpBatchStateLink(data, "needs_review", i18n.T(lang, "erp.activity.batch.filter.needs_review"))
+				@erpBatchStateLink(data, "failed", i18n.T(lang, "erp.activity.batch.filter.failed"))
+			</nav>
+			if len(data.Items) == 0 {
+				@components.EmptyState(components.EmptyStateProps{
+					Title:   i18n.T(lang, "erp.activity.batch.title"),
+					Message: i18n.T(lang, "erp.activity.empty.items"),
+				})
+			} else {
+				<div class="glass-panel p-0 overflow-x-auto">
+					<table class="data-table m-0 w-full text-xs">
+						<thead>
+							<tr>
+								<th>{ i18n.T(lang, "erp.activity.col.position") }</th>
+								<th>{ i18n.T(lang, "erp.activity.col.code") }</th>
+								<th>{ i18n.T(lang, "erp.activity.col.state") }</th>
+								<th>{ i18n.T(lang, "erp.activity.col.message") }</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, item := range data.Items {
+								<tr>
+									<td class="tabular-nums" dir="ltr">{ strconv.Itoa(item.Position) }</td>
+									<td><code class="font-mono" dir="ltr">{ item.ExternalCode }</code></td>
+									<td>@components.Badge(components.BadgeProps{Label: erpItemStateLabel(lang, item.State), Tone: erpItemStateTone(item.State)})</td>
+									<td>{ erpItemMessage(lang, item) }</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+				if data.NextURL != "" {
+					<div class="mt-4">
+						<a href={ templ.SafeURL(data.NextURL) } class="btn btn-secondary btn-sm font-bold">{ i18n.T(lang, "erp.activity.older") }</a>
+					</div>
+				}
+			}
+		</div>
+	}
+}
+
+// erpActivityBody is the content shared by both shells: the header, the tabs and
+// the chosen tab.
+templ erpActivityBody(data ErpActivityData, lang string) {
+	<div class="page-container">
+		<div class="glass-panel p-6 mb-6">
+			<div class="d-flex items-center gap-3 mb-0">
+				<div class="user-avatar-badge text-xl text-brand">
+					@components.IconActivity("icon-sm")
+				</div>
+				<h1 class="text-2xl font-black text-primary m-0">
+					{ i18n.T(lang, "erp.activity.title") }
+				</h1>
+			</div>
+		</div>
+		if data.Summary.IntegrationStatus == "paused" {
+			<div class="alert alert-danger mb-4 p-4 d-flex items-center gap-3" role="alert">
+				@components.IconAlertCircle("icon-xs")
+				<span class="font-bold text-sm">{ i18n.T(lang, "erp.keys.paused_banner") }</span>
+			</div>
+		}
+		if data.NoticeMessage != "" {
+			if data.NoticeKind == "error" {
+				<div class="alert alert-danger mb-4 p-4 d-flex items-center gap-3">
+					@components.IconAlertCircle("icon-xs")
+					<span class="font-bold text-sm">{ data.NoticeMessage }</span>
+				</div>
+			} else {
+				<div class="alert alert-success mb-4 p-4 d-flex items-center gap-3">
+					@components.IconCheckCircle("icon-xs")
+					<span class="font-bold text-sm">{ data.NoticeMessage }</span>
+				</div>
+			}
+		}
+		<nav class="tabs-nav mb-4" aria-label={ i18n.T(lang, "erp.activity.title") }>
+			@erpTabLink(data, "overview", i18n.T(lang, "erp.activity.tab.overview"))
+			if data.Audience == "vendor" {
+				@erpTabLink(data, "syncs", i18n.T(lang, "erp.activity.tab.syncs"))
+			}
+			@erpTabLink(data, "calls", i18n.T(lang, "erp.activity.tab.calls"))
+			@erpTabLink(data, "orders", i18n.T(lang, "erp.activity.tab.orders"))
+		</nav>
+		if data.Tab == "syncs" && data.Audience == "vendor" {
+			@erpSyncsTab(data, lang)
+		} else if data.Tab == "calls" {
+			@erpCallsTab(data, lang)
+		} else if data.Tab == "orders" {
+			@erpOrdersTab(data, lang)
+		} else {
+			@erpOverviewTab(data, lang)
+		}
+	</div>
+}
+
+templ erpTabLink(data ErpActivityData, tab, label string) {
+	<a href={ templ.SafeURL("/" + data.Audience + "/integrations/activity?tab=" + tab) } class={ "tab-btn", templ.KV("active", data.Tab == tab) }>
+		<span>{ label }</span>
+	</a>
+}
+
+templ erpOverviewTab(data ErpActivityData, lang string) {
+	<div class="d-flex flex-col gap-4">
+		<div class="d-grid grid-auto-fit-sm gap-3">
+			<div class="glass-panel p-4">
+				<div class="text-xs text-secondary">{ i18n.T(lang, "erp.activity.status.integration") }</div>
+				<div class="d-flex items-center gap-2 flex-wrap mt-1">
+					@components.Badge(components.BadgeProps{Label: erpIntegrationStatusText(lang, data.Summary.IntegrationStatus), Tone: erpIntegrationTone(data.Summary.IntegrationStatus)})
+					if data.Owner && data.Summary.IntegrationStatus == "paused" {
+						<form method="POST" class="m-0" action={ templ.SafeURL("/" + data.Audience + "/integrations/pause") }>
+							<input type="hidden" name="pause" value="false"/>
+							<button type="submit" class="btn btn-secondary btn-xs font-bold">{ i18n.T(lang, "erp.keys.resume") }</button>
+						</form>
+					}
+				</div>
+			</div>
+			@erpStatCard(i18n.T(lang, "erp.activity.keys_active"), strconv.Itoa(data.Summary.ActiveKeys))
+			@erpStatCard(i18n.T(lang, "erp.activity.last_call"), erpLastCallText(data.Summary))
+			@erpStatCard(i18n.T(lang, "erp.activity.calls_24h"), strconv.Itoa(data.Summary.Calls24h))
+			@erpStatCard(i18n.T(lang, "erp.activity.errors_24h"), strconv.Itoa(data.Summary.Errors24h))
+			@erpStatCard(i18n.T(lang, "erp.activity.avg_ms"), strconv.Itoa(data.Summary.AvgDurationMS))
+			if data.Audience == "vendor" {
+				@erpStatCard(i18n.T(lang, "erp.activity.batches_queued"), strconv.Itoa(data.Summary.BatchesQueued))
+				@erpStatCard(i18n.T(lang, "erp.activity.batches_processing"), strconv.Itoa(data.Summary.BatchesProcessing))
+				@erpStatCard(i18n.T(lang, "erp.activity.batches_failed"), strconv.Itoa(data.Summary.BatchesFailed24h))
+				@erpStatCard(i18n.T(lang, "erp.activity.open_review"), strconv.Itoa(data.Summary.OpenReview))
+			}
+			@erpStatCard(i18n.T(lang, "erp.activity.orders_new"), erpCountText(lang, data.Summary.SalesNew+data.Summary.PurchaseNew))
+			@erpStatCard(i18n.T(lang, "erp.activity.orders_changed"), erpCountText(lang, data.Summary.SalesChanged+data.Summary.PurchaseChanged))
+		</div>
+		if data.Audience == "vendor" {
+			@ErpLivePanel(data, lang)
+		}
+		<section class="glass-panel p-4">
+			<div class="d-flex items-center justify-between flex-wrap gap-2 mb-3">
+				<h2 class="text-lg font-black text-primary m-0">{ i18n.T(lang, "erp.activity.recent") }</h2>
+				<a href={ templ.SafeURL("/" + data.Audience + "/integrations/activity?tab=calls") } class="text-xs font-bold">
+					{ i18n.T(lang, "erp.activity.view_all") }
+				</a>
+			</div>
+			if len(data.Recent) == 0 {
+				@components.EmptyState(components.EmptyStateProps{
+					Title:   i18n.T(lang, "erp.activity.recent"),
+					Message: i18n.T(lang, "erp.activity.empty.recent"),
+				})
+			} else {
+				@erpCallsTable(data, data.Recent, lang)
+			}
+		</section>
+	</div>
+}
+
+// ErpLivePanel is the syncs-in-progress panel. It polls itself every five seconds
+// only while a batch is queued or processing; with none active the fragment has
+// no trigger, so polling stops.
+templ ErpLivePanel(data ErpActivityData, lang string) {
+	if len(data.Live) > 0 {
+		<section id="erp-live-panel" class="glass-panel p-4" hx-get="/vendor/integrations/activity/live" hx-trigger="every 5s" hx-swap="outerHTML">
+			@erpLiveBody(data, lang)
+		</section>
+	} else {
+		<section id="erp-live-panel" class="glass-panel p-4">
+			@erpLiveBody(data, lang)
+		</section>
+	}
+}
+
+templ erpLiveBody(data ErpActivityData, lang string) {
+	<h2 class="text-lg font-black text-primary mb-3">{ i18n.T(lang, "erp.activity.live.title") }</h2>
+	if len(data.Live) == 0 {
+		<p class="text-sm text-secondary m-0">{ i18n.T(lang, "erp.activity.live.empty") }</p>
+	} else {
+		<div class="d-flex flex-col gap-3">
+			for _, b := range data.Live {
+				<div class="stack-sm">
+					<div class="d-flex items-center justify-between flex-wrap gap-2 text-xs">
+						<span class="font-bold tabular-nums" dir="ltr">#{ b.PublicID } · { b.KeyName }</span>
+						@components.Badge(components.BadgeProps{Label: erpStateLabel(lang, b.SyncBatch), Tone: erpStateTone(b.SyncBatch)})
+					</div>
+					@erpProgress(erpBatchPercent(b.SyncBatch))
+					<div class="text-xs text-secondary tabular-nums" dir="ltr">
+						{ i18n.T(lang, "erp.activity.live.chunks") }: { strconv.Itoa(b.ChunksDone) } / { strconv.Itoa(b.ChunkCount) }
+					</div>
+				</div>
+			}
+		</div>
+	}
+}
+
+templ erpSyncsTab(data ErpActivityData, lang string) {
+	<div class="d-flex flex-col gap-3">
+		if len(data.Batches) == 0 {
+			@components.EmptyState(components.EmptyStateProps{
+				Title:   i18n.T(lang, "erp.activity.tab.syncs"),
+				Message: i18n.T(lang, "erp.activity.empty.syncs"),
+			})
+		} else {
+			<div class="glass-panel p-0 overflow-x-auto">
+				<table class="data-table m-0 w-full text-xs">
+					<thead>
+						<tr>
+							<th>{ i18n.T(lang, "erp.activity.col.sync_id") }</th>
+							<th>{ i18n.T(lang, "erp.activity.col.accepted") }</th>
+							<th>{ i18n.T(lang, "erp.activity.col.key") }</th>
+							<th>{ i18n.T(lang, "erp.activity.col.state") }</th>
+							<th>{ i18n.T(lang, "erp.activity.col.progress") }</th>
+							<th>{ i18n.T(lang, "erp.activity.col.results") }</th>
+							<th>{ i18n.T(lang, "erp.activity.col.wait") }</th>
+							<th>{ i18n.T(lang, "erp.activity.col.run") }</th>
+							<th>{ i18n.T(lang, "erp.activity.col.error") }</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, b := range data.Batches {
+							@erpBatchRow(b, lang)
+						}
+					</tbody>
+				</table>
+			</div>
+			if data.BatchNextURL != "" {
+				<div>
+					<a href={ templ.SafeURL(data.BatchNextURL) } class="btn btn-secondary btn-sm font-bold">{ i18n.T(lang, "erp.activity.older") }</a>
+				</div>
+			}
+		}
+	</div>
+}
+
+templ erpBatchRow(b erp.BatchRow, lang string) {
+	<tr>
+		<td>
+			<a href={ templ.SafeURL("/vendor/integrations/activity/syncs/" + b.PublicID) } class="font-mono tabular-nums" dir="ltr">#{ b.PublicID }</a>
+		</td>
+		<td class="tabular-nums" dir="ltr">{ erpTimeText(b.AcceptedAt) }</td>
+		<td>{ b.KeyName }</td>
+		<td>@components.Badge(components.BadgeProps{Label: erpStateLabel(lang, b.SyncBatch), Tone: erpStateTone(b.SyncBatch)})</td>
+		<td>@erpProgress(erpBatchPercent(b.SyncBatch))</td>
+		<td>
+			<div class="d-flex flex-wrap gap-1 tabular-nums" dir="ltr">
+				<span class="badge badge-emerald" title={ i18n.T(lang, "erp.activity.batch.filter.created") }>{ strconv.Itoa(b.CreatedCount) }</span>
+				<span class="badge badge-sky" title={ i18n.T(lang, "erp.activity.batch.filter.updated") }>{ strconv.Itoa(b.UpdatedCount) }</span>
+				<span class="badge badge-slate" title={ i18n.T(lang, "erp.activity.batch.filter.unchanged") }>{ strconv.Itoa(b.UnchangedCount) }</span>
+				<span class="badge badge-amber" title={ i18n.T(lang, "erp.activity.batch.filter.needs_review") }>{ strconv.Itoa(b.NeedsReviewCount) }</span>
+				<span class="badge badge-rose" title={ i18n.T(lang, "erp.activity.batch.filter.failed") }>{ strconv.Itoa(b.FailedCount) }</span>
+			</div>
+		</td>
+		<td class="tabular-nums" dir="ltr">{ erpSpanText(b.AcceptedAt, b.StartedAt) }</td>
+		<td class="tabular-nums" dir="ltr">{ erpSpanText(derefTime(b.StartedAt), b.FinishedAt) }</td>
+		<td>
+			if b.ErrorCode != nil && *b.ErrorCode != "" {
+				<div class="font-mono" dir="ltr">{ *b.ErrorCode }</div>
+				<div class="text-secondary">{ erpErrorText(lang, *b.ErrorCode) }</div>
+			} else {
+				<span class="text-muted">—</span>
+			}
+		</td>
+	</tr>
+}
+
+templ erpCallsTab(data ErpActivityData, lang string) {
+	<div class="d-flex flex-col gap-3">
+		<form method="GET" class="glass-panel p-4 d-flex items-end gap-3 flex-wrap m-0" action={ templ.SafeURL("/" + data.Audience + "/integrations/activity") }>
+			<input type="hidden" name="tab" value="calls"/>
+			<div class="stack-sm">
+				<label class="form-label text-xs font-bold m-0" for="erp-call-result">{ i18n.T(lang, "erp.activity.filter.result") }</label>
+				<select id="erp-call-result" name="result" class="form-select text-sm">
+					<option value="all" selected?={ data.Filter.Result == "all" || data.Filter.Result == "" }>{ i18n.T(lang, "erp.activity.filter.result.all") }</option>
+					<option value="ok" selected?={ data.Filter.Result == "ok" }>{ i18n.T(lang, "erp.activity.filter.result.ok") }</option>
+					<option value="error" selected?={ data.Filter.Result == "error" }>{ i18n.T(lang, "erp.activity.filter.result.error") }</option>
+				</select>
+			</div>
+			<div class="stack-sm">
+				<label class="form-label text-xs font-bold m-0" for="erp-call-key">{ i18n.T(lang, "erp.activity.filter.key") }</label>
+				<input id="erp-call-key" type="text" name="key" maxlength="8" class="form-control text-sm font-mono" dir="ltr" value={ data.Filter.KeyPrefix }/>
+			</div>
+			<div class="stack-sm">
+				<label class="form-label text-xs font-bold m-0" for="erp-call-route">{ i18n.T(lang, "erp.activity.filter.route") }</label>
+				<input id="erp-call-route" type="text" name="route" maxlength="200" class="form-control text-sm font-mono" dir="ltr" value={ data.Filter.Route }/>
+			</div>
+			<div class="stack-sm">
+				<label class="form-label text-xs font-bold m-0" for="erp-call-from">{ i18n.T(lang, "erp.activity.filter.from") }</label>
+				<input id="erp-call-from" type="date" name="from" class="form-control text-sm" dir="ltr" value={ data.Filter.From }/>
+			</div>
+			<div class="stack-sm">
+				<label class="form-label text-xs font-bold m-0" for="erp-call-to">{ i18n.T(lang, "erp.activity.filter.to") }</label>
+				<input id="erp-call-to" type="date" name="to" class="form-control text-sm" dir="ltr" value={ data.Filter.To }/>
+			</div>
+			<button type="submit" class="btn btn-primary btn-sm font-bold">{ i18n.T(lang, "erp.activity.filter.apply") }</button>
+		</form>
+		if len(data.Calls) == 0 {
+			@components.EmptyState(components.EmptyStateProps{
+				Title:   i18n.T(lang, "erp.activity.tab.calls"),
+				Message: i18n.T(lang, "erp.activity.empty.calls"),
+			})
+		} else {
+			@erpCallsTable(data, data.Calls, lang)
+			if data.CallNextURL != "" {
+				<div>
+					<a href={ templ.SafeURL(data.CallNextURL) } class="btn btn-secondary btn-sm font-bold">{ i18n.T(lang, "erp.activity.older") }</a>
+				</div>
+			}
+		}
+	</div>
+}
+
+templ erpCallsTable(data ErpActivityData, rows []erp.CallRow, lang string) {
+	<div class="glass-panel p-0 overflow-x-auto">
+		<table class="data-table m-0 w-full text-xs">
+			<thead>
+				<tr>
+					<th>{ i18n.T(lang, "erp.activity.col.time") }</th>
+					<th>{ i18n.T(lang, "erp.activity.col.key") }</th>
+					<th>{ i18n.T(lang, "erp.activity.col.method") }</th>
+					<th>{ i18n.T(lang, "erp.activity.col.route") }</th>
+					<th>{ i18n.T(lang, "erp.activity.col.status") }</th>
+					<th>{ i18n.T(lang, "erp.activity.col.error") }</th>
+					<th>{ i18n.T(lang, "erp.activity.col.duration") }</th>
+					<th>{ i18n.T(lang, "erp.activity.col.request_id") }</th>
+					<th>{ i18n.T(lang, "erp.activity.col.ref") }</th>
+					<th>{ i18n.T(lang, "erp.activity.details") }</th>
+				</tr>
+			</thead>
+			<tbody>
+				for _, row := range rows {
+					@erpCallRow(data, row, lang)
+				}
+			</tbody>
+		</table>
+	</div>
+}
+
+templ erpCallRow(data ErpActivityData, row erp.CallRow, lang string) {
+	<tr>
+		<td class="tabular-nums" dir="ltr">{ row.CreatedAt.Format("2006-01-02 15:04:05") }</td>
+		<td>
+			if row.KeyName != "" {
+				<div class="font-bold text-primary">{ row.KeyName }</div>
+			}
+			if row.KeyPrefix != "" {
+				<code class="font-mono" dir="ltr">{ row.KeyPrefix }</code>
+			} else {
+				<span class="text-muted">—</span>
+			}
+		</td>
+		<td dir="ltr">{ row.Method }</td>
+		<td><code class="font-mono" dir="ltr">{ row.Route }</code></td>
+		<td>@components.Badge(components.BadgeProps{Label: strconv.Itoa(row.Status), Tone: erpCallTone(row.Status)})</td>
+		<td>
+			if row.ErrorCode != "" {
+				<div class="font-mono" dir="ltr">{ row.ErrorCode }</div>
+				<div class="text-secondary">{ erpErrorText(lang, row.ErrorCode) }</div>
+			} else {
+				<span class="text-muted">—</span>
+			}
+		</td>
+		<td class="tabular-nums" dir="ltr">{ strconv.Itoa(row.DurationMS) }</td>
+		<td>
+			<div class="d-flex items-center gap-2">
+				<code class="font-mono" dir="ltr">{ row.RequestID }</code>
+				<button type="button" class="btn btn-secondary btn-xs font-bold" @click={ fmt.Sprintf("$copy(%q)", row.RequestID) }>
+					{ i18n.T(lang, "erp.keys.copy") }
+				</button>
+			</div>
+		</td>
+		<td>
+			if data.Audience == "vendor" && erpIsSyncRef(row.Route, row.Ref) {
+				<a href={ templ.SafeURL("/vendor/integrations/activity/syncs/" + row.Ref) } class="font-mono tabular-nums" dir="ltr">#{ row.Ref }</a>
+			} else if row.Ref != "" {
+				<code class="font-mono" dir="ltr">{ row.Ref }</code>
+			} else {
+				<span class="text-muted">—</span>
+			}
+		</td>
+		<td>
+			<details class="text-xs">
+				<summary class="cursor-pointer font-bold">{ i18n.T(lang, "erp.activity.details") }</summary>
+				<dl class="stack-sm mt-2 m-0">
+					<div>
+						<dt class="text-secondary">{ i18n.T(lang, "erp.activity.detail.query") }</dt>
+						<dd class="m-0"><code class="font-mono break-all" dir="ltr">{ erpOrDash(row.Query) }</code></dd>
+					</div>
+					<div>
+						<dt class="text-secondary">{ i18n.T(lang, "erp.activity.detail.user_agent") }</dt>
+						<dd class="m-0 break-all" dir="ltr">{ erpOrDash(row.UserAgent) }</dd>
+					</div>
+					<div>
+						<dt class="text-secondary">{ i18n.T(lang, "erp.activity.detail.ip") }</dt>
+						<dd class="m-0" dir="ltr">{ erpOrDash(row.IP) }</dd>
+					</div>
+					<div>
+						<dt class="text-secondary">{ i18n.T(lang, "erp.activity.detail.bytes") }</dt>
+						<dd class="m-0 tabular-nums" dir="ltr">{ strconv.Itoa(row.BytesIn) } / { strconv.Itoa(row.BytesOut) }</dd>
+					</div>
+					if row.AuthReason != "" {
+						<div>
+							<dt class="text-secondary">{ i18n.T(lang, "erp.activity.detail.reason") }</dt>
+							<dd class="m-0"><span class="font-mono" dir="ltr">{ row.AuthReason }</span> — { erpReasonText(lang, row.AuthReason) }</dd>
+						</div>
+					}
+					if row.ErrorDetail != "" {
+						<div>
+							<dt class="text-secondary">{ i18n.T(lang, "erp.activity.detail.error_details") }</dt>
+							<dd class="m-0"><pre class="font-mono text-xs break-all" dir="ltr">{ erpPrettyJSON(row.ErrorDetail) }</pre></dd>
+						</div>
+					}
+				</dl>
+			</details>
+		</td>
+	</tr>
+}
+
+templ erpOrdersTab(data ErpActivityData, lang string) {
+	<div class="d-flex flex-col gap-3">
+		<div class="d-grid grid-auto-fit-sm gap-3">
+			@erpStatCard(i18n.T(lang, "erp.activity.direction.sales")+" · "+i18n.T(lang, "erp.activity.orders_new"), erpCountText(lang, data.Summary.SalesNew))
+			@erpStatCard(i18n.T(lang, "erp.activity.direction.sales")+" · "+i18n.T(lang, "erp.activity.orders_changed"), erpCountText(lang, data.Summary.SalesChanged))
+			@erpStatCard(i18n.T(lang, "erp.activity.direction.purchase")+" · "+i18n.T(lang, "erp.activity.orders_new"), erpCountText(lang, data.Summary.PurchaseNew))
+			@erpStatCard(i18n.T(lang, "erp.activity.direction.purchase")+" · "+i18n.T(lang, "erp.activity.orders_changed"), erpCountText(lang, data.Summary.PurchaseChanged))
+		</div>
+		if len(data.Orders) == 0 {
+			@components.EmptyState(components.EmptyStateProps{
+				Title:   i18n.T(lang, "erp.activity.tab.orders"),
+				Message: i18n.T(lang, "erp.activity.empty.orders"),
+			})
+		} else {
+			<div class="glass-panel p-0 overflow-x-auto">
+				<table class="data-table m-0 w-full text-xs">
+					<thead>
+						<tr>
+							<th>{ i18n.T(lang, "erp.activity.col.direction") }</th>
+							<th>{ i18n.T(lang, "erp.activity.col.order") }</th>
+							<th>{ i18n.T(lang, "erp.activity.col.erp_ref") }</th>
+							<th>{ i18n.T(lang, "erp.activity.col.acked") }</th>
+							<th>{ i18n.T(lang, "erp.activity.col.acked_at") }</th>
+							<th>{ i18n.T(lang, "erp.activity.col.ack_count") }</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, o := range data.Orders {
+							<tr>
+								<td>{ erpDirectionLabel(lang, o.Direction) }</td>
+								<td><code class="font-mono" dir="ltr">{ o.OrderNumber }</code></td>
+								<td><code class="font-mono" dir="ltr">{ o.ErpReference }</code></td>
+								<td><code class="font-mono" dir="ltr">{ o.AckedStatus }</code></td>
+								<td class="tabular-nums" dir="ltr">{ erpTimeText(o.AckedAt) }</td>
+								<td class="tabular-nums" dir="ltr">{ strconv.Itoa(o.AckCount) }</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+	</div>
+}
+
+templ erpBatchStateLink(data ErpBatchPageData, state, label string) {
+	<a href={ templ.SafeURL(erpBatchStateURL(data.Batch.PublicID, state)) } class={ "tab-btn", templ.KV("active", data.State == state) }>
+		<span>{ label }</span>
+	</a>
+}
+
+templ erpStatCard(label, value string) {
+	<div class="glass-panel p-4">
+		<div class="text-xs text-secondary">{ label }</div>
+		<div class="text-2xl font-black text-primary tabular-nums mt-1" dir="ltr">{ value }</div>
+	</div>
+}
+
+templ erpProgress(percent int) {
+	<div class="d-flex items-center gap-2">
+		<progress class="progress erp-progress" value={ strconv.Itoa(percent) } max="100"></progress>
+		<span class="text-xs tabular-nums" dir="ltr">{ strconv.Itoa(percent) }%</span>
+	</div>
+}
+
+// The helpers below keep every i18n key a Go literal, so the key scan sees them.
+
+func erpIntegrationStatusText(lang, status string) string {
+	switch status {
+	case "active":
+		return i18n.T(lang, "erp.activity.status.active")
+	case "paused":
+		return i18n.T(lang, "erp.activity.status.paused")
+	}
+	return i18n.T(lang, "erp.activity.status.none")
+}
+
+func erpIntegrationTone(status string) string {
+	switch status {
+	case "active":
+		return "emerald"
+	case "paused":
+		return "rose"
+	}
+	return "slate"
+}
+
+func erpStateLabel(lang string, b erp.SyncBatch) string {
+	switch {
+	case b.State == "queued":
+		return i18n.T(lang, "erp.activity.state.queued")
+	case b.State == "processing":
+		return i18n.T(lang, "erp.activity.state.processing")
+	case b.State == "failed":
+		return i18n.T(lang, "erp.activity.state.failed")
+	case b.FailedCount > 0:
+		return i18n.T(lang, "erp.activity.state.completed_with_failures")
+	}
+	return i18n.T(lang, "erp.activity.state.completed")
+}
+
+func erpStateTone(b erp.SyncBatch) string {
+	switch {
+	case b.State == "queued":
+		return "slate"
+	case b.State == "processing":
+		return "sky"
+	case b.State == "failed":
+		return "rose"
+	case b.FailedCount > 0:
+		return "amber"
+	}
+	return "emerald"
+}
+
+func erpItemStateLabel(lang, state string) string {
+	switch state {
+	case "created":
+		return i18n.T(lang, "erp.activity.batch.filter.created")
+	case "updated":
+		return i18n.T(lang, "erp.activity.batch.filter.updated")
+	case "unchanged":
+		return i18n.T(lang, "erp.activity.batch.filter.unchanged")
+	case "needs_review":
+		return i18n.T(lang, "erp.activity.batch.filter.needs_review")
+	case "failed":
+		return i18n.T(lang, "erp.activity.batch.filter.failed")
+	}
+	return i18n.T(lang, "erp.activity.state.queued")
+}
+
+func erpItemStateTone(state string) string {
+	switch state {
+	case "created":
+		return "emerald"
+	case "updated":
+		return "sky"
+	case "needs_review":
+		return "amber"
+	case "failed":
+		return "rose"
+	}
+	return "slate"
+}
+
+func erpDirectionLabel(lang, direction string) string {
+	if direction == "purchase" {
+		return i18n.T(lang, "erp.activity.direction.purchase")
+	}
+	return i18n.T(lang, "erp.activity.direction.sales")
+}
+
+func erpReasonText(lang, reason string) string {
+	switch reason {
+	case "secret_mismatch":
+		return i18n.T(lang, "erp.activity.reason.secret_mismatch")
+	case "integration_status":
+		return i18n.T(lang, "erp.activity.reason.integration_status")
+	case "key_status":
+		return i18n.T(lang, "erp.activity.reason.key_status")
+	case "key_expired":
+		return i18n.T(lang, "erp.activity.reason.key_expired")
+	case "org_lookup_error":
+		return i18n.T(lang, "erp.activity.reason.org_lookup_error")
+	case "org_status":
+		return i18n.T(lang, "erp.activity.reason.org_status")
+	case "touch_error":
+		return i18n.T(lang, "erp.activity.reason.touch_error")
+	}
+	return i18n.T(lang, "erp.activity.reason.other")
+}
+
+// erpErrorText is the bilingual wording of an ERP error code, or the code when
+// the catalogue has no entry for it.
+func erpErrorText(lang, code string) string {
+	if code == "" {
+		return ""
+	}
+	key := "erp.err." + strings.ToLower(strings.TrimPrefix(code, "ERP_"))
+	translate := i18n.T
+	msg := translate(lang, key)
+	if msg == "" || msg == key {
+		return code
+	}
+	return msg
+}
+
+func erpItemMessage(lang string, item erp.SyncItemRow) string {
+	if item.Code == nil || *item.Code == "" {
+		return ""
+	}
+	return erpErrorText(lang, *item.Code)
+}
+
+func erpCallTone(status int) string {
+	if status >= 400 {
+		return "rose"
+	}
+	return "emerald"
+}
+
+// erpIsSyncRef reports whether a call touched a product sync: its route is the
+// sync route and its reference is the decimal batch id.
+func erpIsSyncRef(route, ref string) bool {
+	if !strings.HasPrefix(route, "/products/sync") || ref == "" {
+		return false
+	}
+	for _, c := range ref {
+		if c < '0' || c > '9' {
+			return false
+		}
+	}
+	return true
+}
+
+func erpPrettyJSON(raw string) string {
+	var v any
+	if err := json.Unmarshal([]byte(raw), &v); err != nil {
+		return raw
+	}
+	out, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		return raw
+	}
+	return string(out)
+}
+
+func erpOrDash(s string) string {
+	if s == "" {
+		return "—"
+	}
+	return s
+}
+
+// erpBatchPercent is the share of the batch's items that have a result.
+func erpBatchPercent(b erp.SyncBatch) int {
+	if b.ItemCount <= 0 {
+		return 0
+	}
+	done := b.CreatedCount + b.UpdatedCount + b.UnchangedCount + b.NeedsReviewCount + b.FailedCount
+	pct := done * 100 / b.ItemCount
+	if pct > 100 {
+		return 100
+	}
+	return pct
+}
+
+func erpTimeText(t time.Time) string {
+	return t.Format("2006-01-02 15:04")
+}
+
+func derefTime(t *time.Time) time.Time {
+	if t == nil {
+		return time.Time{}
+	}
+	return *t
+}
+
+// erpSpanText is the time from one moment to another, or a dash when either end
+// is missing.
+func erpSpanText(from time.Time, to *time.Time) string {
+	if from.IsZero() || to == nil || to.IsZero() {
+		return "—"
+	}
+	return to.Sub(from).Round(time.Second).String()
+}
+
+func erpPercentText(p int) string {
+	return strconv.Itoa(p) + "%"
+}
+
+func erpLastCallText(s erp.ActivitySummary) string {
+	if s.LastCallAt == nil {
+		return "—"
+	}
+	return fmt.Sprintf("%s · %d", erpTimeText(*s.LastCallAt), s.LastCallStatus)
+}
+
+// erpCountText shows a count, with the cap spelled out when the count stopped there.
+func erpCountText(lang string, n int) string {
+	if n >= erp.ActivityImportCap {
+		return i18n.T(lang, "erp.activity.capped")
+	}
+	return strconv.Itoa(n)
+}
+
+// erpBatchStateURL is the batch page with a state filter; the item cursor resets.
+func erpBatchStateURL(syncID, state string) string {
+	u := "/vendor/integrations/activity/syncs/" + syncID
+	if state != "" {
+		u += "?state=" + state
+	}
+	return u
+}

@@ -112,6 +112,8 @@ Rules:
 
 ### 2b. The Orgasoft order feed
 
+> **Superseded (owner, 2026-11-10):** no separate `/orgasoft/` routes. The main order reads (`/orders/sales`, `/orders/purchase`, the single-order reads) and the purchase-creation reply return this shape themselves, and the old long shape is gone. `total` is the line totals after discount plus shipping. See `docs/modules/erp.md`.
+
 Orgasoft gave this shape and wants it exactly (a bare JSON array, no envelope):
 
 ```json

@@ -17,7 +17,7 @@ import (
 // any integration of the buyer organization).
 const purchaseHeaderInner = `
 SELECT o.id, o.order_number, o.status,
-       CASE WHEN i.acked_status IS NULL THEN 'new' WHEN i.acked_status = o.status THEN 'imported' ELSE 'changed' END AS import_state,
+       CASE WHEN i.acked_status IS NULL AND o.status IN ('cancelled','rejected','failed','returned','refunded') THEN 'closed' WHEN i.acked_status IS NULL THEN 'new' WHEN i.acked_status = o.status THEN 'imported' ELSE 'changed' END AS import_state,
        COALESCE(r.external_reference, ''), COALESCE(i.erp_reference, ''), i.acked_at,
        o.created_at, o.updated_at, o.total_amount,
        COALESCE(buyer.name, '{}'::jsonb),

@@ -19,14 +19,16 @@ func TestIntegrationsNavSection(t *testing.T) {
 		return nil
 	}
 	both := NewSet([]string{"vendor.integration.view", "vendor.integration.review"})
-	if got := itemsOf(ScopeVendor, both); len(got) != 2 || got[0] != "/vendor/integrations" || got[1] != "/vendor/integrations/review" {
+	want := []string{"/vendor/integrations", "/vendor/integrations/activity", "/vendor/integrations/review"}
+	if got := itemsOf(ScopeVendor, both); len(got) != len(want) || got[0] != want[0] || got[1] != want[1] || got[2] != want[2] {
 		t.Errorf("vendor section = %v", got)
 	}
-	if got := itemsOf(ScopeVendor, NewSet([]string{"vendor.integration.view"})); len(got) != 1 {
+	if got := itemsOf(ScopeVendor, NewSet([]string{"vendor.integration.view"})); len(got) != 2 {
 		t.Errorf("review shown without its permission: %v", got)
 	}
-	if got := itemsOf(ScopePharmacy, NewSet([]string{"pharmacy.integration.view"})); len(got) != 1 || got[0] != "/customer/integrations" {
-		t.Errorf("pharmacy section = %v", got)
+	pharmacy := itemsOf(ScopePharmacy, NewSet([]string{"pharmacy.integration.view"}))
+	if len(pharmacy) != 2 || pharmacy[0] != "/customer/integrations" || pharmacy[1] != "/customer/integrations/activity" {
+		t.Errorf("pharmacy section = %v", pharmacy)
 	}
 	NavSuppressions["integrations"] = true
 	t.Cleanup(func() { delete(NavSuppressions, "integrations") })

@@ -210,7 +210,7 @@ paths:
       tags: [Sales orders]
       operationId: listSalesOrders
       summary: Orders the supplier received
-      description: "Only the key organization's own part of each order (its shipment). Scope: `erp.orders.read`. Supplier organizations only."
+      description: "A bare JSON array, one entry per order (the key organization's own shipment of it). Every order is in the shape Orgasoft asked for: `orderId`, `status`, `total`, the `pharmacy*` fields and `items` (`code`, `name`, `qty`, `price`, `discount`), nothing else. `price` is the unit price before discount, `discount` a percentage, and `total` the item totals after discount plus shipping. `pharmacyCode` is your customer code for the pharmacy, null when none is saved. With `state=new`, an order cancelled or rejected before you ever imported it is left out. The next page is in the `X-Next-Cursor` header, absent on the last page. Scope: `erp.orders.read`. Supplier organizations only."
       parameters:
         - { $ref: "#/components/parameters/OrderState" }
         - { $ref: "#/components/parameters/From" }
@@ -219,49 +219,26 @@ paths:
         - { $ref: "#/components/parameters/OrderLimit" }
       responses:
         "200":
-          description: One page of sales orders
+          description: One page of sales orders, as a bare array
+          headers:
+            X-Next-Cursor: { schema: { type: string, maxLength: 20 }, description: "The cursor for the next page. Absent on the last page." }
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/SalesOrderPage" }
-              examples:
-                firstPage:
-                  summary: One new order, last page
-                  value:
-                    status: ok
-                    requestId: 2d5b8a1c77e04f92
-                    data:
-                      - orderNumber: "10542"
-                        shipmentNumber: "10542-1"
-                        status: pending
-                        importState: new
-                        createdAt: "2026-11-07T08:02:11Z"
-                        updatedAt: "2026-11-07T08:02:11Z"
-                        paymentMethod: cash_on_delivery
-                        paymentStatus: unpaid
-                        notes: ""
-                        subtotal: "1250.00"
-                        shippingFee: "25.00"
-                        total: "1275.00"
-                        customer:
-                          erpCode: "C-00871"
-                          mapped: true
-                          unmappedReason: null
-                          name: { ar: "صيدلية الشفاء", en: "Al Shifa Pharmacy" }
-                          branchName: { ar: "الفرع الرئيسي", en: "Main branch" }
-                          address: "12 شارع النيل، المعادي، القاهرة"
-                          phone: "01012345678"
-                        erp: { reference: null, acknowledgedAt: null }
-                        lines:
-                          - lineId: 88231
-                            variantId: "91530"
-                            externalProductCode: "100245"
-                            name: { ar: "بانادول اكسترا 24 قرص", en: "Panadol Extra 24 tablets" }
-                            barcode: "6221024000123"
-                            quantity: 20
-                            unitPrice: "54.69"
-                            discountAmount: "0.00"
-                            totalPrice: "1093.80"
-                    page: { nextCursor: null, limit: 100 }
+              schema: { type: array, items: { $ref: "#/components/schemas/OrgasoftOrder" } }
+              example:
+                - orderId: 21845
+                  status: PENDING
+                  total: 1264.25
+                  pharmacyId: 1
+                  pharmacyName: Direct
+                  pharmacyCode: 263
+                  pharmacyNumber: "01008042755"
+                  pharmacyCity: Fayoum
+                  pharmacyAddress: "الفيوم"
+                  items:
+                    - { code: 100001, name: "سبيركودا 20 قرص", qty: 1, price: 265.00, discount: 21.00 }
+                    - { code: 100005, name: "بروفن اى كونتور 30 مل", qty: 3, price: 385.00, discount: 22.00 }
+                    - { code: 27220, name: "تشيكس جروي شراب للاطفال", qty: 1, price: 220.00, discount: 30.00 }
         "400": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
   /orders/sales/{orderNumber}:
@@ -269,6 +246,7 @@ paths:
       tags: [Sales orders]
       operationId: getSalesOrder
       summary: One sales order
+      description: "One order as a bare object, in the same shape as the list."
       parameters:
         - { $ref: "#/components/parameters/OrderNumber" }
       responses:
@@ -276,10 +254,21 @@ paths:
           description: The order
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/SalesOrderResponse" }
-              examples:
-                order:
-                  $ref: "#/components/examples/SalesOrderGet"
+              schema: { $ref: "#/components/schemas/OrgasoftOrder" }
+              example:
+                orderId: 21845
+                status: PENDING
+                total: 1264.25
+                pharmacyId: 1
+                pharmacyName: Direct
+                pharmacyCode: 263
+                pharmacyNumber: "01008042755"
+                pharmacyCity: Fayoum
+                pharmacyAddress: "الفيوم"
+                items:
+                  - { code: 100001, name: "سبيركودا 20 قرص", qty: 1, price: 265.00, discount: 21.00 }
+                  - { code: 100005, name: "بروفن اى كونتور 30 مل", qty: 3, price: 385.00, discount: 22.00 }
+                  - { code: 27220, name: "تشيكس جروي شراب للاطفال", qty: 1, price: 220.00, discount: 30.00 }
         "404": { $ref: "#/components/responses/Error" }
   /orders/sales/ack:
     post:
@@ -348,7 +337,7 @@ paths:
       tags: [Purchase orders]
       operationId: listPurchaseOrders
       summary: Orders the key organization placed
-      description: "Scope: `erp.orders.read`. Pharmacies and suppliers."
+      description: "A bare JSON array, one entry per order with the items of every supplier in it. Every order is in the shape Orgasoft asked for: `orderId`, `status`, `total`, the `pharmacy*` fields and `items` (`code`, `name`, `qty`, `price`, `discount`), nothing else. `price` is the unit price before discount, `discount` a percentage, and `total` the item totals after discount plus shipping. The `pharmacy*` fields describe your own ordering pharmacy, `pharmacyCode` is null, and `code` is the item code your ERP sent when it placed the order. With `state=new`, an order cancelled before you ever imported it is left out. The next page is in the `X-Next-Cursor` header, absent on the last page. Scope: `erp.orders.read`. Pharmacies and suppliers."
       parameters:
         - { $ref: "#/components/parameters/OrderState" }
         - { $ref: "#/components/parameters/From" }
@@ -357,42 +346,24 @@ paths:
         - { $ref: "#/components/parameters/OrderLimit" }
       responses:
         "200":
-          description: One page of purchase orders
+          description: One page of purchase orders, as a bare array
+          headers:
+            X-Next-Cursor: { schema: { type: string, maxLength: 20 }, description: "The cursor for the next page. Absent on the last page." }
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/PurchaseOrderPage" }
-              examples:
-                firstPage:
-                  summary: One new purchase order, last page
-                  value:
-                    status: ok
-                    requestId: 3b81f0c64e2a4d19
-                    data:
-                      - orderNumber: "20871"
-                        status: pending
-                        importState: new
-                        createdAt: "2026-11-07T09:40:05Z"
-                        updatedAt: "2026-11-07T09:40:05Z"
-                        externalReference: ORGA-PO-2026-000451
-                        total: "626.00"
-                        shipments:
-                          - shipmentNumber: "20871-1"
-                            status: pending
-                            supplier: { name: { ar: "مؤسسة النور للأدوية", en: "Al Nour Pharma" } }
-                            subtotal: "601.00"
-                            shippingFee: "25.00"
-                            lines:
-                              - lineId: 90412
-                                variantId: "91530"
-                                externalProductCode: null
-                                name: { ar: "بانادول اكسترا 24 قرص", en: "Panadol Extra 24 tablets" }
-                                barcode: "6221024000123"
-                                quantity: 12
-                                unitPrice: "50.40"
-                                discountAmount: "3.80"
-                                totalPrice: "601.00"
-                        erp: { reference: null, acknowledgedAt: null }
-                    page: { nextCursor: null, limit: 100 }
+              schema: { type: array, items: { $ref: "#/components/schemas/OrgasoftOrder" } }
+              example:
+                - orderId: 21846
+                  status: CONFIRMED
+                  total: 209.35
+                  pharmacyId: 7
+                  pharmacyName: "صيدلية الشفاء"
+                  pharmacyCode: null
+                  pharmacyNumber: "01008042755"
+                  pharmacyCity: Fayoum
+                  pharmacyAddress: "الفيوم"
+                  items:
+                    - { code: 100001, name: "سبيركودا 20 قرص", qty: 1, price: 265.00, discount: 21.00 }
         "400": { $ref: "#/components/responses/Error" }
     post:
       tags: [Purchase orders]
@@ -408,21 +379,43 @@ paths:
             example:
               externalReference: ORGA-PO-2026-000451
               notes: "توريد الأسبوع"
-              lines:
-                - { variantId: "91530", quantity: 12, unitPrice: "48.00", code: 100001 }
+              items:
+                - { variantId: "91530", qty: 12, unitPrice: "48.00", code: 100001 }
       responses:
         "201":
-          description: Created
+          description: Created. The order as a bare object, in the same shape as the list.
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/PurchaseOrderResponse" }
-              examples: { order: { $ref: "#/components/examples/PurchaseOrderGet" } }
+              schema: { $ref: "#/components/schemas/OrgasoftOrder" }
+              example:
+                orderId: 21846
+                status: CONFIRMED
+                total: 209.35
+                pharmacyId: 7
+                pharmacyName: "صيدلية الشفاء"
+                pharmacyCode: null
+                pharmacyNumber: "01008042755"
+                pharmacyCity: Fayoum
+                pharmacyAddress: "الفيوم"
+                items:
+                  - { code: 100001, name: "سبيركودا 20 قرص", qty: 1, price: 265.00, discount: 21.00 }
         "200":
-          description: Same externalReference sent before; the original order is returned
+          description: Same externalReference sent before; the original order is returned. The order as a bare object, in the same shape as the list.
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/PurchaseOrderResponse" }
-              examples: { order: { $ref: "#/components/examples/PurchaseOrderGet" } }
+              schema: { $ref: "#/components/schemas/OrgasoftOrder" }
+              example:
+                orderId: 21846
+                status: CONFIRMED
+                total: 209.35
+                pharmacyId: 7
+                pharmacyName: "صيدلية الشفاء"
+                pharmacyCode: null
+                pharmacyNumber: "01008042755"
+                pharmacyCity: Fayoum
+                pharmacyAddress: "الفيوم"
+                items:
+                  - { code: 100001, name: "سبيركودا 20 قرص", qty: 1, price: 265.00, discount: 21.00 }
         "409":
           description: Price mismatch, refused rules or request in progress
           content:
@@ -441,6 +434,7 @@ paths:
       tags: [Purchase orders]
       operationId: getPurchaseOrder
       summary: One purchase order
+      description: "One order as a bare object, in the same shape as the list."
       parameters:
         - { $ref: "#/components/parameters/OrderNumber" }
       responses:
@@ -448,8 +442,19 @@ paths:
           description: The order
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/PurchaseOrderResponse" }
-              examples: { order: { $ref: "#/components/examples/PurchaseOrderGet" } }
+              schema: { $ref: "#/components/schemas/OrgasoftOrder" }
+              example:
+                orderId: 21846
+                status: CONFIRMED
+                total: 209.35
+                pharmacyId: 7
+                pharmacyName: "صيدلية الشفاء"
+                pharmacyCode: null
+                pharmacyNumber: "01008042755"
+                pharmacyCity: Fayoum
+                pharmacyAddress: "الفيوم"
+                items:
+                  - { code: 100001, name: "سبيركودا 20 قرص", qty: 1, price: 265.00, discount: 21.00 }
         "404": { $ref: "#/components/responses/Error" }
   /orders/purchase/ack:
     post:
@@ -476,76 +481,6 @@ paths:
                 requestId: 0d9e3b7c51a24f86
                 data:
                   - { orderNumber: "20871", result: acknowledged, code: null, existingReference: null }
-  /orgasoft/orders/sales:
-    get:
-      tags: [Sales orders]
-      operationId: listOrgasoftSalesOrders
-      summary: Sales orders in Orgasoft's shape
-      description: "The same reads as GET /orders/sales (same scope, filters and paging), answered as a bare array in the shape Orgasoft asked for. One entry per supplier shipment. The next page is in the `X-Next-Cursor` header, absent on the last page. Money is written as the decimal the database holds (265.00 stays 265.00). To confirm with Orgasoft: `pharmacyCity` uses the English city name (Arabic when there is none). Scope: `erp.orders.read`. Supplier organizations only."
-      parameters:
-        - { $ref: "#/components/parameters/OrderState" }
-        - { $ref: "#/components/parameters/From" }
-        - { $ref: "#/components/parameters/To" }
-        - { $ref: "#/components/parameters/Cursor" }
-        - { $ref: "#/components/parameters/OrderLimit" }
-      responses:
-        "200":
-          description: One page of orders, as a bare array
-          headers:
-            X-Next-Cursor: { schema: { type: string, maxLength: 20 }, description: "The cursor for the next page. Absent on the last page." }
-          content:
-            application/json:
-              schema: { type: array, items: { $ref: "#/components/schemas/OrgasoftOrder" } }
-              example:
-                - orderId: 21845
-                  status: PENDING
-                  total: 1264.25
-                  pharmacyId: 1
-                  pharmacyName: Direct
-                  pharmacyCode: 263
-                  pharmacyNumber: "01008042755"
-                  pharmacyCity: Fayoum
-                  pharmacyAddress: "الفيوم"
-                  items:
-                    - { code: 100001, name: "سبيركودا 20 قرص", qty: 1, price: 265.00, discount: 21.00 }
-                    - { code: 100002, name: "فيتامين د 1000 وحدة", qty: 3, price: 385.00, discount: 22.00 }
-                    - { code: 100003, name: "شراب الكحة", qty: 1, price: 220.00, discount: 30.00 }
-        "400": { $ref: "#/components/responses/Error" }
-        "403": { $ref: "#/components/responses/Error" }
-  /orgasoft/orders/purchase:
-    get:
-      tags: [Purchase orders]
-      operationId: listOrgasoftPurchaseOrders
-      summary: Purchase orders in Orgasoft's shape
-      description: "The same reads as GET /orders/purchase (same scope, filters and paging), answered as a bare array in Orgasoft's shape. One entry per order, with the lines of every shipment. `pharmacyId`, `pharmacyName`, `pharmacyNumber`, `pharmacyCity` and `pharmacyAddress` describe the ordering pharmacy, and `pharmacyCode` is null. To confirm with Orgasoft: purchase entries describe the ordering pharmacy, and `pharmacyCity` uses the English city name. The next page is in the `X-Next-Cursor` header, absent on the last page. Scope: `erp.orders.read`."
-      parameters:
-        - { $ref: "#/components/parameters/OrderState" }
-        - { $ref: "#/components/parameters/From" }
-        - { $ref: "#/components/parameters/To" }
-        - { $ref: "#/components/parameters/Cursor" }
-        - { $ref: "#/components/parameters/OrderLimit" }
-      responses:
-        "200":
-          description: One page of orders, as a bare array
-          headers:
-            X-Next-Cursor: { schema: { type: string, maxLength: 20 }, description: "The cursor for the next page. Absent on the last page." }
-          content:
-            application/json:
-              schema: { type: array, items: { $ref: "#/components/schemas/OrgasoftOrder" } }
-              example:
-                - orderId: 21846
-                  status: CONFIRMED
-                  total: 209.35
-                  pharmacyId: 7
-                  pharmacyName: "صيدلية الشفاء"
-                  pharmacyCode: null
-                  pharmacyNumber: "01008042755"
-                  pharmacyCity: Fayoum
-                  pharmacyAddress: "الفيوم"
-                  items:
-                    - { code: 100001, name: "سبيركودا 20 قرص", qty: 1, price: 265.00, discount: 21.00 }
-        "400": { $ref: "#/components/responses/Error" }
-        "403": { $ref: "#/components/responses/Error" }
   /offers:
     get:
       tags: [Purchase orders]
@@ -578,8 +513,8 @@ components:
   parameters:
     SyncId: { name: syncId, in: path, required: true, schema: { type: string, pattern: "^[0-9]{1,20}$" }, description: "The sync id from the 202 answer, a decimal number. The UUID form that earlier syncs were given is still accepted." }
     OrderNumber: { name: orderNumber, in: path, required: true, schema: { type: string, maxLength: 32 } }
-    Cursor: { name: cursor, in: query, schema: { type: string, maxLength: 20 }, description: Opaque. Use `page.nextCursor` from the previous response. }
-    OrderState: { name: state, in: query, schema: { type: string, enum: [new, imported, changed, all], default: new } }
+    Cursor: { name: cursor, in: query, schema: { type: string, maxLength: 20 }, description: Opaque. Use the `X-Next-Cursor` header of the previous order page, or `page.nextCursor` of the previous sync items page. }
+    OrderState: { name: state, in: query, schema: { type: string, enum: [new, imported, changed, all], default: new }, description: "new: never imported (an order that ended before import is left out). imported: unchanged since your acknowledgement. changed: its status changed after your acknowledgement. all: every order." }
     From: { name: from, in: query, schema: { type: string, format: date-time }, description: Orders created at or after this time. }
     To: { name: to, in: query, schema: { type: string, format: date-time }, description: Orders created before this time. }
     OrderLimit: { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 500, default: 100 } }
@@ -596,74 +531,6 @@ components:
               code: ERP_SCOPE_MISSING
               message: { ar: "المفتاح لا يملك الصلاحية المطلوبة لهذه العملية.", en: "The key does not have the permission this call needs." }
               details: { requiredScope: erp.orders.read }
-  examples:
-    PurchaseOrderGet:
-      summary: A full purchase order
-      value:
-        status: ok
-        requestId: 4c7a2e19d05b4f68
-        data:
-          orderNumber: "20871"
-          status: pending
-          importState: new
-          createdAt: "2026-11-07T09:40:05Z"
-          updatedAt: "2026-11-07T09:40:05Z"
-          externalReference: ORGA-PO-2026-000451
-          total: "626.00"
-          shipments:
-            - shipmentNumber: "20871-1"
-              status: pending
-              supplier: { name: { ar: "مؤسسة النور للأدوية", en: "Al Nour Pharma" } }
-              subtotal: "601.00"
-              shippingFee: "25.00"
-              lines:
-                - lineId: 90412
-                  variantId: "91530"
-                  externalProductCode: null
-                  name: { ar: "بانادول اكسترا 24 قرص", en: "Panadol Extra 24 tablets" }
-                  barcode: "6221024000123"
-                  quantity: 12
-                  unitPrice: "50.40"
-                  discountAmount: "3.80"
-                  totalPrice: "601.00"
-          erp: { reference: null, acknowledgedAt: null }
-    SalesOrderGet:
-      summary: A full sales order
-      value:
-        status: ok
-        requestId: 5a9e0c12b8d34f71
-        data:
-          orderNumber: "10542"
-          shipmentNumber: "10542-1"
-          status: pending
-          importState: new
-          createdAt: "2026-11-07T08:02:11Z"
-          updatedAt: "2026-11-07T08:02:11Z"
-          paymentMethod: cash_on_delivery
-          paymentStatus: unpaid
-          notes: ""
-          subtotal: "1250.00"
-          shippingFee: "25.00"
-          total: "1275.00"
-          customer:
-            erpCode: "C-00871"
-            mapped: true
-            unmappedReason: null
-            name: { ar: "صيدلية الشفاء", en: "Al Shifa Pharmacy" }
-            branchName: { ar: "الفرع الرئيسي", en: "Main branch" }
-            address: "12 شارع النيل، المعادي، القاهرة"
-            phone: "01012345678"
-          erp: { reference: null, acknowledgedAt: null }
-          lines:
-            - lineId: 88231
-              variantId: "91530"
-              externalProductCode: "100245"
-              name: { ar: "بانادول اكسترا 24 قرص", en: "Panadol Extra 24 tablets" }
-              barcode: "6221024000123"
-              quantity: 20
-              unitPrice: "54.69"
-              discountAmount: "0.00"
-              totalPrice: "1093.80"
   schemas:
     MultiLang:
       type: object
@@ -784,98 +651,6 @@ components:
         requestId: { type: string }
         data: { type: array, items: { $ref: "#/components/schemas/SyncItemResult" } }
         page: { $ref: "#/components/schemas/Page" }
-    Customer:
-      type: object
-      properties:
-        erpCode: { type: [string, "null"] }
-        mapped: { type: boolean }
-        unmappedReason: { type: [string, "null"], enum: [no_link, empty_code, code_conflict, null] }
-        name: { $ref: "#/components/schemas/MultiLang" }
-        branchName: { $ref: "#/components/schemas/MultiLang" }
-        address: { type: string }
-        phone: { type: string }
-    OrderLine:
-      type: object
-      properties:
-        lineId: { type: integer }
-        variantId: { type: [string, "null"], maxLength: 20 }
-        externalProductCode: { type: [string, "null"] }
-        name: { $ref: "#/components/schemas/MultiLang" }
-        barcode: { type: string }
-        quantity: { type: integer }
-        unitPrice: { $ref: "#/components/schemas/Money" }
-        discountAmount: { $ref: "#/components/schemas/Money" }
-        totalPrice: { $ref: "#/components/schemas/Money" }
-    SalesOrder:
-      type: object
-      properties:
-        orderNumber: { type: string }
-        shipmentNumber: { type: string }
-        status: { type: string, enum: [pending, confirmed, processing, shipped, in_transit, out_for_delivery, delivered, completed, cancelled, failed, returned, refunded, on_hold] }
-        importState: { type: string, enum: [new, imported, changed] }
-        createdAt: { type: string, format: date-time }
-        updatedAt: { type: string, format: date-time }
-        paymentMethod: { type: string }
-        paymentStatus: { type: string }
-        notes: { type: string }
-        subtotal: { $ref: "#/components/schemas/Money" }
-        shippingFee: { $ref: "#/components/schemas/Money" }
-        total: { $ref: "#/components/schemas/Money" }
-        customer: { $ref: "#/components/schemas/Customer" }
-        erp:
-          type: object
-          properties: { reference: { type: [string, "null"] }, acknowledgedAt: { type: [string, "null"], format: date-time } }
-        lines: { type: array, items: { $ref: "#/components/schemas/OrderLine" } }
-    SalesOrderPage:
-      type: object
-      properties:
-        status: { const: ok }
-        requestId: { type: string }
-        data: { type: array, items: { $ref: "#/components/schemas/SalesOrder" } }
-        page: { $ref: "#/components/schemas/Page" }
-    SalesOrderResponse:
-      type: object
-      properties:
-        status: { const: ok }
-        requestId: { type: string }
-        data: { $ref: "#/components/schemas/SalesOrder" }
-    PurchaseOrder:
-      type: object
-      properties:
-        orderNumber: { type: string }
-        status: { type: string }
-        importState: { type: string, enum: [new, imported, changed] }
-        createdAt: { type: string, format: date-time }
-        updatedAt: { type: string, format: date-time }
-        externalReference: { type: [string, "null"] }
-        total: { $ref: "#/components/schemas/Money" }
-        shipments:
-          type: array
-          items:
-            type: object
-            properties:
-              shipmentNumber: { type: string }
-              status: { type: string }
-              supplier: { type: object, properties: { name: { $ref: "#/components/schemas/MultiLang" } } }
-              subtotal: { $ref: "#/components/schemas/Money" }
-              shippingFee: { $ref: "#/components/schemas/Money" }
-              lines: { type: array, items: { $ref: "#/components/schemas/OrderLine" } }
-        erp:
-          type: object
-          properties: { reference: { type: [string, "null"] }, acknowledgedAt: { type: [string, "null"], format: date-time } }
-    PurchaseOrderPage:
-      type: object
-      properties:
-        status: { const: ok }
-        requestId: { type: string }
-        data: { type: array, items: { $ref: "#/components/schemas/PurchaseOrder" } }
-        page: { $ref: "#/components/schemas/Page" }
-    PurchaseOrderResponse:
-      type: object
-      properties:
-        status: { const: ok }
-        requestId: { type: string }
-        data: { $ref: "#/components/schemas/PurchaseOrder" }
     AckRequest:
       type: object
       required: [orders]
@@ -923,30 +698,31 @@ components:
             orderStatus: { type: string }
     PurchaseRequest:
       type: object
-      required: [externalReference, lines]
+      required: [externalReference, items]
+      description: "`lines` (with `quantity`) is the earlier name of `items` (with `qty`) and is still accepted."
       properties:
         externalReference: { type: string, minLength: 1, maxLength: 100 }
         notes: { type: string, maxLength: 500 }
-        lines:
+        items:
           type: array
           minItems: 1
           maxItems: 200
           items:
             type: object
-            required: [variantId, quantity]
+            required: [variantId, qty]
             properties:
               variantId: { type: string, maxLength: 20, description: "The variant id from GET /offers. A JSON integer is accepted too." }
-              quantity: { type: integer, minimum: 1, maximum: 100000 }
+              qty: { type: integer, minimum: 1, maximum: 100000, description: "Also accepted as quantity." }
               unitPrice: { type: [string, number], description: Optional check against Dawa24's price. }
-              code: { type: [string, integer], maxLength: 64, description: "Optional. Your own item code for this product; the Orgasoft order feed shows it back. Also accepted as itemId or itemCode." }
+              code: { type: [string, integer], maxLength: 64, description: "Optional. Your own item code for this product; every order read shows it back as the item code. Also accepted as itemId or itemCode." }
     OrgasoftOrder:
       type: object
-      description: "One order in Orgasoft's shape. Field order is the wire order. Sales: one entry per supplier shipment. Purchase: one entry per order. Identifiers are a JSON number when they are plain digits (no leading zero), a string otherwise, and null when empty."
+      description: "One order in the shape Orgasoft asked for, used by every order read and by purchase creation. Field order is the wire order. Sales: one entry per supplier shipment. Purchase: one entry per order. Identifiers are a JSON number when they are plain digits (no leading zero), a string otherwise, and null when empty."
       required: [orderId, status, total, pharmacyId, pharmacyName, pharmacyCode, pharmacyNumber, pharmacyCity, pharmacyAddress, items]
       properties:
         orderId: { type: [integer, string] }
         status: { type: string, description: "Upper case. Shipment status on sales, order status on purchase." }
-        total: { type: number, description: "Raw decimal with two places." }
+        total: { type: number, description: "The item totals after discount plus shipping. Raw decimal with two places." }
         pharmacyId: { type: integer, description: "The buyer's organization id (0 when none)." }
         pharmacyName: { type: string, description: "Arabic name, else English." }
         pharmacyCode: { type: [integer, string, "null"], description: "The customer code the supplier uses. Null when unmapped and on purchase entries." }

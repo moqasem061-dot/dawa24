@@ -1005,7 +1005,7 @@
                 }
               ]
             },
-            "description": "**What it does:** lists orders pharmacies placed with you. Keep `state=new` to get only orders you have not imported yet.\n\n**When:** every few minutes.\n\n**More than one page?** If `page.nextCursor` is not null, call again with `cursor=<that value>`.\n\n**ماذا يفعل:** يعرض طلبات الصيدليات. اترك `state=new` لجلب الطلبات التي لم تستوردها بعد. استدعه كل بضع دقائق."
+            "description": "**What it does:** lists orders pharmacies placed with you, as a plain list in the layout Orgasoft asked for: `orderId`, `status`, `total`, the pharmacy's id, name, code, phone, city and address, and `items` with each item's `code`, `name`, `qty`, `price` (before discount) and `discount` (percent). Keep `state=new` to get only orders you have not imported yet; an order cancelled before you imported it is left out.\n\n**When:** every few minutes.\n\n**More than one page?** The reply header `X-Next-Cursor` holds the cursor for the next page; call again with `cursor=<that value>`. It is absent on the last page.\n\n**ماذا يفعل:** يعرض طلبات الصيدليات بالشكل الذي طلبته أوركاسوفت: رقم الطلب والحالة والإجمالي وبيانات الصيدلية والأصناف (الكود والاسم والكمية والسعر قبل الخصم ونسبة الخصم). اترك `state=new` لجلب الطلبات التي لم تستوردها بعد، والطلب الملغى قبل استيراده لا يظهر. استدعه كل بضع دقائق.\n\n**الصفحة التالية:** الترويسة `X-Next-Cursor` تحمل مؤشر الصفحة التالية، وتغيب في الصفحة الأخيرة."
           },
           "response": [
             {
@@ -1067,7 +1067,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"2d5b8a1c77e04f92\",\n  \"data\": [\n    {\n      \"orderNumber\": \"10542\",\n      \"shipmentNumber\": \"10542-1\",\n      \"status\": \"pending\",\n      \"importState\": \"new\",\n      \"createdAt\": \"2026-11-07T08:02:11Z\",\n      \"updatedAt\": \"2026-11-07T08:02:11Z\",\n      \"paymentMethod\": \"cash_on_delivery\",\n      \"paymentStatus\": \"unpaid\",\n      \"notes\": \"\",\n      \"subtotal\": \"1250.00\",\n      \"shippingFee\": \"25.00\",\n      \"total\": \"1275.00\",\n      \"customer\": {\n        \"erpCode\": \"C-00871\",\n        \"mapped\": true,\n        \"unmappedReason\": null,\n        \"name\": {\n          \"ar\": \"صيدلية الشفاء\",\n          \"en\": \"Al Shifa Pharmacy\"\n        },\n        \"branchName\": {\n          \"ar\": \"الفرع الرئيسي\",\n          \"en\": \"Main branch\"\n        },\n        \"address\": \"12 شارع النيل، المعادي، القاهرة\",\n        \"phone\": \"01012345678\"\n      },\n      \"erp\": {\n        \"reference\": null,\n        \"acknowledgedAt\": null\n      },\n      \"lines\": [\n        {\n          \"lineId\": 88231,\n          \"variantId\": \"91530\",\n          \"externalProductCode\": \"100245\",\n          \"name\": {\n            \"ar\": \"بانادول اكسترا 24 قرص\",\n            \"en\": \"Panadol Extra 24 tablets\"\n          },\n          \"barcode\": \"6221024000123\",\n          \"quantity\": 20,\n          \"unitPrice\": \"54.69\",\n          \"discountAmount\": \"0.00\",\n          \"totalPrice\": \"1093.80\"\n        }\n      ]\n    }\n  ],\n  \"page\": {\n    \"nextCursor\": null,\n    \"limit\": 100\n  }\n}"
+              "body": "[\n  {\n    \"orderId\": 21845,\n    \"status\": \"PENDING\",\n    \"total\": 1264.25,\n    \"pharmacyId\": 1,\n    \"pharmacyName\": \"Direct\",\n    \"pharmacyCode\": 263,\n    \"pharmacyNumber\": \"01008042755\",\n    \"pharmacyCity\": \"Fayoum\",\n    \"pharmacyAddress\": \"الفيوم\",\n    \"items\": [\n      {\n        \"code\": 100001,\n        \"name\": \"سبيركودا 20 قرص\",\n        \"qty\": 1,\n        \"price\": 265.0,\n        \"discount\": 21.0\n      },\n      {\n        \"code\": 100005,\n        \"name\": \"بروفن اى كونتور 30 مل\",\n        \"qty\": 3,\n        \"price\": 385.0,\n        \"discount\": 22.0\n      },\n      {\n        \"code\": 27220,\n        \"name\": \"تشيكس جروي شراب للاطفال\",\n        \"qty\": 1,\n        \"price\": 220.0,\n        \"discount\": 30.0\n      }\n    ]\n  }\n]"
             },
             {
               "name": "400 Bad page cursor",
@@ -1205,259 +1205,7 @@
           ]
         },
         {
-          "name": "2. Orders in Orgasoft format - الطلبات بصيغة Orgasoft",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/erp/v1/orgasoft/orders/sales?state=new",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "erp",
-                "v1",
-                "orgasoft",
-                "orders",
-                "sales"
-              ],
-              "query": [
-                {
-                  "key": "state",
-                  "value": "new",
-                  "disabled": false
-                },
-                {
-                  "key": "from",
-                  "value": "",
-                  "disabled": true
-                },
-                {
-                  "key": "to",
-                  "value": "",
-                  "disabled": true
-                },
-                {
-                  "key": "cursor",
-                  "value": "",
-                  "disabled": true
-                },
-                {
-                  "key": "limit",
-                  "value": "",
-                  "disabled": true
-                }
-              ]
-            },
-            "description": "**What it does:** the same new orders as step 1, written as a plain list in the layout Orgasoft asked for: one entry per shipment, with the pharmacy name, code, phone, city and address, and each item's code, quantity, price and discount percent.\n\n**More than one page?** The reply header `X-Next-Cursor` holds the cursor for the next page. It is absent on the last page.\n\n**ماذا يفعل:** نفس الطلبات الجديدة بالشكل الذي طلبته أوركاسوفت: قائمة مباشرة، طلب لكل شحنة، مع اسم الصيدلية وكودها وهاتفها ومدينتها وعنوانها، ولكل صنف كوده وكميته وسعره ونسبة خصمه.\n\n**الصفحة التالية:** الترويسة `X-Next-Cursor` تحمل مؤشر الصفحة التالية، وتغيب في الصفحة الأخيرة."
-          },
-          "response": [
-            {
-              "name": "200 Success",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Accept",
-                    "value": "application/json"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/erp/v1/orgasoft/orders/sales?state=new",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "erp",
-                    "v1",
-                    "orgasoft",
-                    "orders",
-                    "sales"
-                  ],
-                  "query": [
-                    {
-                      "key": "state",
-                      "value": "new",
-                      "disabled": false
-                    },
-                    {
-                      "key": "from",
-                      "value": "",
-                      "disabled": true
-                    },
-                    {
-                      "key": "to",
-                      "value": "",
-                      "disabled": true
-                    },
-                    {
-                      "key": "cursor",
-                      "value": "",
-                      "disabled": true
-                    },
-                    {
-                      "key": "limit",
-                      "value": "",
-                      "disabled": true
-                    }
-                  ]
-                }
-              },
-              "status": "Success",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "[\n  {\n    \"orderId\": 21845,\n    \"status\": \"PENDING\",\n    \"total\": 1264.25,\n    \"pharmacyId\": 1,\n    \"pharmacyName\": \"Direct\",\n    \"pharmacyCode\": 263,\n    \"pharmacyNumber\": \"01008042755\",\n    \"pharmacyCity\": \"Fayoum\",\n    \"pharmacyAddress\": \"الفيوم\",\n    \"items\": [\n      {\n        \"code\": 100001,\n        \"name\": \"سبيركودا 20 قرص\",\n        \"qty\": 1,\n        \"price\": 265.0,\n        \"discount\": 21.0\n      },\n      {\n        \"code\": 100002,\n        \"name\": \"فيتامين د 1000 وحدة\",\n        \"qty\": 3,\n        \"price\": 385.0,\n        \"discount\": 22.0\n      },\n      {\n        \"code\": 100003,\n        \"name\": \"شراب الكحة\",\n        \"qty\": 1,\n        \"price\": 220.0,\n        \"discount\": 30.0\n      }\n    ]\n  }\n]"
-            },
-            {
-              "name": "400 Bad page cursor",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Accept",
-                    "value": "application/json"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/erp/v1/orgasoft/orders/sales?state=new",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "erp",
-                    "v1",
-                    "orgasoft",
-                    "orders",
-                    "sales"
-                  ],
-                  "query": [
-                    {
-                      "key": "state",
-                      "value": "new",
-                      "disabled": false
-                    },
-                    {
-                      "key": "from",
-                      "value": "",
-                      "disabled": true
-                    },
-                    {
-                      "key": "to",
-                      "value": "",
-                      "disabled": true
-                    },
-                    {
-                      "key": "cursor",
-                      "value": "",
-                      "disabled": true
-                    },
-                    {
-                      "key": "limit",
-                      "value": "",
-                      "disabled": true
-                    }
-                  ]
-                }
-              },
-              "status": "Bad page cursor",
-              "code": 400,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_CURSOR_INVALID\",\n    \"message\": {\n      \"ar\": \"مؤشر الصفحات غير صالح. ابدأ من جديد بدون مؤشر.\",\n      \"en\": \"The page cursor is not valid. Start again without a cursor.\"\n    },\n    \"details\": null\n  }\n}"
-            },
-            {
-              "name": "403 Key lacks permission",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Accept",
-                    "value": "application/json"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/erp/v1/orgasoft/orders/sales?state=new",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "erp",
-                    "v1",
-                    "orgasoft",
-                    "orders",
-                    "sales"
-                  ],
-                  "query": [
-                    {
-                      "key": "state",
-                      "value": "new",
-                      "disabled": false
-                    },
-                    {
-                      "key": "from",
-                      "value": "",
-                      "disabled": true
-                    },
-                    {
-                      "key": "to",
-                      "value": "",
-                      "disabled": true
-                    },
-                    {
-                      "key": "cursor",
-                      "value": "",
-                      "disabled": true
-                    },
-                    {
-                      "key": "limit",
-                      "value": "",
-                      "disabled": true
-                    }
-                  ]
-                }
-              },
-              "status": "Key lacks permission",
-              "code": 403,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_SCOPE_MISSING\",\n    \"message\": {\n      \"ar\": \"المفتاح لا يملك الصلاحية المطلوبة لهذه العملية.\",\n      \"en\": \"The key does not have the permission this call needs.\"\n    },\n    \"details\": {\n      \"requiredScope\": \"erp.orders.read\"\n    }\n  }\n}"
-            }
-          ],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Reply status is ok', () => pm.expect(pm.response.code).to.be.within(200, 299));"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "3. Get one order - جلب طلب واحد",
+          "name": "2. Get one order - جلب طلب واحد",
           "request": {
             "method": "GET",
             "header": [
@@ -1485,7 +1233,7 @@
                 }
               ]
             },
-            "description": "**What it does:** shows one order with the pharmacy, address, phone and all lines.\n\n**ماذا يفعل:** يعرض طلباً واحداً بكل تفاصيله: الصيدلية والعنوان والهاتف والأصناف."
+            "description": "**What it does:** shows one order, in the same layout as the list.\n\n**ماذا يفعل:** يعرض طلباً واحداً بنفس شكل القائمة."
           },
           "response": [
             {
@@ -1527,7 +1275,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"5a9e0c12b8d34f71\",\n  \"data\": {\n    \"orderNumber\": \"10542\",\n    \"shipmentNumber\": \"10542-1\",\n    \"status\": \"pending\",\n    \"importState\": \"new\",\n    \"createdAt\": \"2026-11-07T08:02:11Z\",\n    \"updatedAt\": \"2026-11-07T08:02:11Z\",\n    \"paymentMethod\": \"cash_on_delivery\",\n    \"paymentStatus\": \"unpaid\",\n    \"notes\": \"\",\n    \"subtotal\": \"1250.00\",\n    \"shippingFee\": \"25.00\",\n    \"total\": \"1275.00\",\n    \"customer\": {\n      \"erpCode\": \"C-00871\",\n      \"mapped\": true,\n      \"unmappedReason\": null,\n      \"name\": {\n        \"ar\": \"صيدلية الشفاء\",\n        \"en\": \"Al Shifa Pharmacy\"\n      },\n      \"branchName\": {\n        \"ar\": \"الفرع الرئيسي\",\n        \"en\": \"Main branch\"\n      },\n      \"address\": \"12 شارع النيل، المعادي، القاهرة\",\n      \"phone\": \"01012345678\"\n    },\n    \"erp\": {\n      \"reference\": null,\n      \"acknowledgedAt\": null\n    },\n    \"lines\": [\n      {\n        \"lineId\": 88231,\n        \"variantId\": \"91530\",\n        \"externalProductCode\": \"100245\",\n        \"name\": {\n          \"ar\": \"بانادول اكسترا 24 قرص\",\n          \"en\": \"Panadol Extra 24 tablets\"\n        },\n        \"barcode\": \"6221024000123\",\n        \"quantity\": 20,\n        \"unitPrice\": \"54.69\",\n        \"discountAmount\": \"0.00\",\n        \"totalPrice\": \"1093.80\"\n      }\n    ]\n  }\n}"
+              "body": "{\n  \"orderId\": 21845,\n  \"status\": \"PENDING\",\n  \"total\": 1264.25,\n  \"pharmacyId\": 1,\n  \"pharmacyName\": \"Direct\",\n  \"pharmacyCode\": 263,\n  \"pharmacyNumber\": \"01008042755\",\n  \"pharmacyCity\": \"Fayoum\",\n  \"pharmacyAddress\": \"الفيوم\",\n  \"items\": [\n    {\n      \"code\": 100001,\n      \"name\": \"سبيركودا 20 قرص\",\n      \"qty\": 1,\n      \"price\": 265.0,\n      \"discount\": 21.0\n    },\n    {\n      \"code\": 100005,\n      \"name\": \"بروفن اى كونتور 30 مل\",\n      \"qty\": 3,\n      \"price\": 385.0,\n      \"discount\": 22.0\n    },\n    {\n      \"code\": 27220,\n      \"name\": \"تشيكس جروي شراب للاطفال\",\n      \"qty\": 1,\n      \"price\": 220.0,\n      \"discount\": 30.0\n    }\n  ]\n}"
             },
             {
               "name": "404 Order not found",
@@ -1610,7 +1358,7 @@
                 "ack"
               ]
             },
-            "description": "**What it does:** tells Dawa24 you saved these orders in your system, with your own reference number. They will not come back in `state=new`.\n\n**When:** right after you save the orders. Safe to repeat.\n\n**ماذا يفعل:** يخبر دواء24 أنك حفظت هذه الطلبات عندك مع رقمك المرجعي، فلا تظهر مرة أخرى في الطلبات الجديدة. تكراره آمن.",
+            "description": "**What it does:** tells Dawa24 you saved these orders in your system, with your own reference number. They will not come back in `state=new`. Send the `orderId` you read as `orderNumber` (or as `orderId`).\n\n**When:** right after you save the orders. Safe to repeat.\n\n**ماذا يفعل:** يخبر دواء24 أنك حفظت هذه الطلبات عندك مع رقمك المرجعي، فلا تظهر مرة أخرى في الطلبات الجديدة. تكراره آمن.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"orders\": [\n    {\n      \"orderNumber\": \"10542\",\n      \"erpReference\": \"ORGA-77123\"\n    },\n    {\n      \"orderNumber\": \"10543\",\n      \"erpReference\": \"ORGA-77124\"\n    }\n  ]\n}",
@@ -2065,7 +1813,7 @@
                 }
               ]
             },
-            "description": "**What it does:** lists the orders the pharmacy placed with suppliers on Dawa24.\n\n**ماذا يفعل:** يعرض طلبات الصيدلية من الموردين على دواء24."
+            "description": "**What it does:** lists the orders the pharmacy placed with suppliers on Dawa24, in the same layout as sales orders: one entry per order with all its items. The pharmacy fields describe the ordering pharmacy, `pharmacyCode` is null, and each item's `code` is the item code your system sent when it placed the order.\n\n**More than one page?** Use the `X-Next-Cursor` header, absent on the last page.\n\n**ماذا يفعل:** يعرض طلبات الصيدلية من الموردين على دواء24 بنفس شكل طلبات البيع: طلب واحد بكل أصنافه، وكود كل صنف هو الكود الذي أرسله نظامكم عند إنشاء الطلب."
           },
           "response": [
             {
@@ -2086,256 +1834,6 @@
                   "path": [
                     "erp",
                     "v1",
-                    "orders",
-                    "purchase"
-                  ],
-                  "query": [
-                    {
-                      "key": "state",
-                      "value": "new",
-                      "disabled": false
-                    },
-                    {
-                      "key": "from",
-                      "value": "",
-                      "disabled": true
-                    },
-                    {
-                      "key": "to",
-                      "value": "",
-                      "disabled": true
-                    },
-                    {
-                      "key": "cursor",
-                      "value": "",
-                      "disabled": true
-                    },
-                    {
-                      "key": "limit",
-                      "value": "",
-                      "disabled": true
-                    }
-                  ]
-                }
-              },
-              "status": "Success",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"3b81f0c64e2a4d19\",\n  \"data\": [\n    {\n      \"orderNumber\": \"20871\",\n      \"status\": \"pending\",\n      \"importState\": \"new\",\n      \"createdAt\": \"2026-11-07T09:40:05Z\",\n      \"updatedAt\": \"2026-11-07T09:40:05Z\",\n      \"externalReference\": \"ORGA-PO-2026-000451\",\n      \"total\": \"626.00\",\n      \"shipments\": [\n        {\n          \"shipmentNumber\": \"20871-1\",\n          \"status\": \"pending\",\n          \"supplier\": {\n            \"name\": {\n              \"ar\": \"مؤسسة النور للأدوية\",\n              \"en\": \"Al Nour Pharma\"\n            }\n          },\n          \"subtotal\": \"601.00\",\n          \"shippingFee\": \"25.00\",\n          \"lines\": [\n            {\n              \"lineId\": 90412,\n              \"variantId\": \"91530\",\n              \"externalProductCode\": null,\n              \"name\": {\n                \"ar\": \"بانادول اكسترا 24 قرص\",\n                \"en\": \"Panadol Extra 24 tablets\"\n              },\n              \"barcode\": \"6221024000123\",\n              \"quantity\": 12,\n              \"unitPrice\": \"50.40\",\n              \"discountAmount\": \"3.80\",\n              \"totalPrice\": \"601.00\"\n            }\n          ]\n        }\n      ],\n      \"erp\": {\n        \"reference\": null,\n        \"acknowledgedAt\": null\n      }\n    }\n  ],\n  \"page\": {\n    \"nextCursor\": null,\n    \"limit\": 100\n  }\n}"
-            },
-            {
-              "name": "400 Bad page cursor",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Accept",
-                    "value": "application/json"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/erp/v1/orders/purchase?state=new",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "erp",
-                    "v1",
-                    "orders",
-                    "purchase"
-                  ],
-                  "query": [
-                    {
-                      "key": "state",
-                      "value": "new",
-                      "disabled": false
-                    },
-                    {
-                      "key": "from",
-                      "value": "",
-                      "disabled": true
-                    },
-                    {
-                      "key": "to",
-                      "value": "",
-                      "disabled": true
-                    },
-                    {
-                      "key": "cursor",
-                      "value": "",
-                      "disabled": true
-                    },
-                    {
-                      "key": "limit",
-                      "value": "",
-                      "disabled": true
-                    }
-                  ]
-                }
-              },
-              "status": "Bad page cursor",
-              "code": 400,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_CURSOR_INVALID\",\n    \"message\": {\n      \"ar\": \"مؤشر الصفحات غير صالح. ابدأ من جديد بدون مؤشر.\",\n      \"en\": \"The page cursor is not valid. Start again without a cursor.\"\n    },\n    \"details\": null\n  }\n}"
-            },
-            {
-              "name": "403 Key lacks permission",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Accept",
-                    "value": "application/json"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/erp/v1/orders/purchase?state=new",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "erp",
-                    "v1",
-                    "orders",
-                    "purchase"
-                  ],
-                  "query": [
-                    {
-                      "key": "state",
-                      "value": "new",
-                      "disabled": false
-                    },
-                    {
-                      "key": "from",
-                      "value": "",
-                      "disabled": true
-                    },
-                    {
-                      "key": "to",
-                      "value": "",
-                      "disabled": true
-                    },
-                    {
-                      "key": "cursor",
-                      "value": "",
-                      "disabled": true
-                    },
-                    {
-                      "key": "limit",
-                      "value": "",
-                      "disabled": true
-                    }
-                  ]
-                }
-              },
-              "status": "Key lacks permission",
-              "code": 403,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_SCOPE_MISSING\",\n    \"message\": {\n      \"ar\": \"المفتاح لا يملك الصلاحية المطلوبة لهذه العملية.\",\n      \"en\": \"The key does not have the permission this call needs.\"\n    },\n    \"details\": {\n      \"requiredScope\": \"erp.orders.read\"\n    }\n  }\n}"
-            }
-          ],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Reply status is ok', () => pm.expect(pm.response.code).to.be.within(200, 299));"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "2. Purchase orders in Orgasoft format - طلبات الشراء بصيغة Orgasoft",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/erp/v1/orgasoft/orders/purchase?state=new",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "erp",
-                "v1",
-                "orgasoft",
-                "orders",
-                "purchase"
-              ],
-              "query": [
-                {
-                  "key": "state",
-                  "value": "new",
-                  "disabled": false
-                },
-                {
-                  "key": "from",
-                  "value": "",
-                  "disabled": true
-                },
-                {
-                  "key": "to",
-                  "value": "",
-                  "disabled": true
-                },
-                {
-                  "key": "cursor",
-                  "value": "",
-                  "disabled": true
-                },
-                {
-                  "key": "limit",
-                  "value": "",
-                  "disabled": true
-                }
-              ]
-            },
-            "description": "**What it does:** the same purchase orders as step 1, as a plain list in Orgasoft's layout: one entry per order with all its lines. The entry describes the ordering pharmacy, and `pharmacyCode` is null.\n\n**More than one page?** Use the `X-Next-Cursor` header, absent on the last page.\n\n**ماذا يفعل:** نفس طلبات الشراء بالشكل الذي طلبته أوركاسوفت: طلب واحد لكل طلب شراء مع كل أصنافه. الطلب يصف الصيدلية التي طلبته، و`pharmacyCode` يكون null."
-          },
-          "response": [
-            {
-              "name": "200 Success",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Accept",
-                    "value": "application/json"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/erp/v1/orgasoft/orders/purchase?state=new",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "erp",
-                    "v1",
-                    "orgasoft",
                     "orders",
                     "purchase"
                   ],
@@ -2390,14 +1888,13 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/erp/v1/orgasoft/orders/purchase?state=new",
+                  "raw": "{{baseUrl}}/erp/v1/orders/purchase?state=new",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "erp",
                     "v1",
-                    "orgasoft",
                     "orders",
                     "purchase"
                   ],
@@ -2452,14 +1949,13 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/erp/v1/orgasoft/orders/purchase?state=new",
+                  "raw": "{{baseUrl}}/erp/v1/orders/purchase?state=new",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "erp",
                     "v1",
-                    "orgasoft",
                     "orders",
                     "purchase"
                   ],
@@ -2517,7 +2013,7 @@
           ]
         },
         {
-          "name": "3. Get one purchase order - جلب طلب شراء واحد",
+          "name": "2. Get one purchase order - جلب طلب شراء واحد",
           "request": {
             "method": "GET",
             "header": [
@@ -2545,7 +2041,7 @@
                 }
               ]
             },
-            "description": "**What it does:** shows one purchase order with each supplier's shipment and lines.\n\n**ماذا يفعل:** يعرض طلب شراء واحداً مع شحنة كل مورد وأصنافها."
+            "description": "**What it does:** shows one purchase order, in the same layout as the list.\n\n**ماذا يفعل:** يعرض طلب شراء واحداً بنفس شكل القائمة."
           },
           "response": [
             {
@@ -2587,7 +2083,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"4c7a2e19d05b4f68\",\n  \"data\": {\n    \"orderNumber\": \"20871\",\n    \"status\": \"pending\",\n    \"importState\": \"new\",\n    \"createdAt\": \"2026-11-07T09:40:05Z\",\n    \"updatedAt\": \"2026-11-07T09:40:05Z\",\n    \"externalReference\": \"ORGA-PO-2026-000451\",\n    \"total\": \"626.00\",\n    \"shipments\": [\n      {\n        \"shipmentNumber\": \"20871-1\",\n        \"status\": \"pending\",\n        \"supplier\": {\n          \"name\": {\n            \"ar\": \"مؤسسة النور للأدوية\",\n            \"en\": \"Al Nour Pharma\"\n          }\n        },\n        \"subtotal\": \"601.00\",\n        \"shippingFee\": \"25.00\",\n        \"lines\": [\n          {\n            \"lineId\": 90412,\n            \"variantId\": \"91530\",\n            \"externalProductCode\": null,\n            \"name\": {\n              \"ar\": \"بانادول اكسترا 24 قرص\",\n              \"en\": \"Panadol Extra 24 tablets\"\n            },\n            \"barcode\": \"6221024000123\",\n            \"quantity\": 12,\n            \"unitPrice\": \"50.40\",\n            \"discountAmount\": \"3.80\",\n            \"totalPrice\": \"601.00\"\n          }\n        ]\n      }\n    ],\n    \"erp\": {\n      \"reference\": null,\n      \"acknowledgedAt\": null\n    }\n  }\n}"
+              "body": "{\n  \"orderId\": 21846,\n  \"status\": \"CONFIRMED\",\n  \"total\": 209.35,\n  \"pharmacyId\": 7,\n  \"pharmacyName\": \"صيدلية الشفاء\",\n  \"pharmacyCode\": null,\n  \"pharmacyNumber\": \"01008042755\",\n  \"pharmacyCity\": \"Fayoum\",\n  \"pharmacyAddress\": \"الفيوم\",\n  \"items\": [\n    {\n      \"code\": 100001,\n      \"name\": \"سبيركودا 20 قرص\",\n      \"qty\": 1,\n      \"price\": 265.0,\n      \"discount\": 21.0\n    }\n  ]\n}"
             },
             {
               "name": "404 Order not found",
@@ -2981,10 +2477,10 @@
                 "purchase"
               ]
             },
-            "description": "**What it does:** places a purchase order on Dawa24 from your system.\n\n**ماذا يفعل:** ينشئ طلب شراء على دواء24 من نظامكم.",
+            "description": "**What it does:** places a purchase order on Dawa24 from your system. Send your own item code in each line's `code`; it is saved and returned as the item `code` whenever you read the order. The reply is the order, in the same layout as the list.\n\n**ماذا يفعل:** ينشئ طلب شراء على دواء24 من نظامكم. أرسل كود الصنف عندكم في `code` لكل سطر، فيُحفظ ويظهر كـ `code` كلما قرأت الطلب.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"91530\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\",\n      \"code\": 100001\n    }\n  ]\n}",
+              "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"items\": [\n    {\n      \"variantId\": \"91530\",\n      \"qty\": 12,\n      \"unitPrice\": \"48.00\",\n      \"code\": 100001\n    }\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3021,7 +2517,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"91530\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\",\n      \"code\": 100001\n    }\n  ]\n}",
+                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"items\": [\n    {\n      \"variantId\": \"91530\",\n      \"qty\": 12,\n      \"unitPrice\": \"48.00\",\n      \"code\": 100001\n    }\n  ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -3038,7 +2534,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"4c7a2e19d05b4f68\",\n  \"data\": {\n    \"orderNumber\": \"20871\",\n    \"status\": \"pending\",\n    \"importState\": \"new\",\n    \"createdAt\": \"2026-11-07T09:40:05Z\",\n    \"updatedAt\": \"2026-11-07T09:40:05Z\",\n    \"externalReference\": \"ORGA-PO-2026-000451\",\n    \"total\": \"626.00\",\n    \"shipments\": [\n      {\n        \"shipmentNumber\": \"20871-1\",\n        \"status\": \"pending\",\n        \"supplier\": {\n          \"name\": {\n            \"ar\": \"مؤسسة النور للأدوية\",\n            \"en\": \"Al Nour Pharma\"\n          }\n        },\n        \"subtotal\": \"601.00\",\n        \"shippingFee\": \"25.00\",\n        \"lines\": [\n          {\n            \"lineId\": 90412,\n            \"variantId\": \"91530\",\n            \"externalProductCode\": null,\n            \"name\": {\n              \"ar\": \"بانادول اكسترا 24 قرص\",\n              \"en\": \"Panadol Extra 24 tablets\"\n            },\n            \"barcode\": \"6221024000123\",\n            \"quantity\": 12,\n            \"unitPrice\": \"50.40\",\n            \"discountAmount\": \"3.80\",\n            \"totalPrice\": \"601.00\"\n          }\n        ]\n      }\n    ],\n    \"erp\": {\n      \"reference\": null,\n      \"acknowledgedAt\": null\n    }\n  }\n}"
+              "body": "{\n  \"orderId\": 21846,\n  \"status\": \"CONFIRMED\",\n  \"total\": 209.35,\n  \"pharmacyId\": 7,\n  \"pharmacyName\": \"صيدلية الشفاء\",\n  \"pharmacyCode\": null,\n  \"pharmacyNumber\": \"01008042755\",\n  \"pharmacyCity\": \"Fayoum\",\n  \"pharmacyAddress\": \"الفيوم\",\n  \"items\": [\n    {\n      \"code\": 100001,\n      \"name\": \"سبيركودا 20 قرص\",\n      \"qty\": 1,\n      \"price\": 265.0,\n      \"discount\": 21.0\n    }\n  ]\n}"
             },
             {
               "name": "201 Created",
@@ -3068,7 +2564,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"91530\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\",\n      \"code\": 100001\n    }\n  ]\n}",
+                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"items\": [\n    {\n      \"variantId\": \"91530\",\n      \"qty\": 12,\n      \"unitPrice\": \"48.00\",\n      \"code\": 100001\n    }\n  ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -3085,7 +2581,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"4c7a2e19d05b4f68\",\n  \"data\": {\n    \"orderNumber\": \"20871\",\n    \"status\": \"pending\",\n    \"importState\": \"new\",\n    \"createdAt\": \"2026-11-07T09:40:05Z\",\n    \"updatedAt\": \"2026-11-07T09:40:05Z\",\n    \"externalReference\": \"ORGA-PO-2026-000451\",\n    \"total\": \"626.00\",\n    \"shipments\": [\n      {\n        \"shipmentNumber\": \"20871-1\",\n        \"status\": \"pending\",\n        \"supplier\": {\n          \"name\": {\n            \"ar\": \"مؤسسة النور للأدوية\",\n            \"en\": \"Al Nour Pharma\"\n          }\n        },\n        \"subtotal\": \"601.00\",\n        \"shippingFee\": \"25.00\",\n        \"lines\": [\n          {\n            \"lineId\": 90412,\n            \"variantId\": \"91530\",\n            \"externalProductCode\": null,\n            \"name\": {\n              \"ar\": \"بانادول اكسترا 24 قرص\",\n              \"en\": \"Panadol Extra 24 tablets\"\n            },\n            \"barcode\": \"6221024000123\",\n            \"quantity\": 12,\n            \"unitPrice\": \"50.40\",\n            \"discountAmount\": \"3.80\",\n            \"totalPrice\": \"601.00\"\n          }\n        ]\n      }\n    ],\n    \"erp\": {\n      \"reference\": null,\n      \"acknowledgedAt\": null\n    }\n  }\n}"
+              "body": "{\n  \"orderId\": 21846,\n  \"status\": \"CONFIRMED\",\n  \"total\": 209.35,\n  \"pharmacyId\": 7,\n  \"pharmacyName\": \"صيدلية الشفاء\",\n  \"pharmacyCode\": null,\n  \"pharmacyNumber\": \"01008042755\",\n  \"pharmacyCity\": \"Fayoum\",\n  \"pharmacyAddress\": \"الفيوم\",\n  \"items\": [\n    {\n      \"code\": 100001,\n      \"name\": \"سبيركودا 20 قرص\",\n      \"qty\": 1,\n      \"price\": 265.0,\n      \"discount\": 21.0\n    }\n  ]\n}"
             },
             {
               "name": "409 Price changed - correct price in details",
@@ -3115,7 +2611,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"91530\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\",\n      \"code\": 100001\n    }\n  ]\n}",
+                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"items\": [\n    {\n      \"variantId\": \"91530\",\n      \"qty\": 12,\n      \"unitPrice\": \"48.00\",\n      \"code\": 100001\n    }\n  ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -3162,7 +2658,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"91530\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\",\n      \"code\": 100001\n    }\n  ]\n}",
+                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"items\": [\n    {\n      \"variantId\": \"91530\",\n      \"qty\": 12,\n      \"unitPrice\": \"48.00\",\n      \"code\": 100001\n    }\n  ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -3209,7 +2705,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"91530\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\",\n      \"code\": 100001\n    }\n  ]\n}",
+                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"items\": [\n    {\n      \"variantId\": \"91530\",\n      \"qty\": 12,\n      \"unitPrice\": \"48.00\",\n      \"code\": 100001\n    }\n  ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -3256,7 +2752,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"91530\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\",\n      \"code\": 100001\n    }\n  ]\n}",
+                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"items\": [\n    {\n      \"variantId\": \"91530\",\n      \"qty\": 12,\n      \"unitPrice\": \"48.00\",\n      \"code\": 100001\n    }\n  ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -3303,7 +2799,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"91530\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\",\n      \"code\": 100001\n    }\n  ]\n}",
+                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"items\": [\n    {\n      \"variantId\": \"91530\",\n      \"qty\": 12,\n      \"unitPrice\": \"48.00\",\n      \"code\": 100001\n    }\n  ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -3350,7 +2846,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"91530\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\",\n      \"code\": 100001\n    }\n  ]\n}",
+                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"items\": [\n    {\n      \"variantId\": \"91530\",\n      \"qty\": 12,\n      \"unitPrice\": \"48.00\",\n      \"code\": 100001\n    }\n  ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -3397,7 +2893,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"91530\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\",\n      \"code\": 100001\n    }\n  ]\n}",
+                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"items\": [\n    {\n      \"variantId\": \"91530\",\n      \"qty\": 12,\n      \"unitPrice\": \"48.00\",\n      \"code\": 100001\n    }\n  ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -3444,7 +2940,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"91530\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\",\n      \"code\": 100001\n    }\n  ]\n}",
+                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"items\": [\n    {\n      \"variantId\": \"91530\",\n      \"qty\": 12,\n      \"unitPrice\": \"48.00\",\n      \"code\": 100001\n    }\n  ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"

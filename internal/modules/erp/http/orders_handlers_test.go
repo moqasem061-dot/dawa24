@@ -1,6 +1,7 @@
 package http
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io"
@@ -155,6 +156,20 @@ func testSale(id int64, number, erpCode string) erp.SalesRow {
 	}
 }
 
+// decodeOrders reads a bare order array, keeping numbers exact (json.Number).
+func decodeOrders(t *testing.T, w *httptest.ResponseRecorder) []map[string]any {
+	t.Helper()
+	dec := json.NewDecoder(bytes.NewReader(w.Body.Bytes()))
+	dec.UseNumber()
+	var out []map[string]any
+	if err := dec.Decode(&out); err != nil {
+		t.Fatalf("response is not an order array: %v (%s)", err, w.Body.String())
+	}
+	return out
+}
+
+// TestOrdersSalesListShape pins the exact order shape: the ten order fields
+// and the five item fields, nothing more, money as exact decimals.
 func TestOrdersSalesListShape(t *testing.T) {
 	f := newOrderFixture(t)
 	f.repo.sales = []erp.SalesRow{testSale(10, "10542", "C-00871")}
@@ -162,23 +177,23 @@ func TestOrdersSalesListShape(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Fatalf("status = %d, body %s", w.Code, w.Body.String())
 	}
-	env := decodeEnvelope(t, w)
-	data := env["data"].([]any)
+	data := decodeOrders(t, w)
 	if len(data) != 1 {
 		t.Fatalf("data = %d rows, want 1", len(data))
 	}
-	order := data[0].(map[string]any)
-	customer := order["customer"].(map[string]any)
-	if order["orderNumber"] != "10542" || customer["erpCode"] != "C-00871" || customer["mapped"] != true {
-		t.Fatalf("order = %+v, want order 10542 with erp code C-00871", order)
+	order := data[0]
+	if len(order) != 10 {
+		t.Fatalf("order has %d fields, want exactly 10: %+v", len(order), order)
 	}
-	line := order["lines"].([]any)[0].(map[string]any)
-	if line["totalPrice"] != "1093.80" || line["unitPrice"] != "54.69" || line["externalProductCode"] != "100245" {
-		t.Fatalf("line = %+v, want exact money and the external code", line)
+	if order["orderId"] != json.Number("10542") || order["pharmacyCode"] != "C-00871" || order["status"] != "PENDING" || order["total"] != json.Number("1093.80") {
+		t.Fatalf("order = %+v, want order 10542, code C-00871, PENDING, total 1093.80", order)
 	}
-	page := env["page"].(map[string]any)
-	if page["nextCursor"] != nil || page["limit"] != float64(100) {
-		t.Fatalf("page = %+v, want null nextCursor and limit 100", page)
+	item := order["items"].([]any)[0].(map[string]any)
+	if len(item) != 5 || item["code"] != json.Number("100245") || item["qty"] != json.Number("20") || item["price"] != json.Number("54.69") || item["discount"] != json.Number("0.00") {
+		t.Fatalf("item = %+v, want code 100245, qty 20, price 54.69, discount 0.00", item)
+	}
+	if w.Header().Get("X-Next-Cursor") != "" {
+		t.Fatalf("X-Next-Cursor = %q on the last page, want none", w.Header().Get("X-Next-Cursor"))
 	}
 }
 
@@ -188,9 +203,9 @@ func TestOrdersSalesUnmappedCustomerShape(t *testing.T) {
 	row.Customer.UnmappedReason = "no_link"
 	f.repo.sales = []erp.SalesRow{row}
 	w := f.do("GET", "/orders/sales?state=all", "")
-	customer := decodeEnvelope(t, w)["data"].([]any)[0].(map[string]any)["customer"].(map[string]any)
-	if customer["erpCode"] != nil || customer["mapped"] != false || customer["unmappedReason"] != "no_link" {
-		t.Fatalf("customer = %+v, want null erpCode, mapped false, no_link", customer)
+	order := decodeOrders(t, w)[0]
+	if code, present := order["pharmacyCode"]; !present || code != nil {
+		t.Fatalf("pharmacyCode = %v (present %v), want null", code, present)
 	}
 }
 
@@ -198,17 +213,16 @@ func TestOrdersSalesPagingCursorRoundTrip(t *testing.T) {
 	f := newOrderFixture(t)
 	f.repo.sales = []erp.SalesRow{testSale(10, "A-1", "C-1"), testSale(11, "A-2", "C-2"), testSale(12, "A-3", "C-3")}
 	w := f.do("GET", "/orders/sales?state=all&limit=2", "")
-	env := decodeEnvelope(t, w)
-	next, _ := env["page"].(map[string]any)["nextCursor"].(string)
-	if next == "" || len(env["data"].([]any)) != 2 {
-		t.Fatalf("first page = %s, want two rows and a next cursor", w.Body.String())
+	next := w.Header().Get("X-Next-Cursor")
+	if next == "" || len(decodeOrders(t, w)) != 2 {
+		t.Fatalf("first page = %s (cursor %q), want two rows and a next cursor", w.Body.String(), next)
 	}
 	want, err := DecodeCursor(next)
 	if err != nil || want != 11 {
 		t.Fatalf("next cursor decodes to %d, %v; want shipment 11", want, err)
 	}
 	w = f.do("GET", "/orders/sales?state=all&limit=2&cursor="+next, "")
-	data := decodeEnvelope(t, w)["data"].([]any)
+	data := decodeOrders(t, w)
 	if f.repo.lastFilter.After != 11 || len(data) != 1 {
 		t.Fatalf("second page after %d with %d rows; want after 11 and one row", f.repo.lastFilter.After, len(data))
 	}
@@ -230,11 +244,13 @@ func TestOrdersPurchaseListAndGet(t *testing.T) {
 	f := newOrderFixture(t)
 	f.repo.purchase = []erp.PurchaseRow{{OrderID: 900, OrderNumber: "PO-1", Status: "pending", ImportState: "new", CreatedAt: time.Now(), UpdatedAt: time.Now()}}
 	w := f.do("GET", "/orders/purchase?state=all", "")
-	if w.Code != http.StatusOK || decodeEnvelope(t, w)["data"].([]any)[0].(map[string]any)["orderNumber"] != "PO-1" {
+	if w.Code != http.StatusOK || decodeOrders(t, w)[0]["orderId"] != "PO-1" {
 		t.Fatalf("purchase list = %d %s", w.Code, w.Body.String())
 	}
-	if w := f.do("GET", "/orders/purchase/PO-1", ""); w.Code != http.StatusOK {
-		t.Fatalf("purchase get = %d", w.Code)
+	w = f.do("GET", "/orders/purchase/PO-1", "")
+	var one map[string]any
+	if w.Code != http.StatusOK || json.Unmarshal(w.Body.Bytes(), &one) != nil || one["orderId"] != "PO-1" || len(one) != 10 {
+		t.Fatalf("purchase get = %d %s, want one bare order", w.Code, w.Body.String())
 	}
 	w = f.do("GET", "/orders/purchase/NOPE", "")
 	if w.Code != http.StatusNotFound || decodeEnvelope(t, w)["error"].(map[string]any)["code"] != "ERP_ORDER_NOT_FOUND" {

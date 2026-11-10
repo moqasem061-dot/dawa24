@@ -39,6 +39,7 @@ func writeError(w http.ResponseWriter, r *http.Request, err error) {
 		slog.ErrorContext(r.Context(), "ERP request failed", "error", err, "requestId", requestID(w, r))
 		e = erp.NewError("ERP_INTERNAL", 500, nil)
 	}
+	noteError(r.Context(), e)
 	id := requestID(w, r)
 	key := "erp.err." + strings.ToLower(strings.TrimPrefix(e.Code, "ERP_"))
 	args := messageArgs(e.Code, e.Details)

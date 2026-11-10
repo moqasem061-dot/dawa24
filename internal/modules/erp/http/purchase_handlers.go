@@ -16,7 +16,8 @@ import (
 type purchaseBody struct {
 	ExternalReference string             `json:"externalReference"`
 	Notes             string             `json:"notes"`
-	Lines             []purchaseLineBody `json:"lines"`
+	Items             []purchaseLineBody `json:"items"`
+	Lines             []purchaseLineBody `json:"lines"` // the earlier name, still accepted
 }
 
 // purchaseLineBody keeps variantId, code and its aliases raw: the variant id may
@@ -25,6 +26,7 @@ type purchaseBody struct {
 type purchaseLineBody struct {
 	VariantID json.RawMessage `json:"variantId"`
 	Quantity  json.RawMessage `json:"quantity"`
+	Qty       json.RawMessage `json:"qty"`
 	UnitPrice json.RawMessage `json:"unitPrice"`
 	Code      json.RawMessage `json:"code"`
 	ItemID    json.RawMessage `json:"itemId"`
@@ -36,8 +38,17 @@ type purchaseLineBody struct {
 // the line number. An unitPrice that is neither a string nor a number is refused here.
 func (b purchaseBody) request() (erp.CreatePurchaseRequest, *erp.Error) {
 	req := erp.CreatePurchaseRequest{ExternalReference: b.ExternalReference, Notes: b.Notes}
-	for i, line := range b.Lines {
-		qty, err := strconv.Atoi(string(line.Quantity))
+	// items/qty are the names Orgasoft uses; lines/quantity are the earlier names.
+	list, listName := b.Items, "items"
+	if len(list) == 0 {
+		list, listName = b.Lines, "lines"
+	}
+	for i, line := range list {
+		quantity := line.Quantity
+		if len(quantity) == 0 {
+			quantity = line.Qty
+		}
+		qty, err := strconv.Atoi(string(quantity))
 		if err != nil {
 			qty = 0
 		}
@@ -55,7 +66,7 @@ func (b purchaseBody) request() (erp.CreatePurchaseRequest, *erp.Error) {
 		}
 		code, present, ok := lineCode(line)
 		if present && !ok {
-			return erp.CreatePurchaseRequest{}, erp.NewError("ERP_VALIDATION", 422, map[string]any{"field": "lines[" + strconv.Itoa(i+1) + "].code"})
+			return erp.CreatePurchaseRequest{}, erp.NewError("ERP_VALIDATION", 422, map[string]any{"field": listName + "[" + strconv.Itoa(i+1) + "].code"})
 		}
 		item.Code = code
 		req.Lines = append(req.Lines, item)
@@ -96,6 +107,7 @@ func (h *Handler) postPurchase(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	req, bad := body.request()
+	setCallRef(r.Context(), req.ExternalReference)
 	if bad != nil {
 		writeError(w, r, bad)
 		return
@@ -109,7 +121,7 @@ func (h *Handler) postPurchase(w http.ResponseWriter, r *http.Request) {
 	if res.Replay {
 		status = http.StatusOK
 	}
-	writeOK(w, r, status, purchaseJSON(res.Row))
+	writeOrder(w, r, status, feedPurchaseOrder(res.Row, principal.OrganizationID))
 }
 
 // offersJSON is the GET /offers item shape of the contract (OfferList).

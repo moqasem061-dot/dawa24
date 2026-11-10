@@ -40,6 +40,8 @@ func (h *UIHandler) registerCustomerERPRoutes(r chi.Router) {
 	r.Group(func(g chi.Router) {
 		g.Use(authctx.RequireTenantPagePermission("pharmacy.integration.view"))
 		g.Get("/customer/integrations", h.ErpKeysPage)
+		// The pharmacy's activity screen has no syncs tab and no batch page.
+		g.Get("/customer/integrations/activity", h.ErpActivityPage)
 	})
 	r.Group(func(g chi.Router) {
 		g.Use(authctx.RequireTenantPagePermission("pharmacy.integration.manage"))

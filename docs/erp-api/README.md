@@ -32,7 +32,7 @@ The Postman collection `dawa24-erp.postman_collection.json` runs the whole journ
 4. اقرأ نتيجة كل صنف؛ الصنف ذو السعر غير الصالح يظهر `failed` مع رمز الخطأ.
 5. أرسل الدفعة نفسها مرة ثانية؛ الأصناف المعروفة تظهر `unchanged` ولا تتكرر.
 6. اطلب من الصيدلية إدخال رقم عميلها لدى المورّد عند الدفع (تظهر نافذة الرقم).
-7. اقرأ طلبات البيع الجديدة؛ يظهر رقم العميل لدى المورّد في `customer.erpCode`.
+7. اقرأ طلبات البيع الجديدة؛ يظهر رقم العميل لدى المورّد في `pharmacyCode`.
 8. أكّد استيراد الطلب.
 9. اقرأ الطلبات الجديدة مرة أخرى؛ لن يظهر الطلب المستورد.
 10. أكّد الطلب (`confirmed`).
@@ -153,11 +153,12 @@ The overall state of a batch: `queued`, `processing`, `completed` or `failed`. A
 The result of each item in a batch. Filter with `state=pending|created|updated|unchanged|needs_review|failed`; page with `cursor` and `limit` (default 1000, maximum 5000).
 
 #### GET /erp/v1/orders/sales
-The orders the supplier received (scope `erp.orders.read`). Each order carries only the
-supplier's own part (its shipment). Filter with `state=new|imported|changed|all` (default `new`); page with `cursor` and `limit` (default 100, maximum 500).
+The orders the supplier received (scope `erp.orders.read`), as a bare JSON array in the shape Orgasoft asked for: `orderId`, `status`, `total`, `pharmacyId`, `pharmacyName`, `pharmacyCode`, `pharmacyNumber`, `pharmacyCity`, `pharmacyAddress` and `items` (`code`, `name`, `qty`, `price` before discount, `discount` as a percent), nothing else. `total` is the item totals after discount plus shipping. The next page is in the `X-Next-Cursor` header, absent on the last page. Money keeps its two decimals (`265.00`). Each order carries only the
+supplier's own part (its shipment); `pharmacyCode` is your customer code for the pharmacy, null when none is saved.
+Filter with `state=new|imported|changed|all` (default `new`; an order cancelled or rejected before you imported it is left out of `new`); page with `cursor` and `limit` (default 100, maximum 500).
 
 #### GET /erp/v1/orders/sales/{orderNumber}
-One sales order, with the same fields as the list.
+One sales order as a bare object, with the same fields as the list.
 
 #### POST /erp/v1/orders/sales/ack
 Marks up to 500 orders as imported (scope `erp.orders.ack`). Each order returns its own result:
@@ -169,25 +170,22 @@ charges the buyer's wallet; rejecting refunds it. Delivery is not set through th
 (`ERP_DELIVERY_NOT_ALLOWED`).
 
 #### GET /erp/v1/orders/purchase
-The orders the key's organization placed (scope `erp.orders.read`; pharmacies and suppliers).
+The orders the key's organization placed (scope `erp.orders.read`; pharmacies and suppliers), in the same shape as sales orders: one entry per order with the items of every supplier. The `pharmacy*` fields describe your own ordering pharmacy, `pharmacyCode` is null, and each item's `code` is the item code your system sent when it placed the order.
 
 #### GET /erp/v1/orders/purchase/{orderNumber}
-One purchase order.
+One purchase order as a bare object, with the same fields as the list.
 
 #### POST /erp/v1/orders/purchase/ack
-Marks purchase orders as imported (scope `erp.orders.ack`). Same behaviour as the sales acknowledgement.
+Marks purchase orders as imported (scope `erp.orders.ack`). Same behaviour as the sales acknowledgement. Send the `orderId` you read as `orderNumber` (or as `orderId`).
 
-#### GET /erp/v1/orgasoft/orders/sales and GET /erp/v1/orgasoft/orders/purchase
-The same orders as the two lists above (same scope, filters and paging), answered as a bare JSON array in Orgasoft's shape: `orderId`, `status`, `total`, `pharmacyId`, `pharmacyName`, `pharmacyCode`, `pharmacyNumber`, `pharmacyCity`, `pharmacyAddress` and `items` (`code`, `name`, `qty`, `price`, `discount` as a percent). The next page is in the `X-Next-Cursor` header, absent on the last page. Money keeps its two decimals (`265.00`).
-
-**Ids.** Every id Dawa24 returns is at most 20 characters of `0-9 A-Z a-z _ -`: `requestId` is 16 hex characters, `syncId` and `variantId` are decimal numbers, and `nextCursor` is a decimal number. Send the decimal `variantId` on a purchase line; a JSON integer works too. A purchase line may carry your own item code as `code` (or `itemId`, `itemCode`), and the Orgasoft purchase feed shows it back.
+**Ids.** Every id Dawa24 returns is at most 20 characters of `0-9 A-Z a-z _ -`: `requestId` is 16 hex characters, `syncId` and `variantId` are decimal numbers, and the order page cursor (`X-Next-Cursor`) is a decimal number. Send the decimal `variantId` on a purchase item; a JSON integer works too. A purchase item may carry your own item code as `code` (or `itemId`, `itemCode`), and every purchase order read shows it back.
 
 #### POST /erp/v1/orders/purchase
 Creates a purchase order (scope `erp.po.create`). Prices are Dawa24's; a sent `unitPrice` that
 differs is refused with `ERP_PO_PRICE_MISMATCH`. Retrying with the same `externalReference`
 returns the first order. Body: `externalReference` (required, up to 100 characters), `notes` (optional, up to 500),
-`lines[{variantId, quantity, unitPrice?}]` (1 to 200 lines; `quantity` is a whole number from 1 to 100000;
-`unitPrice` is a string or number, optional). The reply is `201` for a new order and `200` for a replay.
+`items[{variantId, qty, unitPrice?, code?}]` (1 to 200 items; `qty` is a whole number from 1 to 100000;
+`unitPrice` is a string or number, optional; the earlier names `lines` and `quantity` still work). The reply is the order in the same shape as the list, `201` for a new order and `200` for a replay.
 The buyer key needs a buying user, and each supplier must already be linked to your organization. No account is ever created.
 
 #### GET /erp/v1/offers

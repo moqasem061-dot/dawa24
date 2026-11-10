@@ -296,3 +296,40 @@ func TestTenantIsolation_ERPOrderImports(t *testing.T) {
 	}
 	assertERPCrossTenantZero(t, db, ctx, "order_imports", importID, fx.supplierA, fx.supplierB)
 }
+
+// TestERPOrders_CancelledBeforeImportLeavesNew proves state=new leaves out a
+// shipment that was cancelled before the ERP ever imported it, while
+// state=all still returns it.
+func TestERPOrders_CancelledBeforeImportLeavesNew(t *testing.T) {
+	db := getTestDB(t)
+	if db == nil {
+		t.Fatal("database required")
+	}
+	t.Cleanup(db.Close)
+	ctx := context.Background()
+	base := time.Now().UnixNano()/1000 + 5000
+	fx := seedOrdersFixture(t, db, base)
+	cleanupERPOrgs(t, db, ctx, fx.buyer, fx.supplierA, fx.supplierB)
+	_, shipA, _ := seedSplitOrder(t, db, fx, fmt.Sprintf("CXL-%d", base))
+	if err := db.InTx(database.AsSystem(ctx), func(ctx context.Context, tx pgx.Tx) error {
+		_, err := tx.Exec(ctx, `UPDATE commerce.order_shipments SET status = 'cancelled' WHERE id = $1`, shipA)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	repo := erppg.New(db)
+	fresh, err := repo.ListSalesShipmentsAsSystem(ctx, fx.supplierA, fx.integA, erp.OrderFilter{Limit: 100, State: "new"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, listed := shipmentIDs(fresh)[shipA]; listed {
+		t.Fatalf("state=new lists shipment %d, cancelled before import; want it left out", shipA)
+	}
+	all, err := repo.ListSalesShipmentsAsSystem(ctx, fx.supplierA, fx.integA, erp.OrderFilter{Limit: 100, State: "all"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if row, listed := shipmentIDs(all)[shipA]; !listed || row.Status != "cancelled" {
+		t.Fatalf("state=all = %+v (listed %v), want the cancelled shipment", row, listed)
+	}
+}

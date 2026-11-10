@@ -11,21 +11,23 @@ import (
 )
 
 // orgasoftSampleSale is the sample order from Orgasoft: three lines, a discount
-// percentage on each, and a total of 1264.25.
+// percentage on each, and a total of 1264.25. Subtotal is the price before
+// discount (1640.00), as the database stores it, so the test fails if the total
+// is ever taken from it again instead of from the line totals.
 func orgasoftSampleSale() erp.SalesRow {
 	m := money.MustParse
 	return erp.SalesRow{
 		OrderID: 500, ShipmentID: 21, BuyerOrgID: 1, OrderNumber: "21845", Status: "pending",
-		Subtotal: m("1264.25"), ShippingFee: m("0.00"), Total: m("1264.25"),
+		Subtotal: m("1640.00"), ShippingFee: m("0.00"), Total: m("1264.25"),
 		Customer: erp.CustomerInfo{Mapped: true, ErpCode: "263", Name: map[string]string{"en": "Direct"},
 			Ordering: erp.ContactInfo{Phone: "01008042755", City: "Fayoum", Address: "الفيوم"}},
 		Lines: []erp.OrderLine{
 			{LineID: 1, ExternalProductCode: "100001", Name: map[string]string{"ar": "سبيركودا 20 قرص"}, Quantity: 1,
-				UnitPrice: m("209.35"), ListPrice: m("265.00")},
+				UnitPrice: m("209.35"), ListPrice: m("265.00"), TotalPrice: m("209.35")},
 			{LineID: 2, ExternalProductCode: "100002", Name: map[string]string{"ar": "فيتامين د 1000 وحدة"}, Quantity: 3,
-				UnitPrice: m("300.30"), ListPrice: m("385.00")},
+				UnitPrice: m("300.30"), ListPrice: m("385.00"), TotalPrice: m("900.90")},
 			{LineID: 3, ExternalProductCode: "100003", Name: map[string]string{"ar": "شراب الكحة"}, Quantity: 1,
-				UnitPrice: m("154.00"), ListPrice: m("220.00")},
+				UnitPrice: m("154.00"), ListPrice: m("220.00"), TotalPrice: m("154.00")},
 		},
 	}
 }
@@ -39,7 +41,7 @@ const orgasoftSampleBody = `[{"orderId":21845,"status":"PENDING","total":1264.25
 func TestOrgasoftSalesFeedMatchesSampleExactly(t *testing.T) {
 	f := newOrderFixture(t)
 	f.repo.sales = []erp.SalesRow{orgasoftSampleSale()}
-	w := f.do("GET", "/orgasoft/orders/sales?state=all", "")
+	w := f.do("GET", "/orders/sales?state=all", "")
 	if w.Code != http.StatusOK {
 		t.Fatalf("status = %d, body %s", w.Code, w.Body.String())
 	}
@@ -59,7 +61,7 @@ func TestOrgasoftSalesNextCursorHeader(t *testing.T) {
 	f := newOrderFixture(t)
 	f.repo.sales = []erp.SalesRow{testSale(10, "A-1", "C-1"), testSale(11, "A-2", "C-2"), testSale(12, "A-3", "C-3")}
 
-	w := f.do("GET", "/orgasoft/orders/sales?state=all&limit=2", "")
+	w := f.do("GET", "/orders/sales?state=all&limit=2", "")
 	next := w.Header().Get("X-Next-Cursor")
 	if next == "" {
 		t.Fatal("X-Next-Cursor absent on a full page")
@@ -72,7 +74,7 @@ func TestOrgasoftSalesNextCursorHeader(t *testing.T) {
 		t.Fatalf("body = %s, want a bare array of two orders", w.Body.String())
 	}
 
-	w = f.do("GET", "/orgasoft/orders/sales?state=all&limit=10", "")
+	w = f.do("GET", "/orders/sales?state=all&limit=10", "")
 	if _, present := w.Header()["X-Next-Cursor"]; present {
 		t.Fatalf("X-Next-Cursor present on the last page: %q", w.Header().Get("X-Next-Cursor"))
 	}
@@ -84,7 +86,7 @@ func TestOrgasoftSalesRefusesMissingScope(t *testing.T) {
 		row.Scopes = []string{erp.ScopeOrdersAck}
 		f.repo.keys[prefix] = row
 	}
-	w := f.do("GET", "/orgasoft/orders/sales?state=all", "")
+	w := f.do("GET", "/orders/sales?state=all", "")
 	if w.Code != http.StatusForbidden {
 		t.Fatalf("status = %d, want 403 (body %s)", w.Code, w.Body.String())
 	}
@@ -94,7 +96,7 @@ func TestOrgasoftSalesRefusesPharmacyKey(t *testing.T) {
 	f := newOrderFixture(t)
 	f.repo.orgType = "pharmacy"
 	f.repo.sales = []erp.SalesRow{orgasoftSampleSale()}
-	w := f.do("GET", "/orgasoft/orders/sales?state=all", "")
+	w := f.do("GET", "/orders/sales?state=all", "")
 	if w.Code != http.StatusForbidden {
 		t.Fatalf("status = %d, want 403 (body %s)", w.Code, w.Body.String())
 	}
@@ -103,16 +105,16 @@ func TestOrgasoftSalesRefusesPharmacyKey(t *testing.T) {
 func TestOrgasoftPurchaseFeedShape(t *testing.T) {
 	f := newOrderFixture(t)
 	f.repo.purchase = []erp.PurchaseRow{{
-		OrderID: 900, OrderNumber: "21846", Status: "confirmed", Total: money.MustParse("209.35"),
+		OrderID: 900, OrderNumber: "21846", Status: "confirmed", Total: money.MustParse("265.00"), // header total is before discount
 		BuyerName: map[string]string{"ar": "صيدلية الشفاء"},
 		Ordering:  erp.ContactInfo{Phone: "01008042755", City: "Fayoum", Address: "الفيوم"},
 	}}
 	// The service attaches shipments from ListPurchaseShipmentsAsSystem.
 	f.repo.purchaseShipments = []erp.PurchaseShipment{{OrderID: 900, Lines: []erp.OrderLine{{
 		LineID: 1, ExternalProductCode: "100001", Name: map[string]string{"ar": "سبيركودا 20 قرص"}, Quantity: 1,
-		UnitPrice: money.MustParse("209.35"), ListPrice: money.MustParse("265.00"),
+		UnitPrice: money.MustParse("209.35"), ListPrice: money.MustParse("265.00"), TotalPrice: money.MustParse("209.35"),
 	}}}}
-	w := f.do("GET", "/orgasoft/orders/purchase?state=all", "")
+	w := f.do("GET", "/orders/purchase?state=all", "")
 	if w.Code != http.StatusOK {
 		t.Fatalf("status = %d, body %s", w.Code, w.Body.String())
 	}
@@ -130,6 +132,9 @@ func TestOrgasoftPurchaseFeedShape(t *testing.T) {
 	item := order["items"].([]any)[0].(map[string]any)
 	if item["code"] != float64(100001) || item["qty"] != float64(1) || item["discount"] != float64(21) {
 		t.Fatalf("item = %+v", item)
+	}
+	if !bytes.Contains(w.Body.Bytes(), []byte(`"total":209.35`)) {
+		t.Fatalf("total is not the line total after discount: %s", w.Body.String())
 	}
 	if !bytes.Contains(w.Body.Bytes(), []byte(`"price":265.00`)) || !bytes.Contains(w.Body.Bytes(), []byte(`"discount":21.00`)) {
 		t.Fatalf("money not written as exact decimals: %s", w.Body.String())

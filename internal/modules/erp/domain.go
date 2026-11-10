@@ -82,8 +82,12 @@ type CallRecord struct {
 	KeyPrefix, RequestID, Method, Route string
 	Status                              int
 	ErrorCode                           string
-	DurationMS, BytesIn                 int
+	DurationMS, BytesIn, BytesOut       int
 	IP                                  *string
 	SensitiveRead                       bool
 	CreatedAt                           time.Time
+	// The detail columns (migration 261). Query and UserAgent are truncated by
+	// the recorder; ErrorDetail is the error's details as JSON (nil when none).
+	Query, UserAgent, Ref, AuthReason string
+	ErrorDetail                       []byte
 }

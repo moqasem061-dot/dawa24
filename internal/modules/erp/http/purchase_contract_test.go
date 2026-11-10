@@ -23,7 +23,7 @@ func pinKeys(t *testing.T, label string, got map[string]any, want ...string) {
 }
 
 // TestPurchaseContractKeySets pins the exact keys of the S7 replies against the
-// contract (openapi.yaml: OfferList, PurchaseOrderResponse, PurchaseOrder).
+// contract (openapi.yaml: OfferList and OrgasoftOrder).
 func TestPurchaseContractKeySets(t *testing.T) {
 	f := newPurchaseFixture(t)
 
@@ -37,16 +37,11 @@ func TestPurchaseContractKeySets(t *testing.T) {
 	if w.Code != http.StatusCreated {
 		t.Fatalf("status = %d, body %s", w.Code, w.Body.String())
 	}
-	env := decodeEnvelope(t, w)
-	pinKeys(t, "purchase envelope", env, "status", "requestId", "data")
-	order := env["data"].(map[string]any)
-	pinKeys(t, "purchase order", order, "orderNumber", "status", "importState", "createdAt", "updatedAt",
-		"externalReference", "total", "shipments", "erp")
-	pinKeys(t, "purchase order.erp", order["erp"].(map[string]any), "reference", "acknowledgedAt")
-	shipment := order["shipments"].([]any)[0].(map[string]any)
-	pinKeys(t, "shipment", shipment, "shipmentNumber", "status", "supplier", "subtotal", "shippingFee", "lines")
-	pinKeys(t, "shipment.supplier", shipment["supplier"].(map[string]any), "name")
-	line := shipment["lines"].([]any)[0].(map[string]any)
-	pinKeys(t, "line", line, "lineId", "variantId", "externalProductCode", "name", "barcode", "quantity",
-		"unitPrice", "discountAmount", "totalPrice")
+	// The created order is the partner's order shape: a bare object with
+	// exactly these ten fields, and items with exactly five.
+	order := decodeEnvelope(t, w)
+	pinKeys(t, "purchase order", order, "orderId", "status", "total", "pharmacyId", "pharmacyName",
+		"pharmacyCode", "pharmacyNumber", "pharmacyCity", "pharmacyAddress", "items")
+	item := order["items"].([]any)[0].(map[string]any)
+	pinKeys(t, "item", item, "code", "name", "qty", "price", "discount")
 }

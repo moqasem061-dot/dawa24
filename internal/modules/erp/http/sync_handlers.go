@@ -37,6 +37,7 @@ func (h *Handler) postSync(w http.ResponseWriter, r *http.Request) {
 		writeError(w, r, err)
 		return
 	}
+	setCallRef(r.Context(), accepted.SyncID)
 	writeOK(w, r, http.StatusAccepted, map[string]any{
 		"syncId":           accepted.SyncID,
 		"state":            accepted.State,
@@ -52,6 +53,7 @@ func (h *Handler) getSync(w http.ResponseWriter, r *http.Request) {
 		writeError(w, r, erp.NewError("ERP_AUTH_MISSING", 401, nil))
 		return
 	}
+	setCallRef(r.Context(), chi.URLParam(r, "syncId"))
 	batch, err := h.svc.BatchStatus(r.Context(), principal.OrganizationID, chi.URLParam(r, "syncId"))
 	if err != nil {
 		writeError(w, r, syncNotFound(err))
@@ -83,6 +85,7 @@ func (h *Handler) getSyncItems(w http.ResponseWriter, r *http.Request) {
 		writeError(w, r, erp.NewError("ERP_AUTH_MISSING", 401, nil))
 		return
 	}
+	setCallRef(r.Context(), chi.URLParam(r, "syncId"))
 	batch, err := h.svc.BatchStatus(r.Context(), principal.OrganizationID, chi.URLParam(r, "syncId"))
 	if err != nil {
 		writeError(w, r, syncNotFound(err))

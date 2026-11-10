@@ -22,6 +22,11 @@ func (h *UIHandler) registerVendorERPRoutes(g chi.Router) {
 	g.Group(func(gg chi.Router) {
 		gg.Use(authctx.RequireTenantPagePermission("vendor.integration.view"))
 		gg.Get("/vendor/integrations", h.ErpKeysPage)
+		// The activity screen: calls, product syncs, acknowledged orders, the
+		// live panel fragment and one sync's items (plan section 3c).
+		gg.Get("/vendor/integrations/activity", h.ErpActivityPage)
+		gg.Get("/vendor/integrations/activity/live", h.ErpActivityLive)
+		gg.Get("/vendor/integrations/activity/syncs/{id}", h.ErpBatchPage)
 	})
 	g.Group(func(gg chi.Router) {
 		gg.Use(authctx.RequireTenantPagePermission("vendor.integration.review"))

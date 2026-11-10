@@ -9590,3 +9590,7 @@ body.dark .upload-progress-note {
 .map-load-status { padding: .75rem; background: var(--bg-surface-raised); color: var(--text-primary); max-inline-size: 18rem; border: 1px solid var(--border); border-radius: var(--radius-lg); }
 .map-load-status button { display: block; margin-block-start: .5rem; }
 }
+
+/* Integration activity: a product sync's progress bar (erp_activity.templ).
+   A native <progress> styled by .progress; this only sizes it in a flex row. */
+.erp-progress { flex: 1 1 6rem; min-inline-size: 6rem; }

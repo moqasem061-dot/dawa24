@@ -29,8 +29,6 @@ ERRORS = {
     "/orders/purchase": AUTH[1:2] + [(400, "Bad page cursor", "ERP_CURSOR_INVALID", None)],
     "/orders/purchase/{orderNumber}": [(404, "Order not found", "ERP_ORDER_NOT_FOUND", None)],
     "/orders/purchase/ack": [(422, "Invalid data", "ERP_VALIDATION", {"fields": ["orders"]})],
-    "/orgasoft/orders/sales": AUTH[1:2] + [(400, "Bad page cursor", "ERP_CURSOR_INVALID", None)],
-    "/orgasoft/orders/purchase": AUTH[1:2] + [(400, "Bad page cursor", "ERP_CURSOR_INVALID", None)],
     "/offers": [(403, "Key lacks erp.po.create", "ERP_SCOPE_MISSING", {"requiredScope": "erp.po.create"}),
                (422, "Barcode missing", "ERP_VALIDATION", {"fields": ["barcode"]})],
 }
@@ -43,7 +41,7 @@ PURCHASE_ERRORS = [
     (409, "Same reference, different body", "ERP_IDEMPOTENCY_CONFLICT", None),
     (409, "Same reference still being processed", "ERP_PO_IN_PROGRESS", None),
 ]
-SCOPE = {"/offers": "erp.po.create", "/health": "", "/products/sync": "erp.products.sync", "/orders/sales": "erp.orders.read", "/orders/purchase": "erp.orders.read", "/orgasoft/orders/sales": "erp.orders.read", "/orgasoft/orders/purchase": "erp.orders.read"}
+SCOPE = {"/offers": "erp.po.create", "/health": "", "/products/sync": "erp.products.sync", "/orders/sales": "erp.orders.read", "/orders/purchase": "erp.orders.read"}
 
 
 def error_body(code, details):
@@ -100,21 +98,23 @@ PLAN = [
     ]),
     ("03 Sales orders - طلبات البيع", "Orders that pharmacies placed with you. / الطلبات التي أرسلتها الصيدليات إليك.", [
         ("GET", "/orders/sales", "1. Get new orders - جلب الطلبات الجديدة",
-         "**What it does:** lists orders pharmacies placed with you. Keep `state=new` to get only orders you have not "
-         "imported yet.\n\n**When:** every few minutes.\n\n"
-         "**More than one page?** If `page.nextCursor` is not null, call again with `cursor=<that value>`.\n\n"
-         "**ماذا يفعل:** يعرض طلبات الصيدليات. اترك `state=new` لجلب الطلبات التي لم تستوردها بعد. استدعه كل بضع دقائق."),
-        ("GET", "/orgasoft/orders/sales", "2. Orders in Orgasoft format - الطلبات بصيغة Orgasoft",
-         "**What it does:** the same new orders as step 1, written as a plain list in the layout Orgasoft asked for: one entry per shipment, with the pharmacy name, code, phone, city and address, and each item's code, quantity, price and discount percent.\n\n"
-         "**More than one page?** The reply header `X-Next-Cursor` holds the cursor for the next page. It is absent on the last page.\n\n"
-         "**ماذا يفعل:** نفس الطلبات الجديدة بالشكل الذي طلبته أوركاسوفت: قائمة مباشرة، طلب لكل شحنة، مع اسم الصيدلية وكودها وهاتفها ومدينتها وعنوانها، ولكل صنف كوده وكميته وسعره ونسبة خصمه.\n\n"
+         "**What it does:** lists orders pharmacies placed with you, as a plain list in the layout Orgasoft asked for: "
+         "`orderId`, `status`, `total`, the pharmacy's id, name, code, phone, city and address, and `items` with each item's "
+         "`code`, `name`, `qty`, `price` (before discount) and `discount` (percent). Keep `state=new` to get only orders you "
+         "have not imported yet; an order cancelled before you imported it is left out.\n\n**When:** every few minutes.\n\n"
+         "**More than one page?** The reply header `X-Next-Cursor` holds the cursor for the next page; call again with "
+         "`cursor=<that value>`. It is absent on the last page.\n\n"
+         "**ماذا يفعل:** يعرض طلبات الصيدليات بالشكل الذي طلبته أوركاسوفت: رقم الطلب والحالة والإجمالي وبيانات الصيدلية "
+         "والأصناف (الكود والاسم والكمية والسعر قبل الخصم ونسبة الخصم). اترك `state=new` لجلب الطلبات التي لم تستوردها بعد، "
+         "والطلب الملغى قبل استيراده لا يظهر. استدعه كل بضع دقائق.\n\n"
          "**الصفحة التالية:** الترويسة `X-Next-Cursor` تحمل مؤشر الصفحة التالية، وتغيب في الصفحة الأخيرة."),
-        ("GET", "/orders/sales/{orderNumber}", "3. Get one order - جلب طلب واحد",
-         "**What it does:** shows one order with the pharmacy, address, phone and all lines.\n\n"
-         "**ماذا يفعل:** يعرض طلباً واحداً بكل تفاصيله: الصيدلية والعنوان والهاتف والأصناف."),
+        ("GET", "/orders/sales/{orderNumber}", "2. Get one order - جلب طلب واحد",
+         "**What it does:** shows one order, in the same layout as the list.\n\n"
+         "**ماذا يفعل:** يعرض طلباً واحداً بنفس شكل القائمة."),
         ("POST", "/orders/sales/ack", "3. Mark orders as imported - تأكيد استيراد الطلبات",
          "**What it does:** tells Dawa24 you saved these orders in your system, with your own reference number. They "
-         "will not come back in `state=new`.\n\n**When:** right after you save the orders. Safe to repeat.\n\n"
+         "will not come back in `state=new`. Send the `orderId` you read as `orderNumber` (or as `orderId`).\n\n"
+         "**When:** right after you save the orders. Safe to repeat.\n\n"
          "**ماذا يفعل:** يخبر دواء24 أنك حفظت هذه الطلبات عندك مع رقمك المرجعي، فلا تظهر مرة أخرى في الطلبات الجديدة. تكراره آمن."),
         ("POST", "/orders/sales/{orderNumber}/status", "4. Confirm or reject an order - قبول أو رفض الطلب",
          "**What it does:** confirms or rejects a pending order. The pharmacy is notified.\n\n"
@@ -123,15 +123,15 @@ PLAN = [
     ]),
     ("04 Purchase orders - طلبات الشراء", "For pharmacies that use your ERP: their orders from suppliers on Dawa24. / للصيدليات التي تستخدم نظامكم: طلباتها من الموردين على دواء24.", [
         ("GET", "/orders/purchase", "1. Get purchase orders - جلب طلبات الشراء",
-         "**What it does:** lists the orders the pharmacy placed with suppliers on Dawa24.\n\n"
-         "**ماذا يفعل:** يعرض طلبات الصيدلية من الموردين على دواء24."),
-        ("GET", "/orgasoft/orders/purchase", "2. Purchase orders in Orgasoft format - طلبات الشراء بصيغة Orgasoft",
-         "**What it does:** the same purchase orders as step 1, as a plain list in Orgasoft's layout: one entry per order with all its lines. The entry describes the ordering pharmacy, and `pharmacyCode` is null.\n\n"
+         "**What it does:** lists the orders the pharmacy placed with suppliers on Dawa24, in the same layout as sales "
+         "orders: one entry per order with all its items. The pharmacy fields describe the ordering pharmacy, `pharmacyCode` "
+         "is null, and each item's `code` is the item code your system sent when it placed the order.\n\n"
          "**More than one page?** Use the `X-Next-Cursor` header, absent on the last page.\n\n"
-         "**ماذا يفعل:** نفس طلبات الشراء بالشكل الذي طلبته أوركاسوفت: طلب واحد لكل طلب شراء مع كل أصنافه. الطلب يصف الصيدلية التي طلبته، و`pharmacyCode` يكون null."),
-        ("GET", "/orders/purchase/{orderNumber}", "3. Get one purchase order - جلب طلب شراء واحد",
-         "**What it does:** shows one purchase order with each supplier's shipment and lines.\n\n"
-         "**ماذا يفعل:** يعرض طلب شراء واحداً مع شحنة كل مورد وأصنافها."),
+         "**ماذا يفعل:** يعرض طلبات الصيدلية من الموردين على دواء24 بنفس شكل طلبات البيع: طلب واحد بكل أصنافه، "
+         "وكود كل صنف هو الكود الذي أرسله نظامكم عند إنشاء الطلب."),
+        ("GET", "/orders/purchase/{orderNumber}", "2. Get one purchase order - جلب طلب شراء واحد",
+         "**What it does:** shows one purchase order, in the same layout as the list.\n\n"
+         "**ماذا يفعل:** يعرض طلب شراء واحداً بنفس شكل القائمة."),
         ("POST", "/orders/purchase/ack", "3. Mark purchase orders as imported - تأكيد استيراد طلبات الشراء",
          "**What it does:** same as for sales orders: tells Dawa24 you saved these purchase orders.\n\n"
          "**ماذا يفعل:** مثل طلبات البيع: يخبر دواء24 أنك حفظت طلبات الشراء عندك."),
@@ -139,8 +139,11 @@ PLAN = [
          "**What it does:** finds which suppliers sell a product, by barcode, with price and stock.\n\n"
          "**ماذا يفعل:** يبحث بالباركود عن الموردين الذين يبيعون الصنف مع السعر والرصيد."),
         ("POST", "/orders/purchase", "5. Create a purchase order - إنشاء طلب شراء",
-         "**What it does:** places a purchase order on Dawa24 from your system.\n\n"
-         "**ماذا يفعل:** ينشئ طلب شراء على دواء24 من نظامكم."),
+         "**What it does:** places a purchase order on Dawa24 from your system. Send your own item code in each line's "
+         "`code`; it is saved and returned as the item `code` whenever you read the order. The reply is the order, in the "
+         "same layout as the list.\n\n"
+         "**ماذا يفعل:** ينشئ طلب شراء على دواء24 من نظامكم. أرسل كود الصنف عندكم في `code` لكل سطر، فيُحفظ ويظهر كـ `code` "
+         "كلما قرأت الطلب."),
     ]),
 ]
 

@@ -7,7 +7,6 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/erp"
-	"github.com/moqasem061-dot/dawa24/internal/modules/erp/provider"
 	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
 )
 
@@ -49,13 +48,6 @@ func (h *Handler) Routes() chi.Router {
 		r.Get("/orders/purchase", h.listPurchase)
 		r.Get("/orders/purchase/{orderNumber}", h.getPurchase)
 		r.Post("/orders/purchase/ack", h.ackPurchase)
-		// The Orgasoft order feed (2026-11-10): the same reads as the two lists
-		// above, in Orgasoft's bare-array shape with X-Next-Cursor. The feed is
-		// mounted under the default provider's name, so this package names no
-		// provider in a string (the provider seam test).
-		feed := "/" + provider.DefaultProvider + "/orders"
-		r.Get(feed+"/sales", h.listSalesOrgasoft)
-		r.Get(feed+"/purchase", h.listPurchaseOrgasoft)
 		// Purchase orders (S7): the offers lookup and the order creation.
 		r.Get("/offers", h.getOffers)
 		r.Post("/orders/purchase", h.postPurchase)

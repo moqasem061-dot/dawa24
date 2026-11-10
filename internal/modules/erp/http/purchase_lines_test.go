@@ -75,3 +75,35 @@ func repeat(c byte, n int) string {
 	}
 	return string(out)
 }
+
+// TestPurchaseBodyAcceptsItemsAndQty pins the partner's names: items/qty give
+// the same request as the earlier lines/quantity, and a bad code names the
+// list the caller used.
+func TestPurchaseBodyAcceptsItemsAndQty(t *testing.T) {
+	decode := func(raw string) purchaseBody {
+		t.Helper()
+		var b purchaseBody
+		if err := json.Unmarshal([]byte(raw), &b); err != nil {
+			t.Fatalf("decode %s: %v", raw, err)
+		}
+		return b
+	}
+	newer, bad := decode(`{"externalReference":"R-1","items":[{"variantId":91530,"qty":12,"code":100001}]}`).request()
+	if bad != nil {
+		t.Fatalf("items body refused: %v", bad)
+	}
+	older, bad := decode(`{"externalReference":"R-1","lines":[{"variantId":"91530","quantity":12,"code":"100001"}]}`).request()
+	if bad != nil {
+		t.Fatalf("lines body refused: %v", bad)
+	}
+	if len(newer.Lines) != 1 || newer.Lines[0].VariantID != "91530" || newer.Lines[0].Quantity != 12 || newer.Lines[0].Code != "100001" {
+		t.Fatalf("items body = %+v, want variant 91530, qty 12, code 100001", newer.Lines)
+	}
+	if older.Lines[0] != newer.Lines[0] {
+		t.Fatalf("lines body = %+v, items body = %+v; want the same line", older.Lines[0], newer.Lines[0])
+	}
+	_, bad = decode(`{"externalReference":"R-2","items":[{"variantId":"91530","qty":1,"code":""}]}`).request()
+	if bad == nil || bad.Details["field"] != "items[1].code" {
+		t.Fatalf("empty code = %+v, want ERP_VALIDATION on items[1].code", bad)
+	}
+}
