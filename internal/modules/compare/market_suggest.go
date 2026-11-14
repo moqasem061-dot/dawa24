@@ -35,7 +35,7 @@ const (
 	// MarketSuggestMaxItems is the most lines the dropdown shows.
 	MarketSuggestMaxItems = 8
 
-	marketSuggestBudget = 400 * time.Millisecond
+	marketSuggestBudget = 1500 * time.Millisecond
 )
 
 // ErrSuggestUnavailable means suggestions could not be produced in time (or at

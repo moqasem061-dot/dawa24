@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -324,5 +325,20 @@ func TestMarketSuggestQueryUsesTheBoardSourceAndGroupsByProduct(t *testing.T) {
 	}
 	if args[0] != "panadol" {
 		t.Errorf("the typed text is not bound first: %v", args)
+	}
+	// The match is sampled before it is grouped: aggregating every hit of a
+	// short word timed out and the dropdown only ever said it had failed.
+	if args[len(args)-2] != marketSuggestSample {
+		t.Errorf("the sample size is not bound before the limit: %v", args)
+	}
+	hits := sql[:strings.Index(sql, "grouped AS")]
+	if !strings.Contains(hits, fmt.Sprintf("LIMIT $%d", len(args)-1)) {
+		t.Errorf("the hits are not bounded by the sample size:\n%s", hits)
+	}
+	if strings.Count(strings.ToUpper(sql), "FROM COMPARE.FILE_ROWS") != 2 {
+		t.Errorf("expected one sampled match and one exact read by product:\n%s", sql)
+	}
+	if !strings.Contains(sql, "r.matched_product_id IN (SELECT product_id FROM picked") || !strings.Contains(sql, "p.id IS NOT NULL") {
+		t.Errorf("exact figures must use the product filter's own condition:\n%s", sql)
 	}
 }
