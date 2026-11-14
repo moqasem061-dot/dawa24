@@ -13,6 +13,8 @@ import (
 // organization's keys, staff-wide.
 type ErpAdminKeysPageData struct {
 	Rows          []erp.StaffKeyRow
+	// Off is true while an admin has the integration switched off.
+	Off           bool
 	NoticeKind    string
 	NoticeMessage string
 }
@@ -34,6 +36,17 @@ templ ErpAdminKeysPage(data ErpAdminKeysPageData, lang, dir string) {
 					</h1>
 				</div>
 			</div>
+
+			if data.Off {
+				<div class="alert alert-warning mb-4 p-4 d-flex items-center gap-3 flex-wrap" role="status" id="erp-off-banner">
+					@components.IconAlertCircle("icon-xs")
+					<div class="flex-1">
+						<div class="font-bold text-sm">{ i18n.T(lang, "erp.switch.banner") }</div>
+						<div class="text-xs">{ i18n.T(lang, "erp.switch.banner_detail") }</div>
+					</div>
+					<a class="btn btn-secondary btn-sm text-xs font-bold" href="/admin/settings?tab=features">{ i18n.T(lang, "erp.switch.banner_link") }</a>
+				</div>
+			}
 
 			if data.NoticeMessage != "" {
 				if data.NoticeKind == "error" {

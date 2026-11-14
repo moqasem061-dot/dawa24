@@ -16,365 +16,176 @@ import (
 
 // MarketDiscountsPage renders the temporary-warehouse price board.
 //
-// Both card layouts carry the same three decisions, and each replaced something
-// that was actively misleading:
+// The page is a shell and a results region. The shell (header, controls) is
+// rendered once; every later filter, sort, page or page-size change replaces
+// only the contents of #md-results, which is MarketDiscountsResults — the same
+// component the server returns on its own for a request that targets the
+// region. The behaviour lives in /static/js/market-discounts.js, which owns the
+// form: typing shows suggestions and never touches the board.
 //
-//   - **No product code.** The uploads carry whatever the sheet's code column
-//     held, and on files mapped before the header detection was corrected that
-//     is a price or a discount. A number presented as an identifier is worse
-//     than no identifier.
-//   - **سعر الجمهور leads, and is not struck through.** It is the figure this
-//     board exists to compare, and it was rendered small, muted and with a
-//     line-through — which says "superseded" about the one number a reader came
-//     for — beside a larger, bolder net price.
-//   - **The net price column is gone.** The discount pill beside the public
-//     price already says what to subtract, and on this data the net price was
-//     frequently just the public price again.
+// Each offer is one <article> whatever the layout. List and grid are two CSS
+// layouts of the same markup, switched by a class on .md-offers, so changing
+// the layout costs no request and the browser lays out one set of cards, not
+// two.
 //
-// The grid card also gains the upload date, which it never showed: on a price
-// board, when a quote was taken is half of what it means.
+// The card carries three decisions, each of which replaced something that was
+// actively misleading:
 //
-// These are markup comments deliberately kept out of the markup — an HTML
-// comment ships to every reader.
+//   - No product code. The uploads carry whatever the sheet's code column held,
+//     and on files mapped before the header detection was corrected that is a
+//     price or a discount. A number presented as an identifier is worse than no
+//     identifier.
+//   - سعر الجمهور leads, and is not struck through. It is the figure this board
+//     exists to compare.
+//   - There is no separate net-price column of its own weight: the discount
+//     pill beside the public price already says what to subtract.
 templ MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.MarketDiscountsResult, filter compare.MarketDiscountsFilter, currentView string) {
-	@layouts.ShellFor("خصومات السوق العامة | دوا 24", "market-discounts", lang, dir, actor) {
-		<script nonce={ templ.GetNonce(ctx) }>
-			// Moved out of x-data: the CSP build of Alpine cannot parse methods.
-			dawaData('marketDiscountsData', function (a0, a1) {
-				return { showMoreFilters: a0, currentView: a1, setView(v) { this.currentView = v; localStorage.setItem('d24_market_view', v); }, init() { const saved = localStorage.getItem('d24_market_view'); if (saved && (saved === 'list' || saved === 'grid')) { this.currentView = saved; } } };
-			});
-		</script>
+	@layouts.ShellFor(i18n.T(lang, "market.board.page_title"), "market-discounts", lang, dir, actor) {
 		<div
 			class="page-container"
-			x-data={ components.AlpineCall("marketDiscountsData", (filter.DateFrom != "" || filter.DateTo != "" || filter.MinPrice != nil || filter.MaxPrice != nil || filter.MinDiscount != nil || filter.MaxDiscount != nil), currentView) }
+			id="md-page"
+			data-md-root
+			data-view={ currentView }
+			data-msg-failed={ i18n.T(lang, "market.board.loading_failed") }
+			data-msg-loading={ i18n.T(lang, "market.suggest.loading") }
+			data-msg-suggest-error={ i18n.T(lang, "market.suggest.error") }
 		>
-			<!-- Header: what this page is, and the two numbers that describe it -->
 			<header class="md-header">
 				<div class="md-header-copy">
 					<h1 class="md-title">
 						@components.IconTag("icon-sm")
-						<span>خصومات السوق العامة</span>
+						<span>{ i18n.T(lang, "market.board.title") }</span>
 					</h1>
-					<p class="md-subtitle">
-						كشوف أسعار المستودعات المؤقتة التي ترفعها إدارة المنصة — أسعار الجمهور ونسب الخصم كما وردت من السوق.
-					</p>
+					<p class="md-subtitle">{ i18n.T(lang, "market.board.subtitle") }</p>
 				</div>
-				<dl class="md-stats">
-					<div class="md-stat">
-						<dt>أصناف مرصودة</dt>
-						if result.TotalKnown {
-							<dd class="tabular-nums">{ fmt.Sprintf("%d", result.TotalCount) }</dd>
-						} else {
-							<dd class="tabular-nums" title="تعذّر حساب إجمالي الأصناف الآن. الأصناف المعروضة صحيحة وحديثة، والإجمالي سيعود في التحديث القادم.">—</dd>
-						}
-					</div>
-					<div class="md-stat">
-						<dt>المستودعات</dt>
-						<dd class="tabular-nums">{ fmt.Sprintf("%d", len(result.AvailableSuppliers)) }</dd>
-					</div>
-					<div class="md-stat is-accent">
-						<dt>أعلى خصم</dt>
-						<dd class="tabular-nums">{ formatDiscount(calculateMaxDiscount(result.Items)) }%</dd>
-					</div>
-				</dl>
 			</header>
-			<!-- Controls: one row — search, two selects, actions, view switch -->
-			<div class="filter-bar md-controls">
-				<form method="GET" action="/market-discounts" class="md-controls-form filter-form" id="market-filter-form" data-filter-form>
-					<input type="hidden" name="view" x-bind:value="currentView"/>
-					<input type="hidden" name="limit" value={ strconv.Itoa(marketDiscountsLimit(filter)) }/>
-					<div class="md-controls-row">
-						<label class="stack-xs"><span class="text-xs">{ i18n.T(lang, "feedback.date_from") }</span><input type="date" name="date_from" value={ filter.DateFrom } class="form-input" aria-label={ i18n.T(lang, "feedback.date_from") } data-autosubmit/></label>
-						<label class="stack-xs"><span class="text-xs">{ i18n.T(lang, "feedback.date_to") }</span><input type="date" name="date_to" value={ filter.DateTo } class="form-input" aria-label={ i18n.T(lang, "feedback.date_to") } data-autosubmit/></label>
-						<input
-							type="search"
-							name="q"
-							id="market-search-input"
-							value={ filter.Query }
-							class="form-input md-search"
-							placeholder={ i18n.T(lang, "market.search.placeholder") }
-							aria-label="بحث في خصومات السوق"
-							data-min-chars="2"
-							data-debounce-ms="250"
-							maxlength="128"
-							autocomplete="off"
-						/>
-						<input type="search" name="supplier" value={ filter.Supplier } list="market-warehouse-options" class="form-input md-select" placeholder={ i18n.T(lang, "market.search.warehouse") } aria-label={ i18n.T(lang, "market.search.warehouse") } autocomplete="off"/>
-						<datalist id="market-warehouse-options">
-							for _, sup := range result.AvailableSuppliers {
-								<option value={ sup }></option>
-							}
-						</datalist>
-						<select name="sort" class="form-select md-select" data-autosubmit aria-label="الترتيب">
-							<option value="relevance" selected?={ filter.SortBy == "relevance" }>{ i18n.T(lang, "market.search.relevance") }</option>
-							<option value="discount_desc" selected?={ filter.SortBy == "discount_desc" }>الأعلى خصماً</option>
-							<option value="discount_asc" selected?={ filter.SortBy == "discount_asc" }>الأقل خصماً</option>
-							<option value="price_asc" selected?={ filter.SortBy == "price_asc" }>الأقل سعراً</option>
-							<option value="price_desc" selected?={ filter.SortBy == "price_desc" }>الأعلى سعراً</option>
-							<option value="newest" selected?={ filter.SortBy == "" || filter.SortBy == "newest" }>الأحدث إضافة</option>
-							<option value="oldest" selected?={ filter.SortBy == "oldest" }>الأقدم</option>
-						</select>
-						<button type="submit" class="btn btn-primary btn-sm font-bold">
-							@components.IconSearch("icon-xs")
-							<span>بحث</span>
-						</button>
-						<button
-							type="button"
-							@click="showMoreFilters = !showMoreFilters"
-							class="btn btn-secondary btn-sm font-bold"
-							:class="{ 'active': showMoreFilters }"
-							title="نطاق السعر والخصم"
-							x-bind:aria-expanded="showMoreFilters ? 'true' : 'false'"
-						>
-							<span>نطاق متقدم</span>
-						</button>
-						if filter.Query != "" || filter.Supplier != "" || filter.MinPrice != nil || filter.MaxPrice != nil || filter.MinDiscount != nil || filter.MaxDiscount != nil {
-							<a href="/market-discounts" class="btn btn-ghost btn-sm">إلغاء الفلاتر</a>
-						}
-						<div class="md-controls-spacer"></div>
-						<div class="tabs-nav md-viewswitch" role="group" aria-label="طريقة العرض">
-							<button
-								type="button"
-								@click="setView('list')"
-								class="tab-btn"
-								:class="{ 'active': currentView === 'list' }"
-								x-bind:aria-pressed="currentView === 'list' ? 'true' : 'false'"
-								title="عرض كقائمة"
-							>
-								@components.IconList("icon-xs")
-							</button>
-							<button
-								type="button"
-								@click="setView('grid')"
-								class="tab-btn"
-								:class="{ 'active': currentView === 'grid' }"
-								x-bind:aria-pressed="currentView === 'grid' ? 'true' : 'false'"
-								title="عرض ككروت"
-							>
-								@components.IconGrid("icon-xs")
-							</button>
-						</div>
-					</div>
-					<!-- Advanced ranges, collapsed until asked for -->
-					<div x-show="showMoreFilters" x-cloak x-transition.opacity class="md-ranges">
-						<div class="md-range">
-							<span class="md-range-label">نطاق السعر (ج.م)</span>
-							<div class="md-range-pair">
-								<input type="number" min="0" step="0.5" name="min_price" value={ formatOptionalMoney(filter.MinPrice) } class="form-input" placeholder="من" aria-label="أقل سعر"/>
-								<span class="md-range-dash">—</span>
-								<input type="number" min="0" step="0.5" name="max_price" value={ formatOptionalMoney(filter.MaxPrice) } class="form-input" placeholder="إلى" aria-label="أعلى سعر"/>
-							</div>
-						</div>
-						<div class="md-range">
-							<span class="md-range-label">نسبة الخصم (%)</span>
-							<div class="md-range-pair">
-								<input type="number" min="0" max="100" step="1" name="min_discount" value={ formatOptionalFloat(filter.MinDiscount) } class="form-input" placeholder="من" aria-label="أقل خصم"/>
-								<span class="md-range-dash">—</span>
-								<input type="number" min="0" max="100" step="1" name="max_discount" value={ formatOptionalFloat(filter.MaxDiscount) } class="form-input" placeholder="إلى" aria-label="أعلى خصم"/>
-							</div>
-						</div>
-						<button type="submit" class="btn btn-primary btn-sm font-bold md-range-apply">تطبيق النطاق</button>
-					</div>
-				</form>
-			</div>
-			<!-- 3. Results Surface -->
-			if len(result.Items) == 0 {
-				<div class="glass-panel p-12 text-center empty-state-glass">
-					<div class="text-4xl mb-3">
-						@components.IconSearch("icon-sm")
-					</div>
-					<h3 class="text-lg font-black text-primary mb-2">
-						لم نجد أي خصومات مطابقة
-					</h3>
-					<p class="text-sm text-secondary max-w-md mx-auto mb-6">
-						الصفحة تعرض المستودعات المؤقتة المرفوعة من إدارة المنصة فقط. جرّب كلمات بحث أخرى، أو غيّر المستودع ونطاقات السعر والخصم.
-					</p>
-					<a href="/market-discounts" class="btn btn-primary font-bold text-xs">
-						عرض كافة خصومات السوق
-					</a>
-				</div>
-			} else {
-				<!-- List view -->
-				<div class="market-list" x-show="currentView === 'list'" x-cloak>
-					for _, item := range result.Items {
-						<article class="glass-panel market-list-row">
-							<div class="market-list-identity">
-								<div class="market-list-title-wrap">
-									<div class="market-product-names">
-										<h3 class="market-list-title" dir="auto">{ marketProductName(item, lang) }</h3>
-										if item.CatalogNameAR != "" || item.CatalogNameEN != "" {
-											<p class="market-source-name"><span>{ i18n.T(lang, "market.search.file_name") }</span> <bdi>{ item.ProductName }</bdi></p>
-										}
-									</div>
-									<span class="badge badge-primary market-supplier-badge">{ item.SupplierName }</span>
-									<span class="market-list-date tabular-nums" title="تاريخ رفع المستودع">
-										{ item.UploadedAt.Format("2006-01-02") }
-									</span>
-								</div>
-							</div>
-							<div class="market-money">
-								<div class="market-money-cell is-lead">
-									<span class="market-money-label">سعر الجمهور</span>
-									if item.OriginalPrice.Minor() > 0 {
-										<span class="market-money-was tabular-nums">{ formatDiscountPrice(item.OriginalPrice) } <small>ج.م</small></span>
-									} else {
-										<span class="market-money-was is-empty">—</span>
-									}
-								</div>
-								if item.DiscountPercent > 0 {
-									<div class="market-money-cell">
-										<span class="market-money-label">الخصم</span>
-										if item.DiscountPercent >= 40 {
-											<span class="market-disc-pill is-hot tabular-nums">{ formatDiscount(item.DiscountPercent) }%</span>
-										} else {
-											<span class="market-disc-pill tabular-nums">{ formatDiscount(item.DiscountPercent) }%</span>
-										}
-									</div>
-								}
-								<div class="market-money-cell is-net">
-									<span class="market-money-label">السعر بعد الخصم</span>
-									if item.PriceAfterDiscount.Minor() > 0 {
-										<span class="market-money-now tabular-nums">{ formatDiscountPrice(item.PriceAfterDiscount) } <small>ج.م</small></span>
-									} else if item.OriginalPrice.Minor() > 0 {
-										<span class="market-money-now tabular-nums">{ formatDiscountPrice(item.OriginalPrice) } <small>ج.م</small></span>
-									} else {
-										<span class="market-money-now is-empty">—</span>
-									}
-								</div>
-							</div>
-							if item.InCatalog && item.MatchedProductID != nil {
-								<div class="market-list-action">
-									@marketRowAction(item)
-								</div>
-							}
-						</article>
-					}
-				</div>
-				<!-- Grid view -->
-				<div class="market-grid" x-show="currentView === 'grid'" x-cloak>
-					for _, item := range result.Items {
-						<article class="glass-panel market-card">
-							<header class="market-card-head">
-								<span class="badge badge-primary market-supplier-badge">{ item.SupplierName }</span>
-								<span class="market-list-date tabular-nums" title="تاريخ رفع المستودع">
-									{ item.UploadedAt.Format("2006-01-02") }
-								</span>
-							</header>
-							<h3 class="market-card-title" dir="auto">{ marketProductName(item, lang) }</h3>
-							if item.CatalogNameAR != "" || item.CatalogNameEN != "" {
-								<p class="market-source-name"><span>{ i18n.T(lang, "market.search.file_name") }</span> <bdi>{ item.ProductName }</bdi></p>
-							}
-							<div class="market-card-rail">
-								<div class="market-card-pricing-group">
-									<div class="market-card-price-block">
-										<span class="market-money-label">سعر الجمهور</span>
-										if item.OriginalPrice.Minor() > 0 {
-											<span class="market-money-was tabular-nums text-sm font-bold text-primary">{ formatDiscountPrice(item.OriginalPrice) } <small>ج.م</small></span>
-										} else {
-											<span class="market-money-was is-empty text-xs">—</span>
-										}
-									</div>
-									if item.DiscountPercent > 0 {
-										<div class="market-card-price-block">
-											<span class="market-money-label">الخصم</span>
-											if item.DiscountPercent >= 40 {
-												<span class="market-disc-pill is-hot tabular-nums">
-													{ formatDiscount(item.DiscountPercent) }%
-													<small>خصم</small>
-												</span>
-											} else {
-												<span class="market-disc-pill tabular-nums">
-													{ formatDiscount(item.DiscountPercent) }%
-													<small>خصم</small>
-												</span>
-											}
-										</div>
-									}
-									<div class="market-card-price-block">
-										<span class="market-money-label">السعر بعد الخصم</span>
-										if item.PriceAfterDiscount.Minor() > 0 {
-											<span class="market-money-now text-xs tabular-nums font-semibold">{ formatDiscountPrice(item.PriceAfterDiscount) } <small>ج.م</small></span>
-										} else if item.OriginalPrice.Minor() > 0 {
-											<span class="market-money-now text-xs tabular-nums font-semibold">{ formatDiscountPrice(item.OriginalPrice) } <small>ج.م</small></span>
-										} else {
-											<span class="market-money-now is-empty text-xs">—</span>
-										}
-									</div>
-								</div>
-							</div>
-							if item.InCatalog && item.MatchedProductID != nil {
-								<footer class="market-card-foot">
-									@marketCardAction(item)
-								</footer>
-							}
-						</article>
-					}
-				</div>
-				<!-- Pagination Footer Deck -->
-				if result.TotalKnown && result.TotalCount > 0 {
-					<div class="glass-panel p-4 bg-surface-sunken">
-						@components.B2BPagination(components.PaginationProps{
-							CurrentPage:     result.Page,
-							PageSize:        marketDiscountsLimit(filter),
-							TotalCount:      int(result.TotalCount),
-							BaseURL:         "/market-discounts",
-							QueryValues:     marketDiscountsQueryValues(filter, currentView),
-							PageSizeOptions: []int{24, 48, 96},
-						})
-					</div>
-				} else if !result.TotalKnown && (result.HasPrev || result.HasNext) {
-					<!-- The exact total could not be read in time. The rows are live and
-					     correct, so the reader can still move between pages; what is
-					     missing is the page numbers, and the bar says so. -->
-					<div class="glass-panel p-4 bg-surface-sunken d-flex items-center justify-between gap-2 flex-wrap">
-						<span class="text-xs text-secondary">
-							تعذّر حساب إجمالي النتائج الآن — الأصناف المعروضة حديثة، ويمكنك التنقل بين الصفحات.
-						</span>
-						<div class="d-flex items-center gap-2">
-							if result.HasPrev {
-								<a href={ templ.SafeURL(marketPageURL(filter, currentView, result.Page-1)) } class="btn btn-secondary btn-sm font-bold">
-									الصفحة السابقة
-								</a>
-							}
-							if result.HasNext {
-								<a href={ templ.SafeURL(marketPageURL(filter, currentView, result.Page+1)) } class="btn btn-primary btn-sm font-bold">
-									الصفحة التالية
-								</a>
-							}
-						</div>
-					</div>
-				}
-			}
+			@marketControls(lang, result, filter, currentView)
+			<section id="md-results" class="md-results" aria-live="polite" aria-busy="false">
+				@MarketDiscountsResults(lang, result, filter, currentView)
+			</section>
 		</div>
+		<script defer nonce={ templ.GetNonce(ctx) } src={ layouts.Asset("/static/js/market-discounts.js") }></script>
 	}
 }
 
-// marketRowAction and marketCardAction offer the catalogue only when this line
-// has actually been matched to a product.
-templ marketRowAction(item *compare.MarketDiscountRow) {
-	if item.InCatalog && item.MatchedProductID != nil {
-		<a
-			href={ templ.SafeURL(fmt.Sprintf("/catalog/%d", *item.MatchedProductID)) }
-			class="btn btn-primary btn-sm font-bold"
-			title="عرض الصنف في الكتالوج"
-		>
-			@components.IconCart("icon-xs")
-			<span>عرض بالكتالوج</span>
-		</a>
-	}
-}
-
-templ marketCardAction(item *compare.MarketDiscountRow) {
-	if item.InCatalog && item.MatchedProductID != nil {
-		<a
-			href={ templ.SafeURL(fmt.Sprintf("/catalog/%d", *item.MatchedProductID)) }
-			class="btn btn-primary btn-sm font-bold w-full justify-center"
-			title="عرض الصنف في الكتالوج"
-		>
-			@components.IconCart("icon-xs")
-			<span>عرض بالكتالوج</span>
-		</a>
-	}
+// marketControls is the form the page script owns. Without the script it still
+// works as a plain GET form.
+templ marketControls(lang string, result *compare.MarketDiscountsResult, filter compare.MarketDiscountsFilter, currentView string) {
+	{{ advancedOpen := marketAdvancedActive(filter) }}
+	<div class="filter-bar md-controls">
+		<form method="GET" action="/market-discounts" class="md-controls-form" id="market-filter-form" data-no-filter data-no-boost role="search">
+			<input type="hidden" name="view" value={ currentView }/>
+			<input type="hidden" name="limit" value={ strconv.Itoa(marketDiscountsLimit(filter)) }/>
+			if filter.ProductID != nil {
+				<input type="hidden" name="product" value={ strconv.FormatInt(*filter.ProductID, 10) }/>
+			}
+			<div class="md-controls-row">
+				<div class="md-search-wrap" data-md-combobox>
+					<input
+						type="search"
+						name="q"
+						id="market-search-input"
+						value={ filter.Query }
+						class="form-input md-search"
+						placeholder={ i18n.T(lang, "market.search.placeholder") }
+						aria-label={ i18n.T(lang, "market.board.search_label") }
+						role="combobox"
+						aria-autocomplete="list"
+						aria-haspopup="listbox"
+						aria-expanded="false"
+						aria-controls="md-suggest-list"
+						data-min-chars="2"
+						maxlength="128"
+						autocomplete="off"
+						autocapitalize="off"
+						spellcheck="false"
+					/>
+					<div class="md-suggest" id="md-suggest" hidden>
+						<div class="md-suggest-list" id="md-suggest-list" role="listbox" aria-label={ i18n.T(lang, "market.suggest.label") }></div>
+						<div class="md-suggest-state" id="md-suggest-state" role="status" hidden></div>
+					</div>
+				</div>
+				<input type="search" name="supplier" value={ filter.Supplier } list="market-warehouse-options" class="form-input md-select" placeholder={ i18n.T(lang, "market.search.warehouse") } aria-label={ i18n.T(lang, "market.search.warehouse") } autocomplete="off"/>
+				<datalist id="market-warehouse-options">
+					for _, sup := range result.AvailableSuppliers {
+						<option value={ sup }></option>
+					}
+				</datalist>
+				<select name="sort" class="form-select md-select" aria-label={ i18n.T(lang, "market.board.sort_label") }>
+					<option value="relevance" selected?={ filter.SortBy == "relevance" }>{ i18n.T(lang, "market.search.relevance") }</option>
+					<option value="discount_desc" selected?={ filter.SortBy == "discount_desc" }>{ i18n.T(lang, "market.board.sort.discount_desc") }</option>
+					<option value="discount_asc" selected?={ filter.SortBy == "discount_asc" }>{ i18n.T(lang, "market.board.sort.discount_asc") }</option>
+					<option value="price_asc" selected?={ filter.SortBy == "price_asc" }>{ i18n.T(lang, "market.board.sort.price_asc") }</option>
+					<option value="price_desc" selected?={ filter.SortBy == "price_desc" }>{ i18n.T(lang, "market.board.sort.price_desc") }</option>
+					<option value="newest" selected?={ filter.SortBy == "" || filter.SortBy == "newest" }>{ i18n.T(lang, "market.board.sort.newest") }</option>
+					<option value="oldest" selected?={ filter.SortBy == "oldest" }>{ i18n.T(lang, "market.board.sort.oldest") }</option>
+				</select>
+				<button
+					type="button"
+					class={ "btn btn-secondary btn-sm font-bold md-advanced-toggle", templ.KV("active", advancedOpen) }
+					data-md-advanced-toggle
+					aria-expanded={ mdBool(advancedOpen) }
+					aria-controls="md-advanced"
+				>
+					@components.IconSliders("icon-xs")
+					<span>{ i18n.T(lang, "market.board.advanced") }</span>
+				</button>
+				<div class="md-controls-spacer"></div>
+				<div class="tabs-nav md-viewswitch" role="group" aria-label={ i18n.T(lang, "market.board.view_label") }>
+					<button
+						type="button"
+						class={ "tab-btn", templ.KV("active", currentView != "grid") }
+						data-md-view="list"
+						aria-pressed={ mdBool(currentView != "grid") }
+						title={ i18n.T(lang, "market.board.view_list") }
+						aria-label={ i18n.T(lang, "market.board.view_list") }
+					>
+						@components.IconList("icon-xs")
+					</button>
+					<button
+						type="button"
+						class={ "tab-btn", templ.KV("active", currentView == "grid") }
+						data-md-view="grid"
+						aria-pressed={ mdBool(currentView == "grid") }
+						title={ i18n.T(lang, "market.board.view_grid") }
+						aria-label={ i18n.T(lang, "market.board.view_grid") }
+					>
+						@components.IconGrid("icon-xs")
+					</button>
+				</div>
+			</div>
+			<div class="md-ranges" id="md-advanced" hidden?={ !advancedOpen }>
+				<div class="md-range">
+					<span class="md-range-label">{ i18n.T(lang, "feedback.date_from") } / { i18n.T(lang, "feedback.date_to") }</span>
+					<div class="md-range-pair">
+						<input type="date" name="date_from" value={ filter.DateFrom } class="form-input" aria-label={ i18n.T(lang, "feedback.date_from") }/>
+						<span class="md-range-dash">—</span>
+						<input type="date" name="date_to" value={ filter.DateTo } class="form-input" aria-label={ i18n.T(lang, "feedback.date_to") }/>
+					</div>
+				</div>
+				<div class="md-range">
+					<span class="md-range-label">{ i18n.T(lang, "market.board.price_range") }</span>
+					<div class="md-range-pair">
+						<input type="number" min="0" step="0.5" inputmode="decimal" name="min_price" value={ formatOptionalMoney(filter.MinPrice) } class="form-input" placeholder={ i18n.T(lang, "market.board.from") } aria-label={ i18n.T(lang, "market.board.min_price") }/>
+						<span class="md-range-dash">—</span>
+						<input type="number" min="0" step="0.5" inputmode="decimal" name="max_price" value={ formatOptionalMoney(filter.MaxPrice) } class="form-input" placeholder={ i18n.T(lang, "market.board.to") } aria-label={ i18n.T(lang, "market.board.max_price") }/>
+					</div>
+				</div>
+				<div class="md-range">
+					<span class="md-range-label">{ i18n.T(lang, "market.board.discount_range") }</span>
+					<div class="md-range-pair">
+						<input type="number" min="0" max="100" step="1" inputmode="decimal" name="min_discount" value={ formatOptionalFloat(filter.MinDiscount) } class="form-input" placeholder={ i18n.T(lang, "market.board.from") } aria-label={ i18n.T(lang, "market.board.min_discount") }/>
+						<span class="md-range-dash">—</span>
+						<input type="number" min="0" max="100" step="1" inputmode="decimal" name="max_discount" value={ formatOptionalFloat(filter.MaxDiscount) } class="form-input" placeholder={ i18n.T(lang, "market.board.to") } aria-label={ i18n.T(lang, "market.board.max_discount") }/>
+					</div>
+				</div>
+				<button type="submit" class="btn btn-primary btn-sm font-bold md-range-apply">
+					@components.IconSearch("icon-xs")
+					<span>{ i18n.T(lang, "market.board.apply") }</span>
+				</button>
+			</div>
+		</form>
+	</div>
 }
 
 // marketDiscountsLimit is the page size in effect: the filter's value, or the
@@ -384,6 +195,19 @@ func marketDiscountsLimit(f compare.MarketDiscountsFilter) int {
 		return f.Limit
 	}
 	return 24
+}
+
+// marketAdvancedActive reports whether any filter that lives in the collapsible
+// panel is set, so the panel opens on a page that arrived with one.
+func marketAdvancedActive(f compare.MarketDiscountsFilter) bool {
+	return f.DateFrom != "" || f.DateTo != "" || f.MinPrice != nil || f.MaxPrice != nil || f.MinDiscount != nil || f.MaxDiscount != nil
+}
+
+func mdBool(b bool) string {
+	if b {
+		return "true"
+	}
+	return "false"
 }
 
 // marketDiscountsQueryValues carries every filter the screen supports through a
@@ -401,6 +225,9 @@ func marketDiscountsQueryValues(f compare.MarketDiscountsFilter, view string) ur
 	}
 	if f.Supplier != "" {
 		q.Set("supplier", f.Supplier)
+	}
+	if f.ProductID != nil {
+		q.Set("product", strconv.FormatInt(*f.ProductID, 10))
 	}
 	if f.SortBy != "" {
 		q.Set("sort", f.SortBy)
@@ -436,6 +263,17 @@ func marketPageURL(f compare.MarketDiscountsFilter, view string, page int) strin
 	return "/market-discounts?" + q.Encode()
 }
 
+// marketWithout is the board's URL with the named filter parameters dropped and
+// the page reset: what removing a filter chip links to.
+func marketWithout(f compare.MarketDiscountsFilter, view string, drop ...string) string {
+	q := marketDiscountsQueryValues(f, view)
+	for _, key := range drop {
+		q.Del(key)
+	}
+	q.Set("limit", strconv.Itoa(marketDiscountsLimit(f)))
+	return "/market-discounts?" + q.Encode()
+}
+
 func formatOptionalFloat(val *float64) string {
 	if val == nil {
 		return ""
@@ -458,16 +296,6 @@ func formatDiscount(pct float64) string {
 
 func formatDiscountPrice(m money.Amount) string {
 	return m.String()
-}
-
-func calculateMaxDiscount(items []*compare.MarketDiscountRow) float64 {
-	var max float64
-	for _, item := range items {
-		if item.DiscountPercent > max {
-			max = item.DiscountPercent
-		}
-	}
-	return max
 }
 
 func marketProductName(item *compare.MarketDiscountRow, lang string) string {

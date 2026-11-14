@@ -93,6 +93,21 @@ func Nav(scope Scope) []NavSection {
 // hiding a link never changes what a request may do.
 var NavSuppressions = map[string]bool{}
 
+// NavSuppressedFunc is the runtime counterpart of NavSuppressions: the
+// composition root sets it once, and it is consulted on every render, so an
+// entry can disappear the moment an admin flips a switch, with no restart. It
+// applies to the vendor and pharmacy sidebars only; the staff sidebar keeps its
+// entries (the admin integrations page stays reachable while the integration is
+// off). Like NavSuppressions it hides a link and nothing else.
+var NavSuppressedFunc func(key string) bool
+
+func navSuppressed(scope Scope, key string) bool {
+	if NavSuppressions[key] {
+		return true
+	}
+	return scope != ScopeAdmin && NavSuppressedFunc != nil && NavSuppressedFunc(key)
+}
+
 // VisibleNav returns the sidebar a holder actually sees: items they hold a
 // permission for, and only the sections that still have items.
 //
@@ -105,12 +120,12 @@ func VisibleNav(scope Scope, held Set) []NavSection {
 	src := Nav(scope)
 	out := make([]NavSection, 0, len(src))
 	for _, sec := range src {
-		if NavSuppressions[sec.Key] {
+		if navSuppressed(scope, sec.Key) {
 			continue
 		}
 		items := make([]NavItem, 0, len(sec.Items))
 		for _, it := range sec.Items {
-			if NavSuppressions[it.Key] {
+			if navSuppressed(scope, it.Key) {
 				continue
 			}
 			if it.Visible(held) {

@@ -4,6 +4,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/erpgate"
 )
 
 // registerVendorERPRoutes mounts the supplier's integration screen and its
@@ -19,6 +20,9 @@ func (h *UIHandler) registerVendorERPRoutes(g chi.Router) {
 		// do not exist.
 		return
 	}
+	// The runtime switch: while an admin has the integration off, every route
+	// below answers 404 as though it did not exist.
+	g = g.With(erpgate.RequireEnabled)
 	g.Group(func(gg chi.Router) {
 		gg.Use(authctx.RequireTenantPagePermission("vendor.integration.view"))
 		gg.Get("/vendor/integrations", h.ErpKeysPage)

@@ -23,6 +23,7 @@ type AdminSettingsValues struct {
 	ActivePolicy              *platformadmin.Policy
 	ActivePolicyKey           string
 	PlatformPaymentMethods    []*billing.PlatformPaymentMethod
+	ERP                       AdminERPSwitch
 }
 
 func tempWhArchiveHours(s *platformadmin.TempWarehouseLifecycleSettings) int {
@@ -289,6 +290,8 @@ templ AdminSettings(values AdminSettingsValues, lang, dir string) {
 						</div>
 					</form>
 				</div>
+
+				@AdminERPSwitchCard(values.ERP, lang)
 
 				<!-- Temp Warehouse & Compare Files Lifecycle & Retention Card -->
 				<div class="glass-panel p-6 mb-0">

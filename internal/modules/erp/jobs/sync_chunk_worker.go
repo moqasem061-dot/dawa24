@@ -13,6 +13,7 @@ import (
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/erp"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/erpgate"
 	"github.com/moqasem061-dot/dawa24/internal/platform/queue"
 )
 
@@ -28,12 +29,22 @@ type SyncChunkWorker struct {
 	log *slog.Logger
 }
 
+// disabledSnooze is how long a chunk waits before the worker looks at the ERP
+// switch again while the integration is turned off.
+const disabledSnooze = 5 * time.Minute
+
 // Work re-scopes the context to the batch's organization (the job args carry
 // it; the queue is shared, the data is not) and calls ProcessChunk. An
 // earlier-batch wait becomes a snooze of the SyncSnoozeSeconds constant —
 // never a literal, never a failure (research D-09); every other error passes
 // through to River's MaxAttempts retry.
 func (w *SyncChunkWorker) Work(ctx context.Context, job *river.Job[queue.ERPSyncChunkArgs]) error {
+	// While an admin has the integration switched off, a chunk is put back, not
+	// run and not discarded: switching it on again resumes the batch where it
+	// stopped.
+	if !erpgate.Enabled(ctx) {
+		return river.JobSnooze(disabledSnooze)
+	}
 	err := w.svc.ProcessChunk(database.WithTenant(ctx, job.Args.OrganizationID), job.Args.BatchID, job.Args.ChunkNo)
 	if errors.Is(err, erp.ErrWaitForEarlierBatch) {
 		return river.JobSnooze(time.Duration(erp.SyncSnoozeSeconds) * time.Second)

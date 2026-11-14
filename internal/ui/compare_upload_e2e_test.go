@@ -360,12 +360,18 @@ func (m *mockCompareRepoE2E) SearchFileRows(ctx context.Context, userID int64, o
 func (m *mockCompareRepoE2E) ListDistinctSuppliers(ctx context.Context) ([]string, error) {
 	return []string{"شركة الفتح", "شركة النصر للأدوية"}, nil
 }
-func (m *mockCompareRepoE2E) CountMarketDiscounts(ctx context.Context, filter compare.MarketDiscountsFilter) (int64, error) {
+func (m *mockCompareRepoE2E) CountMarketDiscounts(ctx context.Context, filter compare.MarketDiscountsFilter) (compare.MarketCount, error) {
 	res, err := m.ListMarketDiscounts(ctx, filter)
 	if err != nil {
-		return 0, err
+		return compare.MarketCount{}, err
 	}
-	return res.TotalCount, nil
+	count := compare.MarketCount{Total: res.TotalCount}
+	for _, item := range res.Items {
+		if item.DiscountPercent > count.MaxDiscount {
+			count.MaxDiscount = item.DiscountPercent
+		}
+	}
+	return count, nil
 }
 
 func (m *mockCompareRepoE2E) LoadPackRelationships(ctx context.Context, productIDs []int64) ([]productmatch.PackRelationship, error) {

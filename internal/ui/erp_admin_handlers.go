@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/erpgate"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
@@ -24,7 +25,7 @@ func (h *UIHandler) ErpAdminKeysPage(w http.ResponseWriter, r *http.Request) {
 		erpLoginRedirect(w, r)
 		return
 	}
-	data := pages.ErpAdminKeysPageData{}
+	data := pages.ErpAdminKeysPageData{Off: !erpgate.Enabled(ctx)}
 	data.NoticeKind, data.NoticeMessage = noticeFrom(r)
 	if h.erpSvc != nil {
 		rows, err := h.erpSvc.ListKeysAsStaff(ctx)

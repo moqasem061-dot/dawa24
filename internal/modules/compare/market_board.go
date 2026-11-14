@@ -49,11 +49,61 @@ type MarketDiscountsResult struct {
 	// page's budget. The rows are still the answer; the pager is the part that
 	// is missing, and it says so rather than printing a zero it would have to
 	// invent.
-	TotalKnown         bool     `json:"total_known"`
+	TotalKnown bool `json:"total_known"`
+	// MaxDiscount is the highest discount on the whole filtered board, not on
+	// this page: it comes from the same cached scan as TotalCount and is only
+	// meaningful while TotalKnown is true and TotalCount is above zero.
+	MaxDiscount float64 `json:"max_discount"`
+	// ProductNameAR and ProductNameEN name the catalogue product the board is
+	// filtered to (MarketDiscountsFilter.ProductID); both are empty otherwise,
+	// or when the product no longer exists.
+	ProductNameAR      string   `json:"product_name_ar,omitempty"`
+	ProductNameEN      string   `json:"product_name_en,omitempty"`
 	AvailableSuppliers []string `json:"available_suppliers"`
 	Page               int      `json:"page"`
 	Limit              int      `json:"limit"`
 	TotalPages         int      `json:"total_pages"`
 	HasPrev            bool     `json:"has_prev"`
 	HasNext            bool     `json:"has_next"`
+}
+
+// MarketCount is what one scan of the filtered board yields: how many rows
+// there are, and the highest discount among them. They are read together so the
+// header's "highest discount" describes the whole filter, not the page on show,
+// at the price of one extra aggregate on a scan the count already makes.
+type MarketCount struct {
+	Total       int64   `json:"total"`
+	MaxDiscount float64 `json:"max_discount"`
+}
+
+// MarketSuggestion is one line of the search box's dropdown: a product, or an
+// unmatched file name, with what the board holds for it.
+//
+// ProductID is set when the offers were matched to a catalogue product; the
+// board can then be filtered to exactly that product. An unmatched line has no
+// ID and is grouped by its normalised file name instead.
+type MarketSuggestion struct {
+	ProductID    *int64       `json:"product_id,omitempty"`
+	NameAR       string       `json:"name_ar,omitempty"`
+	NameEN       string       `json:"name_en,omitempty"`
+	FileName     string       `json:"file_name"`
+	Offers       int          `json:"offers"`
+	Warehouses   int          `json:"warehouses"`
+	BestDiscount float64      `json:"best_discount"`
+	LowestPrice  money.Amount `json:"lowest_price"`
+}
+
+// DisplayName is the catalogue name in the reader's language, else the other
+// catalogue language, else the name as the sheet spelled it.
+func (s MarketSuggestion) DisplayName(lang string) string {
+	if lang == "en" && s.NameEN != "" {
+		return s.NameEN
+	}
+	if s.NameAR != "" {
+		return s.NameAR
+	}
+	if s.NameEN != "" {
+		return s.NameEN
+	}
+	return s.FileName
 }

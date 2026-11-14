@@ -13,6 +13,7 @@ import (
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/erp"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/features"
 	"github.com/moqasem061-dot/dawa24/internal/platform/queue"
 )
 
@@ -193,3 +194,33 @@ func TestCleanupWorkerCallsCleanup(t *testing.T) {
 }
 
 var _ = database.ErrNoTenant
+
+func TestSyncChunkWorkerSnoozesWhileSwitchedOff(t *testing.T) {
+	svc, repo := workerFixture(t)
+	batchID := repo.seed(7, "queued")
+	worker := NewSyncChunkWorker(svc, nil)
+	job := &river.Job[queue.ERPSyncChunkArgs]{Args: queue.ERPSyncChunkArgs{BatchID: batchID, OrganizationID: 7, ChunkNo: 0}}
+
+	restore := features.SetGlobal(features.NewStatic(map[string]bool{features.KeyERPEnabled: false}))
+	err := worker.Work(context.Background(), job)
+	restore()
+
+	var snooze *rivertype.JobSnoozeError
+	if !errors.As(err, &snooze) {
+		t.Fatalf("err = %v, want a snooze while the integration is off", err)
+	}
+	if snooze.Duration != disabledSnooze {
+		t.Errorf("snooze = %v, want %v", snooze.Duration, disabledSnooze)
+	}
+	if repo.batches[batchID].state != "queued" {
+		t.Errorf("state = %q, want still queued: the chunk must not run or be discarded", repo.batches[batchID].state)
+	}
+
+	// Switched back on, the same job runs to completion.
+	if err := worker.Work(context.Background(), job); err != nil {
+		t.Fatal(err)
+	}
+	if repo.batches[batchID].state != "completed" {
+		t.Errorf("state = %q, want completed after switching back on", repo.batches[batchID].state)
+	}
+}

@@ -9,7 +9,7 @@ The `compare` bounded context implements the platform's flagship supplier-vs-sup
 - Comparison selection uses `EntitlementFor().MaxActiveFiles` in both submission and execution. The independent ten-file ceiling is removed; the current effective entitlement permits 100 files. These are supplier spreadsheet files, not a limit on product rows.
 - Results support product/code search, offer availability, catalog linkage and winning supplier filters. Filter links and pagination preserve the selected criteria. Head-to-head filters use a responsive grid, explicit outcome selection and exact monetary price bounds.
 - Head-to-head exports the report as an Excel workbook (`.xlsx`), not CSV: money and discounts are numeric cells with number formats, the header row is frozen and filterable, the sheet is right-to-left for the Arabic report, and a second sheet carries the summary statistics. Every row matching the current filters is exported before pagination, including all report columns. Export and result requests validate selected IDs against the caller's visible files. `export=csv` is still accepted so saved links keep working, and also downloads a workbook.
-- Market upload-date filters include both ends of the selected date range in Africa/Cairo time. Listing, totals, cache keys and pagination share the date criteria. Market typing waits 250 ms; cancellation, composition handling and stale-response protection remain active.
+- Market upload-date filters include both ends of the selected date range in Africa/Cairo time. Listing, totals, cache keys and pagination share the date criteria. Market typing no longer reloads the board (see "Market-board UI rebuild (2026-11-14)"): cancellation, composition handling and stale-response protection apply to the suggestion dropdown.
 
 ## Schema Mapping
 
@@ -96,7 +96,7 @@ fuzzy candidates. Punctuation-only normalized terms cannot match every row.
 Typing uses a 250 ms debounce; cancellation, stale-response suppression,
 Arabic composition and input-focus retention are covered by browser tests.
 
-Market-discount searches wait 250 ms after typing pauses; other GET filter searches retain 450 ms.
+Other GET filter searches wait 450 ms after typing pauses. (Market-discount searches used to wait 250 ms; since 2026-11-14 the board does not search while typing at all, see "Market-board UI rebuild".)
 Each form owns its debounce timer, composition input waits until committed, and
 editing or submitting cancels pending search work. Select controls with
 `data-autosubmit` issue one request rather than also triggering the generic filter
@@ -169,6 +169,122 @@ or rate limit leaves the current screen usable without repeatedly reloading it.
 The browser regressions in `scripts/test-session-search.cjs` exercise these flows
 with the real HTMX, CSP/Trusted Types, Alpine and shared application scripts.
 
+## Market-board UI rebuild (2026-11-14)
+
+خصومات السوق (`/market-discounts`) lagged although its SQL was already fast (see
+"Market-board rewrite"). The cost was in the front end: every typing pause
+(250 ms) submitted the whole GET form through the generic filter machinery
+(`actions.js` `queueFilterSearch` -> `requestSubmit` -> `boost-nav.js`), which
+re-rendered the page and swapped all of `<main>`; each response rendered every
+offer twice (a list and a grid, one hidden with `x-show`), so a 96-row page was
+192 cards; the cards were `.glass-panel`s with shadow/transform transitions and
+no `content-visibility`; dates, numbers and selects auto-submitted the whole
+page; and "أعلى خصم" was the maximum of the *current page*. This replaces the
+front end. The SQL, indexes and cache semantics are unchanged except where
+stated below. **This supersedes the 250 ms typing debounce described above:
+typing no longer touches the board.**
+
+**Behaviour.**
+
+- Typing shows a dropdown of suggestions under the search box (ARIA combobox:
+  `role=combobox`, `aria-expanded`, `aria-controls`, `aria-activedescendant`,
+  listbox of options; Up/Down/Home/End/Enter/Escape/Tab; IME composition
+  respected; 200 ms debounce; the previous request is aborted and a revision
+  counter drops a stale answer). The board changes only when the reader commits:
+  Enter, the first line "عرض كل النتائج لـ «…»", or picking a suggestion.
+  Clearing the box (native clear button) is also a commit.
+- Picking a *product* suggestion filters the board to that catalogue product
+  (every warehouse's offer for it) and clears the typed text; the filter shows
+  as a removable chip "الصنف: <name>". A suggestion for an *unmatched* file name
+  commits that name as a text search.
+- Only the results region updates on any filter, sort, page or page-size
+  change: `<section id="md-results" aria-live="polite">` holds the three header
+  numbers, the active-filter chips, the offers and the pager. The header, the
+  controls and the sidebar are never re-rendered. The URL follows (`pushState`),
+  so a result is shareable and the back button restores it.
+- List and grid are one markup: each offer is one `<article class="md-offer">`;
+  `.md-offers.is-list | .is-grid` is the layout. Switching is a class change,
+  remembered in `localStorage` (`d24_market_view`) and written to the URL with
+  `replaceState` (`view=`); no request.
+- Numbered pagination (`components.B2BPagination`) is swapped in place; the
+  next page is prefetched on hover/focus into an in-memory map (6 entries, 30 s);
+  after a swap focus moves to the visually hidden results heading and the results
+  scroll into view only if they are above the viewport (`prefers-reduced-motion`
+  honoured). While loading, `aria-busy="true"` dims the old results and the
+  region keeps its height. A failed refresh keeps the old results and shows an
+  alert.
+- Dates, price and discount ranges live in the collapsible "فلاتر متقدمة" panel
+  and apply with its button (or Enter inside it); they no longer auto-submit.
+  The warehouse box (datalist) and the sort select commit on `change`.
+- Cards are plain surfaces with `content-visibility: auto` and no shadow or
+  transform transitions; `is-hot` (>= 40 %) keeps its look.
+
+**Server.**
+
+- `MarketDiscountsResults` (`pages/market_discounts_results.templ`) is the whole
+  results surface. `MarketDiscountsPage` renders it inside `#md-results`. A
+  request with `HX-Request: true` and `HX-Target: md-results` gets only that
+  component; both responses carry `Vary: HX-Request, HX-Target`. The page script
+  (`static/js/market-discounts.js`, loaded with the CSP nonce) uses `fetch` and
+  sets those two headers itself, and inserts HTML through
+  `window.dawaHTML.fromServer` (Trusted Types). The form carries
+  `data-no-filter data-no-boost`, so `actions.js` and `boost-nav.js` leave it
+  alone. Without the script the page is still a plain GET form with real links.
+- `parseMarketDiscountsFilter(r)` (`ui/market_discounts_handlers.go`) is the one
+  interpretation of the query string for the page, the fragment and the suggest
+  endpoint. Invalid values are ignored; unknown sorts fall back to `newest`;
+  discounts are capped at 100 and `NaN`/`Inf` are refused.
+- **"أعلى خصم" is board-wide.** `CountMarketDiscounts` now returns
+  `MarketCount{Total, MaxDiscount}` from one scan:
+  `SELECT COUNT(*), COALESCE(MAX(<clamped discount>), 0)` over the same FROM and
+  clauses. The clamped expression is the listing's own, so the header never
+  prints a number the cards refuse to print. It is cached under the same key
+  (`compare:market:count:v6:<stamp>:<fingerprint>`, bumped from v5 because the
+  cached value changed shape) and the same `marketCountBudget`;
+  `MarketDiscountsResult.MaxDiscount` is meaningful only with `TotalKnown` and a
+  non-zero count, otherwise the header shows `—`. `calculateMaxDiscount` is gone.
+- **Product filter.** `MarketDiscountsFilter.ProductID` (query `product`):
+  `r.matched_product_id = $n AND p.id IS NOT NULL`. The second condition keeps
+  the eligibility the LEFT JOIN already applies (accepted/confirmed/unset match
+  state, product not deleted), so the rows are exactly the ones shown under that
+  product's name. It uses `compare_file_rows_matched_product` (migration 243);
+  `TestMarketProductFilterCanUseTheCatalogueLinkIndex` shows, with sequential
+  scans disabled, that listing and count can reach it. The product id is part of
+  the count's fingerprint and of every pager and chip URL. The product's name
+  for the chip is read by `MarketProductNames` (a primary-key lookup, only when
+  the filter is set).
+- **`GET /market-discounts/suggest?q=...`** returns an HTML fragment
+  (`MarketSuggestions`, templ) of at most 8 lines. Access is the page's: no
+  session -> 401, a customer account or an unentitled organization -> 403 (it is
+  an XHR, so never a redirect and never data); staff always. Fewer than 2
+  characters returns an empty 200 without touching the database; 128 is the
+  maximum. The query is the board's own indexed word match over the board's own
+  source clause (temporary warehouses only), grouped by `matched_product_id`
+  (unmatched offers by normalised file name): display name (catalogue AR/EN by
+  language, else the file name), product id, offers, warehouses, best discount,
+  lowest public price (`money.Amount`). **No COUNT of the board and no fuzzy
+  fallback**: the fuzzy catalogue retrieval alone can take the 500 ms the whole
+  suggestion budget (400 ms) cannot afford, and a misspelt name gets "no
+  suggestions" while the "view all" line still runs the full search (which does
+  retry fuzzily). On timeout or error the fragment is the "view all" line plus a
+  "تعذّر جلب الاقتراحات" note, never a 5xx page. Nothing is cached: prices are
+  never cached on this board, and eight grouped lines are not worth a second key
+  space.
+- Strings are bilingual keys (`market.board.*`, `market.suggest.*` in
+  `internal/shared/i18n/catalog_market_board.go`).
+
+**Tests.** Handler (page vs fragment, `Vary`, one article per offer, invalid
+values ignored, product chip), suggest access (401/403 for anonymous, customer,
+unentitled; <= 8 lines; empty for one character; failure note), the query
+builders, the service (board-wide maximum cached with the count, unknown without
+it, product name, suggest limits and failure) and, against Postgres,
+`test/integration/market_board_rebuild_test.go` (product filter, COUNT+MAX,
+grouped suggestions, a private compare upload never appears).
+`scripts/test-market-discounts.cjs` is the browser regression (needs
+`go run ./scripts/pagespeed`): typing makes no board request, dropdown keyboard
+navigation, commit swaps only `#md-results`, a stale suggestion and a stale
+results response are ignored, pager prefetch and back button, layout switch
+without a request, phone overflow.
 
 ## Shared Matching (2026-08-25)
 

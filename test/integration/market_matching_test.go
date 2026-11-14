@@ -76,8 +76,8 @@ func TestMarketMatchingSearchAndAtomicReplacement(t *testing.T) {
 			t.Fatalf("query %+v: %+v", filter, result.Items)
 		}
 		count, err := repo.CountMarketDiscounts(ctx, filter)
-		if err != nil || count != 1 {
-			t.Fatalf("count=%d err=%v", count, err)
+		if err != nil || count.Total != 1 {
+			t.Fatalf("count=%+v err=%v", count, err)
 		}
 	}
 	for _, q := range []string{"%", "_", "x' OR 1=1 --", "nonexistent drug"} {

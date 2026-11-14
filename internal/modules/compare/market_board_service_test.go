@@ -235,6 +235,7 @@ func fp(v float64) *float64 { return &v }
 type countingMarketRepo struct {
 	Repository
 	total                    int64
+	maxDiscount              float64
 	rows                     int
 	countErr, listErr        error
 	supplierErr              error
@@ -266,12 +267,12 @@ func (r *countingMarketRepo) ListMarketDiscounts(_ context.Context, f MarketDisc
 	}, nil
 }
 
-func (r *countingMarketRepo) CountMarketDiscounts(context.Context, MarketDiscountsFilter) (int64, error) {
+func (r *countingMarketRepo) CountMarketDiscounts(context.Context, MarketDiscountsFilter) (MarketCount, error) {
 	r.counts++
 	if r.countErr != nil {
-		return 0, r.countErr
+		return MarketCount{}, r.countErr
 	}
-	return r.total, nil
+	return MarketCount{Total: r.total, MaxDiscount: r.maxDiscount}, nil
 }
 
 func (r *countingMarketRepo) ListDistinctSuppliers(context.Context) ([]string, error) {

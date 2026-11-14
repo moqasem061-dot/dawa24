@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/erp"
+	"github.com/moqasem061-dot/dawa24/internal/platform/erpgate"
 	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
 )
 
@@ -24,6 +25,10 @@ func NewHandler(svc *erp.Service, cfg erp.Config, lim *httpx.Limiter, log *slog.
 
 func (h *Handler) Routes() chi.Router {
 	r := chi.NewRouter()
+	// The runtime switch comes first, before the spec and before key
+	// authentication: with the integration off, no ERP client learns anything
+	// from this API except that it is off.
+	r.Use(requireEnabled)
 	// The spec stays public (S6/S8 ship it as documentation); it carries no
 	// tenant data, but it is still unauthenticated output, so it gets its own
 	// per-IP counter — separate from the per-key limit and the auth-failure
@@ -56,4 +61,18 @@ func (h *Handler) Routes() chi.Router {
 		writeError(w, r, erp.NewError("ERP_NOT_FOUND", 404, nil))
 	})
 	return r
+}
+
+// requireEnabled answers 503 ERP_DISABLED while an admin has the integration
+// switched off. It is evaluated per request, so switching it back on takes
+// effect without a restart.
+func requireEnabled(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !erpgate.Enabled(r.Context()) {
+			w.Header().Set("Retry-After", "300")
+			writeError(w, r, erp.NewError("ERP_DISABLED", http.StatusServiceUnavailable, nil))
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }

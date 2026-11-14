@@ -5,6 +5,7 @@ import (
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
 	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
+	"github.com/moqasem061-dot/dawa24/internal/platform/erpgate"
 	"github.com/moqasem061-dot/dawa24/internal/ui/components"
 	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
@@ -512,13 +513,15 @@ templ CustomerHome(featured []*catalog.Product, categories []*catalog.Category, 
 				</div>
 
 				<!-- Feature 6: System Integrations -->
-				<div class="landing-feature-card">
-					<div class="landing-feature-icon-box">
-						@components.IconLink("icon-md")
+				if erpgate.Enabled(ctx) {
+					<div class="landing-feature-card">
+						<div class="landing-feature-icon-box">
+							@components.IconLink("icon-md")
+						</div>
+						<h3 class="landing-feature-title">تكامل مع الأنظمة</h3>
+						<p class="landing-feature-desc">ربط سلس ومرن مع أنظمة إدارة الصيدليات وبرامج الحسابات (ERP) لتحديث الأرصدة والمخزون والمشتريات آلياً دون جهد يدوي.</p>
 					</div>
-					<h3 class="landing-feature-title">تكامل مع الأنظمة</h3>
-					<p class="landing-feature-desc">ربط سلس ومرن مع أنظمة إدارة الصيدليات وبرامج الحسابات (ERP) لتحديث الأرصدة والمخزون والمشتريات آلياً دون جهد يدوي.</p>
-				</div>
+				}
 			</div>
 		</section>
 

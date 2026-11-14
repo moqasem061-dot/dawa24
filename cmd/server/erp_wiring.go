@@ -18,6 +18,7 @@ import (
 	inventoryPostgres "github.com/moqasem061-dot/dawa24/internal/modules/inventory/postgres"
 	"github.com/moqasem061-dot/dawa24/internal/platform/config"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/erpgate"
 	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
 	"github.com/moqasem061-dot/dawa24/internal/platform/queue"
 	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
@@ -28,6 +29,13 @@ import (
 )
 
 func mountERP(r chi.Router, cfg *config.Config, log *slog.Logger, deps *dependencies, db *database.DB) *erp.Service {
+	erpgate.SetDeployment(cfg.ERP.Enabled)
+	// The runtime switch (feature flag erp.enabled) hides the vendor and
+	// pharmacy sidebar entries the moment an admin flips it; the staff
+	// sidebar keeps its entry so the page stays reachable.
+	rbac.NavSuppressedFunc = func(key string) bool {
+		return key == "integrations" && !erpgate.Enabled(context.Background())
+	}
 	if !cfg.ERP.Enabled {
 		// The integrations screens' routes, modals and sidebar entries come
 		// from the RPC-facing half of the slice; with the API off the page

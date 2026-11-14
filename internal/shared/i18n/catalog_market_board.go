@@ -1,0 +1,83 @@
+package i18n
+
+// loadMarketBoardKeys holds the strings of the خصومات السوق العامة board: its
+// header, controls, filter chips, offers, pager and the search box's dropdown.
+func loadMarketBoardKeys(e *engine) {
+	const ns = "market"
+
+	addKey(e, "market.board.title", ns, "خصومات السوق العامة", "Public market discounts", "Market board title")
+	addKey(e, "market.board.page_title", ns, "خصومات السوق العامة | دوا 24", "Public market discounts | Dawa24", "Market board document title")
+	addKey(e, "market.board.subtitle", ns, "كشوف أسعار المستودعات المؤقتة التي ترفعها إدارة المنصة — أسعار الجمهور ونسب الخصم كما وردت من السوق.", "Temporary-warehouse price lists uploaded by the platform team: public prices and discounts as the market quoted them.", "Market board subtitle")
+
+	addKey(e, "market.board.stat.items", ns, "أصناف مرصودة", "Offers tracked", "Market board stat")
+	addKey(e, "market.board.stat.warehouses", ns, "المستودعات", "Warehouses", "Market board stat")
+	addKey(e, "market.board.stat.max", ns, "أعلى خصم", "Highest discount", "Market board stat")
+	addKey(e, "market.board.stat.unknown", ns, "تعذّر حساب الإجمالي الآن. الأصناف المعروضة صحيحة وحديثة.", "The total could not be counted right now. The offers shown are correct and current.", "Market board stat tooltip")
+	addKey(e, "market.board.results_heading", ns, "نتائج خصومات السوق", "Market discount results", "Market board results heading")
+	addKey(e, "market.board.loading_failed", ns, "تعذّر تحديث النتائج. حاول مرة أخرى.", "The results could not be updated. Try again.", "Market board refresh failure")
+
+	addKey(e, "market.board.search_label", ns, "بحث في خصومات السوق", "Search market discounts", "Market board search label")
+	addKey(e, "market.board.sort_label", ns, "الترتيب", "Sort order", "Market board sort label")
+	addKey(e, "market.board.sort.discount_desc", ns, "الأعلى خصماً", "Highest discount", "Market board sort")
+	addKey(e, "market.board.sort.discount_asc", ns, "الأقل خصماً", "Lowest discount", "Market board sort")
+	addKey(e, "market.board.sort.price_asc", ns, "الأقل سعراً", "Lowest price", "Market board sort")
+	addKey(e, "market.board.sort.price_desc", ns, "الأعلى سعراً", "Highest price", "Market board sort")
+	addKey(e, "market.board.sort.newest", ns, "الأحدث إضافة", "Newest first", "Market board sort")
+	addKey(e, "market.board.sort.oldest", ns, "الأقدم", "Oldest first", "Market board sort")
+	addKey(e, "market.board.advanced", ns, "فلاتر متقدمة", "Advanced filters", "Market board advanced filters toggle")
+	addKey(e, "market.board.view_label", ns, "طريقة العرض", "Layout", "Market board view switch")
+	addKey(e, "market.board.view_list", ns, "عرض كقائمة", "List view", "Market board view switch")
+	addKey(e, "market.board.view_grid", ns, "عرض كبطاقات", "Card view", "Market board view switch")
+	addKey(e, "market.board.price_range", ns, "نطاق السعر (ج.م)", "Price range (EGP)", "Market board filter")
+	addKey(e, "market.board.discount_range", ns, "نسبة الخصم (%)", "Discount (%)", "Market board filter")
+	addKey(e, "market.board.from", ns, "من", "From", "Market board range start")
+	addKey(e, "market.board.to", ns, "إلى", "To", "Market board range end")
+	addKey(e, "market.board.min_price", ns, "أقل سعر", "Lowest price", "Market board filter")
+	addKey(e, "market.board.max_price", ns, "أعلى سعر", "Highest price", "Market board filter")
+	addKey(e, "market.board.min_discount", ns, "أقل خصم", "Lowest discount", "Market board filter")
+	addKey(e, "market.board.max_discount", ns, "أعلى خصم", "Highest discount", "Market board filter")
+	addKey(e, "market.board.apply", ns, "تطبيق", "Apply", "Market board apply filters")
+
+	addKey(e, "market.board.chips_label", ns, "الفلاتر المفعّلة", "Active filters", "Market board chips group")
+	addKey(e, "market.board.chip.q", ns, "البحث", "Search", "Market board filter chip")
+	addKey(e, "market.board.chip.supplier", ns, "المستودع", "Warehouse", "Market board filter chip")
+	addKey(e, "market.board.chip.product", ns, "الصنف", "Product", "Market board filter chip")
+	addKey(e, "market.board.chip.date_from", ns, "من تاريخ", "From", "Market board filter chip")
+	addKey(e, "market.board.chip.date_to", ns, "إلى تاريخ", "To", "Market board filter chip")
+	addKey(e, "market.board.chip.min_price", ns, "السعر من", "Price from", "Market board filter chip")
+	addKey(e, "market.board.chip.max_price", ns, "السعر إلى", "Price to", "Market board filter chip")
+	addKey(e, "market.board.chip.min_discount", ns, "الخصم من", "Discount from", "Market board filter chip")
+	addKey(e, "market.board.chip.max_discount", ns, "الخصم حتى", "Discount up to", "Market board filter chip")
+	addKey(e, "market.board.chip.remove", ns, "إزالة الفلتر: %s", "Remove filter: %s", "Market board filter chip remove")
+	addKey(e, "market.board.clear_all", ns, "مسح الكل", "Clear all", "Market board clear filters")
+
+	addKey(e, "market.board.empty_filtered_title", ns, "لم نجد أي خصومات مطابقة", "No matching discounts found", "Market board empty state")
+	addKey(e, "market.board.empty_filtered_body", ns, "جرّب كلمات بحث أخرى، أو غيّر المستودع ونطاقات السعر والخصم.", "Try other search words, or change the warehouse and the price and discount ranges.", "Market board empty state")
+	addKey(e, "market.board.empty_title", ns, "لا توجد كشوف أسعار منشورة بعد", "No price lists are published yet", "Market board empty state")
+	addKey(e, "market.board.empty_body", ns, "ستظهر الخصومات هنا فور رفع إدارة المنصة لمستودعات مؤقتة.", "Discounts appear here as soon as the platform team uploads temporary warehouses.", "Market board empty state")
+	addKey(e, "market.board.show_all", ns, "عرض كافة خصومات السوق", "Show all market discounts", "Market board empty state action")
+
+	addKey(e, "market.board.public_price", ns, "سعر الجمهور", "Public price", "Market offer")
+	addKey(e, "market.board.discount", ns, "الخصم", "Discount", "Market offer")
+	addKey(e, "market.board.net_price", ns, "السعر بعد الخصم", "Price after discount", "Market offer")
+	addKey(e, "market.board.currency", ns, "ج.م", "EGP", "Currency suffix")
+	addKey(e, "market.board.upload_date", ns, "تاريخ رفع المستودع", "Warehouse upload date", "Market offer")
+	addKey(e, "market.board.discount_word", ns, "خصم", "off", "Market offer discount suffix")
+	addKey(e, "market.board.view_in_catalog", ns, "عرض بالكتالوج", "View in catalog", "Market offer action")
+	addKey(e, "market.board.view_in_catalog_title", ns, "عرض الصنف في الكتالوج", "Open the product in the catalog", "Market offer action tooltip")
+
+	addKey(e, "market.board.total_unknown", ns, "تعذّر حساب إجمالي النتائج الآن — الأصناف المعروضة حديثة، ويمكنك التنقل بين الصفحات.", "The total could not be counted right now. The offers shown are current and you can still move between pages.", "Market board pager fallback")
+	addKey(e, "market.board.prev_page", ns, "الصفحة السابقة", "Previous page", "Market board pager fallback")
+	addKey(e, "market.board.next_page", ns, "الصفحة التالية", "Next page", "Market board pager fallback")
+
+	addKey(e, "market.suggest.label", ns, "اقتراحات البحث", "Search suggestions", "Market search dropdown")
+	addKey(e, "market.suggest.view_all", ns, "عرض كل النتائج لـ «%s»", "View all results for “%s”", "Market search dropdown")
+	addKey(e, "market.suggest.none", ns, "لا توجد اقتراحات مطابقة", "No matching suggestions", "Market search dropdown")
+	addKey(e, "market.suggest.error", ns, "تعذّر جلب الاقتراحات", "Suggestions could not be loaded", "Market search dropdown")
+	addKey(e, "market.suggest.loading", ns, "جارٍ البحث…", "Searching…", "Market search dropdown")
+	addKey(e, "market.suggest.offers", ns, "%d عرض", "%d offers", "Market search dropdown")
+	addKey(e, "market.suggest.warehouses", ns, "%d مستودع", "%d warehouses", "Market search dropdown")
+	addKey(e, "market.suggest.best", ns, "أفضل خصم %s%%", "best discount %s%%", "Market search dropdown")
+	addKey(e, "market.suggest.from_price", ns, "من %s ج.م", "from EGP %s", "Market search dropdown")
+	addKey(e, "market.suggest.unmatched", ns, "اسم من الملف", "Name from the file", "Market search dropdown")
+}

@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/erp"
+	"github.com/moqasem061-dot/dawa24/internal/platform/features"
 	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
 )
 
@@ -110,5 +111,43 @@ func TestHandlerHealth(t *testing.T) {
 	handler.ServeHTTP(badW, badReq)
 	if badW.Code != 401 || strings.Contains(badW.Body.String(), bad) || strings.Contains(badW.Body.String(), secret) || strings.Contains(logs.String(), bad) || strings.Contains(logs.String(), secret) {
 		t.Error("bad key response or logs leaked credentials")
+	}
+}
+
+func TestHandlerAnswersERPDisabledWhileSwitchedOff(t *testing.T) {
+	handler := NewHandler(nil, erp.Config{}, httpx.NewLimiter(nil, "test:"), slog.New(slog.NewTextHandler(&bytes.Buffer{}, nil))).Routes()
+
+	for _, tc := range []struct{ method, path string }{
+		{"GET", "/health"},
+		{"POST", "/products/sync"},
+		{"GET", "/openapi.yaml"},
+		{"GET", "/no-such-route"},
+	} {
+		restore := features.SetGlobal(features.NewStatic(map[string]bool{features.KeyERPEnabled: false}))
+		// A syntactically valid-looking key must not matter: the gate runs
+		// before authentication, so nothing about the key is ever checked.
+		req := httptest.NewRequest(tc.method, tc.path, nil)
+		req.Header.Set("Authorization", "Bearer dk_test_anything")
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+		restore()
+
+		var env responseEnvelope
+		if err := json.Unmarshal(w.Body.Bytes(), &env); err != nil {
+			t.Fatalf("%s %s: %v: %s", tc.method, tc.path, err, w.Body.String())
+		}
+		if w.Code != 503 || env.Status != "error" || env.Error.Code != "ERP_DISABLED" || env.Error.Message["ar"] == "" || env.Error.Message["en"] == "" {
+			t.Errorf("%s %s: status=%d body=%s, want 503 ERP_DISABLED with bilingual message", tc.method, tc.path, w.Code, w.Body.String())
+		}
+	}
+
+	// Switched back on, the same request reaches key authentication again.
+	req := httptest.NewRequest("GET", "/health", nil)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	var env responseEnvelope
+	_ = json.Unmarshal(w.Body.Bytes(), &env)
+	if w.Code != 401 || env.Error.Code != "ERP_AUTH_MISSING" {
+		t.Errorf("switched on: status=%d body=%s, want 401 ERP_AUTH_MISSING", w.Code, w.Body.String())
 	}
 }

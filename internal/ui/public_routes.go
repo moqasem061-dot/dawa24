@@ -166,6 +166,7 @@ func (h *UIHandler) RegisterPublicRoutes(r chi.Router) {
 		pub.Get("/compare/market-benchmark/offers/close", h.CompareBenchmarkOffersClose)
 		pub.Get("/compare/market-intelligence", h.CompareMarketIntelligencePage)
 		pub.Get("/market-discounts", h.MarketDiscountsPage)
+		pub.Get("/market-discounts/suggest", h.MarketDiscountsSuggest)
 		// Order numbers are sequential, so /tracking is limited per IP to stop
 		// it being walked. 30 a minute is far above what a person needs.
 		pub.With(h.limiter.LimitByIP(30, time.Minute)).Get("/tracking", h.GuestOrderTrackingPage)

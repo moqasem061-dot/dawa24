@@ -171,16 +171,32 @@ func (r *Repository) ListDistinctSuppliers(ctx context.Context) ([]string, error
 // The count is the expensive half now, and it is the half that can be cached:
 // it changes only when a moderator uploads or archives a temporary warehouse.
 // compare.Service does that; see marketCountTTL.
-func (r *Repository) CountMarketDiscounts(ctx context.Context, filter compare.MarketDiscountsFilter) (int64, error) {
+func (r *Repository) CountMarketDiscounts(ctx context.Context, filter compare.MarketDiscountsFilter) (compare.MarketCount, error) {
 	sql, args := buildMarketDiscountsCountQuery(filter)
-	var total int64
+	var count compare.MarketCount
 	err := r.db.InReadTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
-		if err := tx.QueryRow(txCtx, sql, args...).Scan(&total); err != nil {
+		if err := tx.QueryRow(txCtx, sql, args...).Scan(&count.Total, &count.MaxDiscount); err != nil {
 			return fmt.Errorf("compare postgres: count market discounts: %w", err)
 		}
 		return nil
 	})
-	return total, err
+	return count, err
+}
+
+// MarketProductNames reads a catalogue product's two names, for the board's
+// "الصنف: <name>" chip. A deleted or unknown product yields empty names and no
+// error: the filter is then simply a filter that matches nothing.
+func (r *Repository) MarketProductNames(ctx context.Context, productID int64) (ar, en string, err error) {
+	err = r.db.InReadTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
+		qerr := tx.QueryRow(txCtx, `
+			SELECT COALESCE(name->>'ar', ''), COALESCE(name->>'en', '')
+			FROM catalog.products WHERE id = $1 AND deleted_at IS NULL`, productID).Scan(&ar, &en)
+		if errors.Is(qerr, pgx.ErrNoRows) {
+			return nil
+		}
+		return qerr
+	})
+	return ar, en, err
 }
 
 // ListMarketDiscounts returns one page of temporary-warehouse rows.

@@ -13,6 +13,7 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/modules/org"
 	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/erpgate"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
@@ -37,6 +38,13 @@ func erpCodeTaken(err error) bool {
 	return errors.As(err, &coded) && coded.Code == "ERP_CODE_TAKEN"
 }
 
+// erpOn reports whether the checkout should treat suppliers as ERP-connected:
+// the service exists on this deployment and an admin has not switched the
+// integration off. With it off, no buyer is asked for a customer code.
+func (h *UIHandler) erpOn(ctx context.Context) bool {
+	return h.erpSvc != nil && erpgate.Enabled(ctx)
+}
+
 // erpBuyerOrg is the buyer organization of the actor, or 0 for a user with none.
 func erpBuyerOrg(actor authctx.Actor) int64 {
 	if actor.OrganizationID > 0 {
@@ -49,7 +57,7 @@ func erpBuyerOrg(actor authctx.Actor) int64 {
 // customer code for. The checkout page and the checkout plan both read it here,
 // so neither trusts a query string.
 func (h *UIHandler) erpMissingCodeNeeds(ctx context.Context, actor authctx.Actor, cart *commerce.Cart, lang string) ([]pages.ErpCodeNeed, error) {
-	if h.erpSvc == nil || cart == nil {
+	if !h.erpOn(ctx) || cart == nil {
 		return nil, nil
 	}
 	var ids []int64
@@ -78,7 +86,7 @@ func (h *UIHandler) erpMissingCodeNeeds(ctx context.Context, actor authctx.Actor
 // code for this buyer. The checkout page then opens the code modal (SC-009: a
 // supplier without ERP is never asked).
 func (h *UIHandler) erpMissingCodeFailure(ctx context.Context, actor authctx.Actor, items []commerce.CheckoutLineItem) *checkoutFailure {
-	if h.erpSvc == nil {
+	if !h.erpOn(ctx) {
 		return nil
 	}
 	var ids []int64
@@ -104,6 +112,10 @@ func (h *UIHandler) erpMissingCodeFailure(ctx context.Context, actor authctx.Act
 // touched. A number another customer holds is refused with a notice.
 func (h *UIHandler) CheckoutErpCodeSubmit(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	if !erpgate.Enabled(ctx) {
+		http.NotFound(w, r)
+		return
+	}
 	actor, ok := authctx.From(ctx)
 	if !ok || actor.UserID <= 0 {
 		http.Redirect(w, r, "/auth/login?redirect=/checkout", http.StatusSeeOther)

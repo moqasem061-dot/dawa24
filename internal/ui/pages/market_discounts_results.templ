@@ -1,0 +1,269 @@
+package pages
+
+import (
+	"fmt"
+	"strconv"
+
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+)
+
+// marketChip is one active filter, with the link that removes it.
+type marketChip struct {
+	Label string
+	Value string
+	Href  string
+}
+
+// MarketDiscountsResults is the whole results surface of the board: the three
+// numbers, the active-filter chips, the offers and the pager. The full page
+// renders it inside <section id="md-results">; a request that targets that
+// region gets just this, so the header, the controls and the sidebar are never
+// re-rendered or swapped.
+//
+// The numbers live here, not in the page header, so they change with the
+// results they describe. "أعلى خصم" is the highest discount on the whole
+// filtered board (result.MaxDiscount, from the same cached scan as the count),
+// never the highest on the page on show.
+templ MarketDiscountsResults(lang string, result *compare.MarketDiscountsResult, filter compare.MarketDiscountsFilter, view string) {
+	{{ chips := marketChips(lang, result, filter, view) }}
+	<div class="md-fragment" data-md-fragment data-page={ strconv.Itoa(result.Page) }>
+		<h2 id="md-results-heading" class="sr-only" tabindex="-1">{ marketResultsHeading(lang, result) }</h2>
+		<div class="md-summary">
+			<dl class="md-stats">
+				<div class="md-stat">
+					<dt>{ i18n.T(lang, "market.board.stat.items") }</dt>
+					if result.TotalKnown {
+						<dd class="tabular-nums">{ fmt.Sprintf("%d", result.TotalCount) }</dd>
+					} else {
+						<dd class="tabular-nums" title={ i18n.T(lang, "market.board.stat.unknown") }>—</dd>
+					}
+				</div>
+				<div class="md-stat">
+					<dt>{ i18n.T(lang, "market.board.stat.warehouses") }</dt>
+					<dd class="tabular-nums">{ fmt.Sprintf("%d", len(result.AvailableSuppliers)) }</dd>
+				</div>
+				<div class="md-stat is-accent">
+					<dt>{ i18n.T(lang, "market.board.stat.max") }</dt>
+					if result.TotalKnown && result.TotalCount > 0 {
+						<dd class="tabular-nums">{ formatDiscount(result.MaxDiscount) }%</dd>
+					} else {
+						<dd class="tabular-nums" title={ i18n.T(lang, "market.board.stat.unknown") }>—</dd>
+					}
+				</div>
+			</dl>
+			if len(chips) > 0 {
+				<ul class="md-chips" aria-label={ i18n.T(lang, "market.board.chips_label") }>
+					for _, chip := range chips {
+						<li>
+							<a
+								class="md-chip"
+								href={ templ.SafeURL(chip.Href) }
+								data-no-boost
+								data-md-commit
+								aria-label={ fmt.Sprintf(i18n.T(lang, "market.board.chip.remove"), chip.Label+": "+chip.Value) }
+							>
+								<span class="md-chip-label">{ chip.Label }:</span>
+								<bdi class="md-chip-value">{ chip.Value }</bdi>
+								@components.IconX("icon-xs")
+							</a>
+						</li>
+					}
+					<li>
+						<a class="md-chip-clear" href={ templ.SafeURL(marketClearAllURL(filter, view)) } data-no-boost data-md-commit>
+							{ i18n.T(lang, "market.board.clear_all") }
+						</a>
+					</li>
+				</ul>
+			}
+		</div>
+		if len(result.Items) == 0 {
+			@marketEmptyState(lang, len(chips) > 0 || filter.Query != "")
+		} else {
+			<div class={ "md-offers", templ.KV("is-grid", view == "grid"), templ.KV("is-list", view != "grid") }>
+				for _, item := range result.Items {
+					@marketOffer(lang, item)
+				}
+			</div>
+			@marketPager(lang, result, filter, view)
+		}
+	</div>
+}
+
+templ marketEmptyState(lang string, filtered bool) {
+	<div class="glass-panel md-empty empty-state-glass">
+		<div class="md-empty-icon">
+			@components.IconSearch("icon-sm")
+		</div>
+		if filtered {
+			<h3 class="md-empty-title">{ i18n.T(lang, "market.board.empty_filtered_title") }</h3>
+			<p class="md-empty-body">{ i18n.T(lang, "market.board.empty_filtered_body") }</p>
+			<a href="/market-discounts" class="btn btn-primary font-bold text-xs" data-no-boost data-md-commit>
+				{ i18n.T(lang, "market.board.show_all") }
+			</a>
+		} else {
+			<h3 class="md-empty-title">{ i18n.T(lang, "market.board.empty_title") }</h3>
+			<p class="md-empty-body">{ i18n.T(lang, "market.board.empty_body") }</p>
+		}
+	</div>
+}
+
+// marketOffer is one offer. The same element is the list row and the grid card;
+// CSS on .md-offers decides which.
+templ marketOffer(lang string, item *compare.MarketDiscountRow) {
+	<article class="md-offer">
+		<div class="md-offer-identity">
+			<div class="md-offer-meta">
+				<span class="badge badge-primary market-supplier-badge">{ item.SupplierName }</span>
+				<span class="market-list-date tabular-nums" title={ i18n.T(lang, "market.board.upload_date") }>
+					{ item.UploadedAt.Format("2006-01-02") }
+				</span>
+			</div>
+			<h3 class="md-offer-name" dir="auto">{ marketProductName(item, lang) }</h3>
+			if item.CatalogNameAR != "" || item.CatalogNameEN != "" {
+				<p class="market-source-name"><span>{ i18n.T(lang, "market.search.file_name") }</span> <bdi>{ item.ProductName }</bdi></p>
+			}
+		</div>
+		<div class="md-offer-money">
+			<div class="md-offer-cell is-lead">
+				<span class="market-money-label">{ i18n.T(lang, "market.board.public_price") }</span>
+				if item.OriginalPrice.Minor() > 0 {
+					<span class="market-money-was tabular-nums">{ formatDiscountPrice(item.OriginalPrice) } <small>{ i18n.T(lang, "market.board.currency") }</small></span>
+				} else {
+					<span class="market-money-was is-empty">—</span>
+				}
+			</div>
+			if item.DiscountPercent > 0 {
+				<div class="md-offer-cell">
+					<span class="market-money-label">{ i18n.T(lang, "market.board.discount") }</span>
+					<span class={ "market-disc-pill tabular-nums", templ.KV("is-hot", item.DiscountPercent >= 40) }>{ formatDiscount(item.DiscountPercent) }%</span>
+				</div>
+			}
+			<div class="md-offer-cell is-net">
+				<span class="market-money-label">{ i18n.T(lang, "market.board.net_price") }</span>
+				if item.PriceAfterDiscount.Minor() > 0 {
+					<span class="market-money-now tabular-nums">{ formatDiscountPrice(item.PriceAfterDiscount) } <small>{ i18n.T(lang, "market.board.currency") }</small></span>
+				} else if item.OriginalPrice.Minor() > 0 {
+					<span class="market-money-now tabular-nums">{ formatDiscountPrice(item.OriginalPrice) } <small>{ i18n.T(lang, "market.board.currency") }</small></span>
+				} else {
+					<span class="market-money-now is-empty">—</span>
+				}
+			</div>
+		</div>
+		if item.InCatalog && item.MatchedProductID != nil {
+			<div class="md-offer-action">
+				<a
+					href={ templ.SafeURL(fmt.Sprintf("/catalog/%d", *item.MatchedProductID)) }
+					class="btn btn-primary btn-sm font-bold"
+					title={ i18n.T(lang, "market.board.view_in_catalog_title") }
+				>
+					@components.IconCart("icon-xs")
+					<span>{ i18n.T(lang, "market.board.view_in_catalog") }</span>
+				</a>
+			</div>
+		}
+	</article>
+}
+
+// marketPager is the numbered pager. The links are real URLs (so the page works
+// and can be shared without the script); the page script turns a click into an
+// in-place swap and prefetches the target on hover or focus.
+templ marketPager(lang string, result *compare.MarketDiscountsResult, filter compare.MarketDiscountsFilter, view string) {
+	if result.TotalKnown && result.TotalCount > 0 {
+		<div class="glass-panel md-pager" data-md-pager>
+			@components.B2BPagination(components.PaginationProps{
+				CurrentPage:     result.Page,
+				PageSize:        marketDiscountsLimit(filter),
+				TotalCount:      int(result.TotalCount),
+				BaseURL:         "/market-discounts",
+				QueryValues:     marketDiscountsQueryValues(filter, view),
+				PageSizeOptions: []int{24, 48, 96},
+			})
+		</div>
+	} else if !result.TotalKnown && (result.HasPrev || result.HasNext) {
+		<div class="glass-panel md-pager md-pager-plain" data-md-pager>
+			<span class="text-xs text-secondary">{ i18n.T(lang, "market.board.total_unknown") }</span>
+			<div class="d-flex items-center gap-2">
+				if result.HasPrev {
+					<a href={ templ.SafeURL(marketPageURL(filter, view, result.Page-1)) } class="btn btn-secondary btn-sm font-bold" data-no-boost data-md-commit>
+						{ i18n.T(lang, "market.board.prev_page") }
+					</a>
+				}
+				if result.HasNext {
+					<a href={ templ.SafeURL(marketPageURL(filter, view, result.Page+1)) } class="btn btn-primary btn-sm font-bold" data-no-boost data-md-commit>
+						{ i18n.T(lang, "market.board.next_page") }
+					</a>
+				}
+			</div>
+		</div>
+	}
+}
+
+// marketResultsHeading is the (visually hidden) heading focus moves to after a
+// swap, and what a screen reader announces: how many offers there are.
+func marketResultsHeading(lang string, result *compare.MarketDiscountsResult) string {
+	count := "—"
+	if result.TotalKnown {
+		count = strconv.FormatInt(result.TotalCount, 10)
+	}
+	return i18n.T(lang, "market.board.results_heading") + ": " + count
+}
+
+// marketClearAllURL drops every filter and keeps how the reader wants to look at
+// the board: sort, page size and layout.
+func marketClearAllURL(f compare.MarketDiscountsFilter, view string) string {
+	return marketWithout(f, view, "q", "supplier", "product", "date_from", "date_to", "min_price", "max_price", "min_discount", "max_discount")
+}
+
+// marketChips lists the filters in effect, in the order the controls show them.
+func marketChips(lang string, result *compare.MarketDiscountsResult, f compare.MarketDiscountsFilter, view string) []marketChip {
+	var chips []marketChip
+	add := func(label, value string, drop ...string) {
+		chips = append(chips, marketChip{Label: label, Value: value, Href: marketWithout(f, view, drop...)})
+	}
+	if f.ProductID != nil {
+		name := marketBoardProductName(result, lang)
+		if name == "" {
+			name = "#" + strconv.FormatInt(*f.ProductID, 10)
+		}
+		add(i18n.T(lang, "market.board.chip.product"), name, "product")
+	}
+	if f.Query != "" {
+		add(i18n.T(lang, "market.board.chip.q"), f.Query, "q")
+	}
+	if f.Supplier != "" {
+		add(i18n.T(lang, "market.board.chip.supplier"), f.Supplier, "supplier")
+	}
+	if f.DateFrom != "" {
+		add(i18n.T(lang, "market.board.chip.date_from"), f.DateFrom, "date_from")
+	}
+	if f.DateTo != "" {
+		add(i18n.T(lang, "market.board.chip.date_to"), f.DateTo, "date_to")
+	}
+	if f.MinPrice != nil {
+		add(i18n.T(lang, "market.board.chip.min_price"), f.MinPrice.String(), "min_price")
+	}
+	if f.MaxPrice != nil {
+		add(i18n.T(lang, "market.board.chip.max_price"), f.MaxPrice.String(), "max_price")
+	}
+	if f.MinDiscount != nil {
+		add(i18n.T(lang, "market.board.chip.min_discount"), formatDiscount(*f.MinDiscount)+"%", "min_discount")
+	}
+	if f.MaxDiscount != nil {
+		add(i18n.T(lang, "market.board.chip.max_discount"), formatDiscount(*f.MaxDiscount)+"%", "max_discount")
+	}
+	return chips
+}
+
+// marketBoardProductName is the filtered product's name in the reader's
+// language, falling back to the other catalogue language.
+func marketBoardProductName(result *compare.MarketDiscountsResult, lang string) string {
+	if lang == "en" && result.ProductNameEN != "" {
+		return result.ProductNameEN
+	}
+	if result.ProductNameAR != "" {
+		return result.ProductNameAR
+	}
+	return result.ProductNameEN
+}

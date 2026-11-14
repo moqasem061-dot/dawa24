@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/erpgate"
 )
 
 // The pharmacy dashboard, /customer/*.
@@ -37,6 +38,9 @@ func (h *UIHandler) registerCustomerERPRoutes(r chi.Router) {
 		// the navigation entry is hidden by rbac.NavSuppressions.
 		return
 	}
+	// The runtime switch: while an admin has the integration off, every route
+	// below answers 404 as though it did not exist.
+	r = r.With(erpgate.RequireEnabled)
 	r.Group(func(g chi.Router) {
 		g.Use(authctx.RequireTenantPagePermission("pharmacy.integration.view"))
 		g.Get("/customer/integrations", h.ErpKeysPage)

@@ -70,11 +70,11 @@ type fuzzyFallbackRepo struct {
 	listedIDs []int64
 }
 
-func (r *fuzzyFallbackRepo) CountMarketDiscounts(_ context.Context, filter MarketDiscountsFilter) (int64, error) {
+func (r *fuzzyFallbackRepo) CountMarketDiscounts(_ context.Context, filter MarketDiscountsFilter) (MarketCount, error) {
 	if len(filter.CatalogIDs) > 0 {
-		return 3, nil
+		return MarketCount{Total: 3}, nil
 	}
-	return 0, nil
+	return MarketCount{}, nil
 }
 
 // The indexed search found nothing, so the second pass runs with the catalogue's

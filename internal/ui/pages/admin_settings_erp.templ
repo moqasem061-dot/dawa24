@@ -1,0 +1,56 @@
+package pages
+
+import (
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+)
+
+// AdminERPSwitch is what the settings card needs: whether the integration is
+// on, and whether the deployment lets it be on at all.
+type AdminERPSwitch struct {
+	// Deployed is false when ERP_API_ENABLED is off. The switch then has
+	// nothing to control and is shown disabled.
+	Deployed bool
+	Enabled  bool
+}
+
+// AdminERPSwitchCard is the one purpose-built control for the ERP runtime
+// switch. It is deliberately not a generic feature-flag list.
+templ AdminERPSwitchCard(sw AdminERPSwitch, lang string) {
+	<div class="glass-panel p-6 mb-0" id="erp-switch-card">
+		<div class="d-flex items-center justify-between pb-3 mb-4 border-b flex-wrap gap-3">
+			<div class="d-flex items-center gap-2">
+				@components.IconLink("icon-sm text-brand")
+				<h3 class="text-base font-black text-primary m-0">{ i18n.T(lang, "erp.switch.title") }</h3>
+			</div>
+			if !sw.Deployed {
+				<span class="badge badge-neutral">{ i18n.T(lang, "erp.switch.deployment_off") }</span>
+			} else if sw.Enabled {
+				<span class="badge badge-success">{ i18n.T(lang, "erp.switch.state_on") }</span>
+			} else {
+				<span class="badge badge-warning">{ i18n.T(lang, "erp.switch.state_off") }</span>
+			}
+		</div>
+		<p class="text-xs text-secondary m-0 mb-1">{ i18n.T(lang, "erp.switch.explain") }</p>
+		<p class="text-2xs text-secondary m-0 mb-4">{ i18n.T(lang, "erp.switch.other_servers") }</p>
+		if sw.Deployed && sw.Enabled {
+			<form action="/admin/settings/erp-integration" method="POST" class="m-0" data-confirm={ i18n.T(lang, "erp.switch.confirm_off") }>
+				<input type="hidden" name="enabled" value="false"/>
+				<button type="submit" class="btn btn-danger btn-sm font-bold text-xs">
+					<span>{ i18n.T(lang, "erp.switch.turn_off") }</span>
+				</button>
+			</form>
+		} else if sw.Deployed {
+			<form action="/admin/settings/erp-integration" method="POST" class="m-0">
+				<input type="hidden" name="enabled" value="true"/>
+				<button type="submit" class="btn btn-primary btn-sm font-bold text-xs">
+					<span>{ i18n.T(lang, "erp.switch.turn_on") }</span>
+				</button>
+			</form>
+		} else {
+			<button type="button" class="btn btn-secondary btn-sm font-bold text-xs" disabled>
+				<span>{ i18n.T(lang, "erp.switch.turn_on") }</span>
+			</button>
+		}
+	</div>
+}

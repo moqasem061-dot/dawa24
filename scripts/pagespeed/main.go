@@ -24,6 +24,7 @@ func main() {
 	r.Get("/vendor/inventory/alerts", stockAlertsFixture)
 	r.Get("/vendor/branches", branchMapFixture)
 	r.Get("/market-discounts", marketFixture)
+	r.Get("/market-discounts/suggest", marketSuggestFixture)
 	r.Get("/admin/organizations", adminOrganizationsFixture)
 	r.Get("/admin/finance/deposits", financeDepositsFixture)
 	r.Get("/vendor/products/new", vendorPricingFixture)

@@ -264,3 +264,65 @@ func TestMarketDefaultSortKeepsNewestFirstWhileSearching(t *testing.T) {
 }
 
 func priceBound(value string) *money.Amount { amount := money.MustParse(value); return &amount }
+
+// The product filter narrows the board with a bound parameter, in the listing
+// and in the count alike, and cannot reach the temporary-warehouse gate.
+func TestMarketProductFilterIsBoundAndSharedByListingAndCount(t *testing.T) {
+	product := int64(42)
+	filter := compare.MarketDiscountsFilter{ProductID: &product, Limit: 24}
+
+	listing, listingArgs, _, _ := buildMarketDiscountsQuery(filter)
+	count, countArgs := buildMarketDiscountsCountQuery(filter)
+	for name, sql := range map[string]string{"listing": listing, "count": count} {
+		if !strings.Contains(sql, "r.matched_product_id = $1 AND p.id IS NOT NULL") {
+			t.Errorf("%s: the product clause is missing:\n%s", name, sql)
+		}
+		if !strings.Contains(sql, "f.is_temp_warehouse = TRUE") {
+			t.Errorf("%s: the temporary-warehouse gate is gone", name)
+		}
+		if strings.Contains(sql, "42") {
+			t.Errorf("%s: the product id is spliced into the SQL, not bound", name)
+		}
+	}
+	if len(countArgs) != 1 || countArgs[0] != int64(42) {
+		t.Errorf("count args = %v, want only the product id", countArgs)
+	}
+	if len(listingArgs) != 3 || listingArgs[0] != int64(42) {
+		t.Errorf("listing args = %v, want product id, limit, offset", listingArgs)
+	}
+}
+
+// The header's highest discount comes from the count's own scan, using the
+// listing's clamped expression: one statement, one pass.
+func TestMarketCountQueryReadsTheMaximumInTheSameScan(t *testing.T) {
+	sql, _ := buildMarketDiscountsCountQuery(compare.MarketDiscountsFilter{Query: "x", MinDiscount: f(5)})
+	if !strings.Contains(sql, "COUNT(*), COALESCE(MAX("+marketWarehouseDiscountSQL+"), 0)::float8") {
+		t.Errorf("count query does not read MAX(clamped discount) beside COUNT(*):\n%s", sql)
+	}
+	if strings.Count(strings.ToUpper(sql), "FROM COMPARE.FILE_ROWS") != 1 {
+		t.Errorf("count query scans file_rows more than once:\n%s", sql)
+	}
+}
+
+// Suggestions use the board's own source clause and text match, group by product
+// (or normalised file name), and are bounded by a bound limit.
+func TestMarketSuggestQueryUsesTheBoardSourceAndGroupsByProduct(t *testing.T) {
+	sql, args := buildMarketSuggestQuery("panadol", 8)
+	for _, want := range []string{
+		"f.is_temp_warehouse = TRUE", "f.archived_at IS NULL", "f.deleted_at IS NULL",
+		"GROUP BY product_id", "COUNT(DISTINCT supplier)", "MAX(discount)", "MIN(price)",
+	} {
+		if !strings.Contains(sql, want) {
+			t.Errorf("suggest query lacks %q:\n%s", want, sql)
+		}
+	}
+	if strings.Contains(strings.ToUpper(sql), "COUNT(*) OVER") {
+		t.Error("suggestions must not count the board")
+	}
+	if args[len(args)-1] != 8 {
+		t.Errorf("the limit is not the last bound argument: %v", args)
+	}
+	if args[0] != "panadol" {
+		t.Errorf("the typed text is not bound first: %v", args)
+	}
+}

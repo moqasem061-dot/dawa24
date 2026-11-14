@@ -31,6 +31,8 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/platform/cache"
 	"github.com/moqasem061-dot/dawa24/internal/platform/config"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/erpgate"
+	"github.com/moqasem061-dot/dawa24/internal/platform/features"
 	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
 	"github.com/moqasem061-dot/dawa24/internal/platform/importrun"
 	importrunPostgres "github.com/moqasem061-dot/dawa24/internal/platform/importrun/postgres"
@@ -79,6 +81,13 @@ func run() error {
 	}
 	log.Info("worker database ready", "statement_timeout", workerDB.StatementTimeout)
 	defer db.Close()
+
+	// The ERP runtime switch lives in the feature flags; the sync worker reads
+	// it so a chunk snoozes, rather than runs, while an admin has it off.
+	erpgate.SetDeployment(cfg.ERP.Enabled)
+	if _, err := features.Init(ctx, db, log); err != nil {
+		log.Warn("failed to initialize features engine", "error", err)
+	}
 
 	var s3Store *storage.Client
 	if cfg.Storage.Configured() {

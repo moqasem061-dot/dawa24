@@ -80,6 +80,8 @@ func (h *UIHandler) AdminSettingsPage(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	values.ERP = erpSwitchState(ctx)
+
 	if values.GatewaySettings == nil || values.GatewaySettings.EndpointURL == "" {
 		values.GatewaySettings = &platformadmin.GatewaySettings{
 			EndpointURL:    "https://api.muhiya.com",

@@ -17,15 +17,21 @@ import (
 // Deliberately implemented THROUGH the listing rather than beside it: in
 // production these are two statements built from one clause builder, and a mock
 // that counted by its own rules would let a divergence between them pass.
-func (m *mockCompareRepo) CountMarketDiscounts(ctx context.Context, filter compare.MarketDiscountsFilter) (int64, error) {
+func (m *mockCompareRepo) CountMarketDiscounts(ctx context.Context, filter compare.MarketDiscountsFilter) (compare.MarketCount, error) {
 	all := filter
 	all.Page = 1
 	all.Limit = 96
 	res, err := m.ListMarketDiscounts(ctx, all)
 	if err != nil {
-		return 0, err
+		return compare.MarketCount{}, err
 	}
-	return res.TotalCount, nil
+	count := compare.MarketCount{Total: res.TotalCount}
+	for _, item := range res.Items {
+		if item.DiscountPercent > count.MaxDiscount {
+			count.MaxDiscount = item.DiscountPercent
+		}
+	}
+	return count, nil
 }
 
 func (m *mockCompareRepo) ListMarketDiscounts(ctx context.Context, filter compare.MarketDiscountsFilter) (*compare.MarketDiscountsResult, error) {

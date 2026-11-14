@@ -129,15 +129,50 @@ func (s *Service) ListMarketDiscounts(ctx context.Context, filter MarketDiscount
 	}
 
 	s.decorateBoard(ctx, filter, result)
+	s.nameBoardProduct(ctx, filter, result)
 	return result, nil
+}
+
+// marketProductNamer is implemented by the Postgres repository, and only by it,
+// for the same reason as marketStamper: a double that does not implement it just
+// leaves the product chip without a name.
+type marketProductNamer interface {
+	MarketProductNames(ctx context.Context, productID int64) (ar, en string, err error)
+}
+
+// nameBoardProduct fills the name of the product the board is filtered to, so
+// the page can say "الصنف: <name>" even on a page with no rows. A failed lookup
+// leaves the name empty; the filter itself is unaffected.
+func (s *Service) nameBoardProduct(ctx context.Context, filter MarketDiscountsFilter, result *MarketDiscountsResult) {
+	if filter.ProductID == nil {
+		return
+	}
+	for _, item := range result.Items {
+		if item.CatalogNameAR != "" || item.CatalogNameEN != "" {
+			result.ProductNameAR, result.ProductNameEN = item.CatalogNameAR, item.CatalogNameEN
+			return
+		}
+	}
+	namer, ok := s.repo.(marketProductNamer)
+	if !ok {
+		return
+	}
+	ar, en, err := namer.MarketProductNames(ctx, *filter.ProductID)
+	if err != nil {
+		s.warn(ctx, "market board: product name unavailable", err)
+		return
+	}
+	result.ProductNameAR, result.ProductNameEN = ar, en
 }
 
 // decorateBoard adds what the page needs around the rows: the pager, and the
 // warehouse list for the filter. Neither can fail the page — they are read,
 // logged, and left out if they are unavailable.
 func (s *Service) decorateBoard(ctx context.Context, filter MarketDiscountsFilter, result *MarketDiscountsResult) {
-	total, known := s.marketTotal(ctx, filter)
+	count, known := s.marketTotal(ctx, filter)
+	total := count.Total
 	result.TotalCount = total
+	result.MaxDiscount = count.MaxDiscount
 	result.TotalKnown = known
 	if known {
 		if result.Limit > 0 {
@@ -164,14 +199,19 @@ func (s *Service) decorateBoard(ctx context.Context, filter MarketDiscountsFilte
 	result.AvailableSuppliers = suppliers
 }
 
-// marketTotal counts the rows behind the pager, through the cache, under a
-// deadline. The bool reports whether the number is known; false is a page
-// without a pager, not an error.
-func (s *Service) marketTotal(ctx context.Context, filter MarketDiscountsFilter) (int64, bool) {
+// marketTotal counts the rows behind the pager and finds the board's highest
+// discount, in one scan, through the cache, under a deadline. The bool reports
+// whether the numbers are known; false is a page without a pager and without a
+// highest discount, not an error.
+//
+// The maximum shares the count's key and its budget on purpose: it is the same
+// filter over the same rows, so it is exactly as stale as the count and costs
+// no second round trip.
+func (s *Service) marketTotal(ctx context.Context, filter MarketDiscountsFilter) (MarketCount, bool) {
 	key := ""
 	if s.cache != nil {
-		key = "compare:market:count:v5:" + s.boardStamp(ctx) + ":" + marketFilterFingerprint(filter)
-		var cached int64
+		key = "compare:market:count:v6:" + s.boardStamp(ctx) + ":" + marketFilterFingerprint(filter)
+		var cached MarketCount
 		if err := s.cache.GetJSON(ctx, key, &cached); err == nil { // nolint:errswallow: a cache miss or error recomputes the count below
 			return cached, true
 		}
@@ -179,17 +219,17 @@ func (s *Service) marketTotal(ctx context.Context, filter MarketDiscountsFilter)
 
 	countCtx, cancel := context.WithTimeout(ctx, marketCountBudget)
 	defer cancel()
-	total, err := s.repo.CountMarketDiscounts(countCtx, filter)
+	count, err := s.repo.CountMarketDiscounts(countCtx, filter)
 	if err != nil {
 		s.warn(ctx, "market board: count unavailable, rendering without a pager", err)
-		return 0, false
+		return MarketCount{}, false
 	}
 	if s.cache != nil {
-		if err := s.cache.SetJSON(ctx, key, total, marketCountTTL); err != nil {
+		if err := s.cache.SetJSON(ctx, key, count, marketCountTTL); err != nil {
 			s.warn(ctx, "market board: could not cache the count", err)
 		}
 	}
-	return total, true
+	return count, true
 }
 
 // boardStamp names the board's current contents.
@@ -256,10 +296,10 @@ func (s *Service) warn(ctx context.Context, msg string, err error) {
 // arriving from a URL, and a raw one would put user input — colons, spaces,
 // newlines — into a Redis key namespace that uses ':' as its separator.
 func marketFilterFingerprint(f MarketDiscountsFilter) string {
-	raw := fmt.Sprintf("from=%s|to=%s|q=%s|sup=%s|minp=%v|maxp=%v|mind=%v|maxd=%v|ids=%v",
+	raw := fmt.Sprintf("from=%s|to=%s|q=%s|sup=%s|minp=%v|maxp=%v|mind=%v|maxd=%v|ids=%v|pid=%s",
 		f.DateFrom, f.DateTo, f.Query, f.Supplier,
 		marketPriceBound(f.MinPrice), marketPriceBound(f.MaxPrice),
-		derefFloat(f.MinDiscount), derefFloat(f.MaxDiscount), f.CatalogIDs)
+		derefFloat(f.MinDiscount), derefFloat(f.MaxDiscount), f.CatalogIDs, derefInt(f.ProductID))
 	sum := sha256.Sum256([]byte(raw))
 	return hex.EncodeToString(sum[:12])
 }
@@ -271,6 +311,13 @@ func derefFloat(v *float64) string {
 		return "-"
 	}
 	return fmt.Sprintf("%g", *v)
+}
+
+func derefInt(v *int64) string {
+	if v == nil {
+		return "-"
+	}
+	return fmt.Sprintf("%d", *v)
 }
 
 func marketPriceBound(value *money.Amount) string {

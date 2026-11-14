@@ -27,6 +27,17 @@ func marketFilterClauses(filter compare.MarketDiscountsFilter) (extra string, ar
 		argIdx++
 	}
 
+	if filter.ProductID != nil {
+		// One catalogue product, every warehouse. The two conditions are both
+		// there on purpose: the first lets the planner use
+		// compare_file_rows_matched_product (migration 243), the second keeps the
+		// same eligibility the LEFT JOIN applies, so the rows are exactly the ones
+		// the board would show under that product's name.
+		where = append(where, fmt.Sprintf("r.matched_product_id = $%d AND p.id IS NOT NULL", argIdx))
+		args = append(args, *filter.ProductID)
+		argIdx++
+	}
+
 	if filter.DateFrom != "" {
 		where = append(where, fmt.Sprintf("f.created_at >= ($%d::date::timestamp AT TIME ZONE 'Africa/Cairo')", argIdx))
 		args = append(args, filter.DateFrom)
@@ -64,10 +75,13 @@ func marketFilterClauses(filter compare.MarketDiscountsFilter) (extra string, ar
 }
 
 // buildMarketDiscountsCountQuery counts the rows the listing would page
-// through, using the same clauses the listing does.
+// through, using the same clauses the listing does, and finds the highest
+// discount among them in the same scan. The maximum uses the listing's clamped
+// expression, so the header never prints a number the cards refuse to print.
 func buildMarketDiscountsCountQuery(filter compare.MarketDiscountsFilter) (string, []any) {
 	extra, args := marketFilterClauses(filter)
-	return "SELECT COUNT(*)" + marketWarehouseFrom + extra + ";", args
+	return "SELECT COUNT(*), COALESCE(MAX(" + marketWarehouseDiscountSQL + "), 0)::float8" +
+		marketWarehouseFrom + extra + ";", args
 }
 
 // marketOrdering selects the column the two chronological orderings sort by.

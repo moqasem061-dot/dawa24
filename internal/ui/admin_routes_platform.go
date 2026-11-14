@@ -35,6 +35,8 @@ func (h *UIHandler) registerAdminERPRoutes(r chi.Router) {
 		// the navigation entry is hidden by rbac.NavSuppressions.
 		return
 	}
+	// These routes stay reachable while the runtime switch is off: staff can
+	// still read and revoke keys. The page shows a banner instead.
 	r.Group(func(g chi.Router) {
 		g.Use(authctx.RequirePagePermission("platform.integration.view"))
 		g.Get("/admin/integrations", h.ErpAdminKeysPage)
@@ -66,6 +68,7 @@ func (h *UIHandler) registerAdminSettingsRoutes(r chi.Router) {
 		g.Post("/admin/settings/payment-methods/toggle-checkout", h.AdminPlatformPaymentMethodToggleCheckoutSubmit)
 		g.Post("/admin/settings/payment-methods/{id}/delete", h.AdminPlatformPaymentMethodDeleteSubmit)
 		g.Post("/admin/settings/policies", h.AdminSettingsPolicySubmit)
+		g.Post("/admin/settings/erp-integration", h.AdminERPIntegrationSubmit)
 	})
 
 	r.Group(func(g chi.Router) {

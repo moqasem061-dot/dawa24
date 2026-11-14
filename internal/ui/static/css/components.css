@@ -6043,9 +6043,11 @@ form.filter-bar { margin: 0; }
 
 /* ==========================================================================
    Market Discounts — header and controls
-   One header row (identity + the three numbers), one controls row (search,
-   two selects, actions, view switch). Both wrap predictably; neither depends
-   on the shared .filter-bar imposing a layout, because it no longer does.
+   One header row (identity), one controls row (search, warehouse, sort,
+   advanced toggle, view switch) and a collapsible panel for the ranges. The
+   three numbers and the filter chips sit with the results, because they change
+   with them. Everything wraps predictably; none of it depends on the shared
+   .filter-bar imposing a layout, because it no longer does.
    ========================================================================== */
 
 .md-header {
@@ -6135,8 +6137,8 @@ form.filter-bar { margin: 0; }
   min-inline-size: 12rem;
 }
 .md-controls-row .md-select {
-  flex: 0 1 11rem;
-  min-inline-size: 8rem;
+  flex: 0 1 9.5rem;
+  min-inline-size: 7rem;
 }
 .md-controls-row .btn { flex: 0 0 auto; }
 
@@ -6144,7 +6146,16 @@ form.filter-bar { margin: 0; }
    nothing once the row wraps. */
 .md-controls-spacer { flex: 1 1 0; min-inline-size: 0; }
 
-.md-viewswitch { flex: 0 0 auto; }
+/* A compact segmented control, not the full-width underlined tab bar the shared
+   .tabs-nav is by default. */
+.md-viewswitch {
+  flex: 0 0 auto;
+  inline-size: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.md-viewswitch .tab-btn { padding-inline: 0.625rem; }
 
 /* Advanced ranges --------------------------------------------------------- */
 
@@ -6165,11 +6176,98 @@ form.filter-bar { margin: 0; }
 .md-range-dash { color: var(--text-muted); flex: 0 0 auto; }
 .md-range-apply { flex: 0 0 auto; }
 
+/* Search combobox: the dropdown under the search box ---------------------- */
+
+.md-search-wrap {
+  position: relative;
+  flex: 1 1 15rem;
+  min-inline-size: 11rem;
+}
+.md-search-wrap .md-search { inline-size: 100%; }
+
+.md-suggest {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: calc(100% + 0.25rem);
+  z-index: 30;
+  max-block-size: min(26rem, 70vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-card, var(--border-subtle));
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+.md-suggest-list[aria-busy="true"] { opacity: 0.55; }
+
+.md-suggest-item {
+  border-inline-start: 0.1875rem solid transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  justify-content: center;
+  min-block-size: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  border-block-end: 1px solid var(--border-subtle);
+}
+.md-suggest-item:last-child { border-block-end: 0; }
+.md-suggest-item:hover,
+.md-suggest-item[aria-selected="true"] { background: var(--bg-surface-sunken); }
+.md-suggest-item[aria-selected="true"] { border-inline-start-color: var(--brand); }
+.md-suggest-item.is-all {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  color: var(--brand);
+}
+.md-suggest-all-text { overflow-wrap: anywhere; }
+.md-suggest-name {
+  font-size: 0.875rem;
+  font-weight: 800;
+  line-height: 1.4;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+.md-suggest-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.125rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.md-suggest-best { color: var(--success); font-weight: 800; }
+
+.md-suggest-state,
+.md-suggest-note {
+  padding: 0.625rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.md-suggest-state.is-loading { font-style: italic; }
+.md-suggest-state.is-error { color: var(--danger); }
+
+@media (pointer: coarse) {
+  .md-controls-row .form-input,
+  .md-controls-row .form-select,
+  .md-controls-row .btn,
+  .md-controls-row .tab-btn,
+  .md-ranges .form-input,
+  .md-ranges .btn { min-block-size: 2.75rem; }
+  .md-controls-row .tab-btn { min-inline-size: 2.75rem; }
+  .md-chip,
+  .md-chip-clear { min-block-size: 2.75rem; }
+}
+
 @media (max-width: 768px) {
   .md-header { align-items: stretch; }
   .md-stats { inline-size: 100%; }
   .md-stat { flex: 1 1 0; min-inline-size: 0; }
-  .md-controls-row .md-search,
+  .md-controls-row .md-search-wrap,
   .md-controls-row .md-select { flex-basis: 100%; }
   .md-controls-spacer { display: none; }
   .md-viewswitch { margin-inline-start: auto; }
@@ -6179,7 +6277,7 @@ form.filter-bar { margin: 0; }
 
 /* ==========================================================================
    Market Discounts — خصومات السوق العامة
-   Two views over the same offer. Both are read for the same three numbers
+   Two layouts of the same offer. Both are read for the same three numbers
    (سعر الجمهور → الخصم → سعر بعد الخصم), so both put those three adjacent and
    in that order, and give the net price the loudest type on the surface.
    ========================================================================== */
@@ -6231,7 +6329,6 @@ form.filter-bar { margin: 0; }
   color: var(--text-muted);
   opacity: 0.55;
 }
-.market-money-cell.is-lead { min-inline-size: 6.5rem; }
 
 .market-disc-pill {
   display: inline-flex;
@@ -6259,13 +6356,6 @@ form.filter-bar { margin: 0; }
   opacity: 0.9;
   margin-inline-start: 0.125rem;
 }
-.market-disc-pill.is-block {
-  flex-direction: column;
-  align-items: center;
-  gap: 0;
-  padding: 0.375rem 0.5rem;
-  min-inline-size: 3.25rem;
-}
 .market-supplier-badge {
   font-size: 0.8125rem;
   font-weight: 700;
@@ -6274,115 +6364,55 @@ form.filter-bar { margin: 0; }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-/* The available quantity. */
-.market-stock {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--success);
-  background: var(--success-subtle);
-  border: 1px solid var(--success-border);
-  border-radius: var(--radius-sm);
-  padding: 0.0625rem 0.375rem;
-  white-space: nowrap;
+
+/* Offers — one <article> per offer, two layouts -------------------------- */
+
+/* The list and the grid are the same markup. A class on .md-offers decides
+   which, so switching costs no request and the browser lays out one set of
+   cards. Cards are plain surfaces: no shadow or transform transitions, and
+   content-visibility lets the browser skip layout and paint for the ones that
+   are off screen, which is what makes a 96-row page cheap. */
+.md-offers {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
 }
-
-/* Grid view — four compact cards per row ---------------------------------- */
-
-.market-grid {
+.md-offers.is-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.75rem;
   align-items: stretch;
 }
-@media (max-width: 1280px) { .market-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (max-width: 1024px) { .market-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 640px)  { .market-grid { grid-template-columns: 1fr; } }
+@media (max-width: 1280px) { .md-offers.is-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 1024px) { .md-offers.is-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px)  { .md-offers.is-grid { grid-template-columns: 1fr; } }
 
-.market-card {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.75rem;
-  overflow: visible;
-}
-.market-card:hover {
-  border-color: var(--border-strong, var(--border-card));
-  box-shadow: var(--shadow-md);
-}
-.market-card-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.375rem;
-  min-block-size: 1.375rem;
-}
-.market-card .market-supplier-badge {
-  font-size: 0.8125rem;
-  font-weight: 700;
-  padding: 0.2rem 0.5rem;
-}
-.market-card-title {
-  margin: 0;
-  font-size: 0.875rem;
-  font-weight: 800;
-  line-height: 1.45;
-  color: var(--text-primary);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  min-block-size: 2.35em;
-}
-/* The price rail keeps public price and discount tag adjacent on the right (RTL). */
-.market-card-rail {
-  display: flex;
-  align-items: center;
-  margin-block-start: auto;
-  padding-block-start: 0.5rem;
-  border-block-start: 1px solid var(--border-subtle);
-}
-.market-card-pricing-group {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  width: 100%;
-  justify-content: flex-start;
-}
-.market-card-price-block {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-}
-.market-card-foot { margin-block-start: 0.125rem; }
-
-/* List view — one row per offer ------------------------------------------- */
-
-.market-list { display: flex; flex-direction: column; gap: 0.625rem; }
-
-.market-list-row {
+.md-offer {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1.25rem;
   padding: 0.875rem 1.25rem;
-  overflow: visible;
-  transition: border-color var(--duration-fast), box-shadow var(--duration-fast);
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-card, var(--border-subtle));
+  border-radius: var(--radius-xl);
+  content-visibility: auto;
+  contain-intrinsic-size: auto 5.5rem;
 }
-.market-list-row:hover {
-  border-color: var(--border-strong, var(--border-card));
-  box-shadow: var(--shadow-sm);
-}
-.market-list-identity {
+.md-offer:hover { border-color: var(--border-strong, var(--border-card)); }
+
+/* List: [name][warehouse][date] on one line, the file's own name beneath. */
+.md-offer-identity {
   flex: 1 1 0;
   min-inline-size: 0;
-}
-.market-list-title-wrap {
   display: flex;
-  align-items: center;
-  gap: 0.625rem;
   flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.625rem;
 }
-.market-list-title {
+.md-offer-name {
+  order: 1;
+  flex: 0 1 auto;
   margin: 0;
   font-size: 1rem;
   font-weight: 800;
@@ -6390,38 +6420,37 @@ form.filter-bar { margin: 0; }
   color: var(--text-primary);
   overflow-wrap: anywhere;
 }
-.market-list-row .market-supplier-badge {
-  font-size: 0.8125rem;
-  font-weight: 700;
+.md-offer-meta {
+  order: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  min-inline-size: 0;
+}
+.md-offer-identity .market-source-name { order: 3; flex: 1 1 100%; }
+.md-offer .market-supplier-badge {
   padding: 0.25rem 0.625rem;
   border-radius: var(--radius-md);
 }
-.market-list-date {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  display: inline-flex;
-  align-items: center;
-}
-.market-list-row .market-list-date {
+.md-offer .market-list-date {
   background: var(--bg-surface-sunken);
   border: 1px solid var(--border-subtle);
   padding: 0.2rem 0.5rem;
   border-radius: var(--radius-sm);
-  font-size: 0.8125rem;
   color: var(--text-secondary);
 }
-.market-money {
+
+.md-offer-money {
   display: flex;
   align-items: stretch;
-  gap: 0;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   background: var(--bg-surface-sunken, #f8fafc);
   overflow: hidden;
   flex: 0 0 auto;
 }
-.market-money-cell {
+.md-offer-cell {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -6430,60 +6459,169 @@ form.filter-bar { margin: 0; }
   padding: 0.4375rem 0.875rem;
   min-inline-size: 6rem;
 }
-.market-money-cell + .market-money-cell {
-  border-inline-start: 1px solid var(--border-subtle);
-}
-.market-money-cell.is-net { background: var(--bg-surface-raised, #fff); }
-.market-list-action {
+.md-offer-cell + .md-offer-cell { border-inline-start: 1px solid var(--border-subtle); }
+.md-offer-cell.is-lead { min-inline-size: 6.5rem; }
+.md-offer-cell.is-net { background: var(--bg-surface-raised, #fff); }
+.md-offer-action {
   display: flex;
   justify-content: flex-end;
   flex: 0 0 auto;
   min-inline-size: 6rem;
 }
 
+/* Grid: the same elements, stacked as a compact card. */
+.md-offers.is-grid .md-offer {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  contain-intrinsic-size: auto 13rem;
+}
+.md-offers.is-grid .md-offer-identity {
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.375rem;
+}
+.md-offers.is-grid .md-offer-meta {
+  order: 1;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  min-block-size: 1.375rem;
+}
+.md-offers.is-grid .md-offer-name {
+  order: 2;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-block-size: 2.35em;
+}
+.md-offers.is-grid .md-offer-identity .market-source-name { order: 3; flex: 0 0 auto; }
+.md-offers.is-grid .md-offer .market-supplier-badge { padding: 0.2rem 0.5rem; }
+.md-offers.is-grid .md-offer-money {
+  margin-block-start: auto;
+  padding-block-start: 0.5rem;
+  gap: 0.75rem;
+  border: 0;
+  border-block-start: 1px solid var(--border-subtle);
+  border-radius: 0;
+  background: transparent;
+}
+.md-offers.is-grid .md-offer-cell {
+  align-items: flex-start;
+  padding: 0;
+  min-inline-size: 0;
+  gap: 0.125rem;
+}
+.md-offers.is-grid .md-offer-cell + .md-offer-cell { border-inline-start: 0; }
+.md-offers.is-grid .md-offer-cell.is-lead { min-inline-size: 0; }
+.md-offers.is-grid .md-offer-cell.is-net { background: transparent; }
+.md-offers.is-grid .md-offer-cell .market-money-was { font-size: 0.875rem; }
+.md-offers.is-grid .md-offer-action { min-inline-size: 0; }
+.md-offers.is-grid .md-offer-action .btn { inline-size: 100%; justify-content: center; }
+
 @media (max-width: 1024px) {
-  .market-list-row {
-    flex-wrap: wrap;
-    gap: 0.875rem;
-  }
-  .market-list-identity {
-    flex: 1 1 100%;
-  }
-  .market-money {
-    flex: 1 1 auto;
-  }
-  .market-list-action {
-    flex: 0 0 auto;
-  }
+  .md-offers.is-list .md-offer { flex-wrap: wrap; gap: 0.875rem; }
+  .md-offers.is-list .md-offer-identity { flex: 1 1 100%; }
+  .md-offers.is-list .md-offer-money { flex: 1 1 auto; }
 }
 @media (max-width: 640px) {
-  .market-list-row {
+  .md-offers.is-list .md-offer {
     flex-direction: column;
     align-items: stretch;
     gap: 0.75rem;
     padding: 0.75rem;
   }
-  .market-list-title-wrap {
-    gap: 0.375rem;
-  }
-  .market-money {
-    width: 100%;
-    justify-content: space-between;
-  }
-  .market-money-cell {
-    flex: 1 1 0;
-    min-inline-size: 0;
-    padding-inline: 0.375rem;
-  }
-  .market-money-was { font-size: 1rem; }
-  .market-list-action {
-    width: 100%;
-  }
-  .market-list-action > .btn {
-    width: 100%;
-    justify-content: center;
-  }
+  .md-offers.is-list .md-offer-identity { gap: 0.375rem; }
+  .md-offers.is-list .md-offer-money { inline-size: 100%; justify-content: space-between; }
+  .md-offers.is-list .md-offer-cell { flex: 1 1 0; min-inline-size: 0; padding-inline: 0.375rem; }
+  .md-offers.is-list .market-money-label { white-space: normal; text-align: center; }
+  .md-offers.is-list .market-money-was { font-size: 1rem; }
+  .md-offers.is-list .md-offer-action { inline-size: 100%; }
+  .md-offers.is-list .md-offer-action > .btn { inline-size: 100%; justify-content: center; }
 }
+
+/* Results region, summary, chips, pager, empty state ---------------------- */
+
+.md-results { scroll-margin-block-start: 5rem; }
+.md-results[aria-busy="true"] .md-fragment {
+  opacity: 0.55;
+  pointer-events: none;
+  transition: opacity var(--duration-fast) linear;
+}
+.md-error { margin-block-end: 0.75rem; }
+
+.md-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem 1rem;
+  flex-wrap: wrap;
+  margin-block: 0.75rem;
+}
+.md-summary .md-stats { flex: 0 0 auto; }
+
+.md-chips {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  flex: 1 1 16rem;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.md-chip,
+.md-chip-clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-block-size: 2rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.3;
+  text-decoration: none;
+}
+.md-chip {
+  max-inline-size: 100%;
+  color: var(--primary);
+  background: var(--primary-subtle);
+  border: 1px solid var(--primary-border, var(--border-subtle));
+}
+.md-chip:hover { border-color: var(--primary); }
+.md-chip-label { color: var(--text-secondary); white-space: nowrap; }
+.md-chip-value { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-inline-size: 16rem; }
+.md-chip .icon-xs { flex: 0 0 auto; }
+.md-chip-clear {
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px dashed var(--border-strong, var(--border-subtle));
+}
+.md-chip-clear:hover { color: var(--danger); border-color: var(--danger); }
+
+.md-pager {
+  margin-block-start: 0.75rem;
+  padding: 1rem;
+  background: var(--bg-surface-sunken);
+}
+.md-pager-plain {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.md-empty { padding: 3rem 1.5rem; text-align: center; }
+.md-empty-icon { margin-block-end: 0.75rem; color: var(--text-muted); }
+.md-empty-title { margin: 0 0 0.5rem; font-size: 1.125rem; font-weight: 900; color: var(--text-primary); }
+.md-empty-body { margin: 0 auto 1.5rem; max-inline-size: 28rem; font-size: 0.875rem; color: var(--text-secondary); }
 
 /* ---- Market-intelligence spread table (reference layout: product | best | highest) ---- */
 .intel-spread-table th:nth-child(2), .intel-spread-table th:nth-child(3) { text-align: center; }
